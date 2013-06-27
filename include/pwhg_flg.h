@@ -25,7 +25,8 @@ c flg_reweight: outputs extra infos for reweighting LH events
      4     flg_bornzerodamp,flg_ckkwscalup,
      5     flg_minlo,flg_minlo_nnll,flg_minlo_real,
      6     flg_reweight,flg_newweight,flg_fastbtlbound,
-     7     flg_storemintupb,flg_doublefsr,flg_monitorubound
+     7     flg_storemintupb,flg_doublefsr,flg_monitorubound,
+     8     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad
       character * 1 flg_btildepart
       character * 20 flg_processid
       common/pwhg_flg/flg_nlotest,flg_withsubtr,flg_withdamp,
@@ -37,5 +38,6 @@ c flg_reweight: outputs extra infos for reweighting LH events
      7     flg_minlo,flg_minlo_nnll,flg_minlo_real,
      8     flg_reweight,flg_newweight,flg_fastbtlbound,
      9     flg_storemintupb,flg_doublefsr,flg_monitorubound,
-     $     flg_btildepart,flg_processid
+     1     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad,
+     2     flg_btildepart,flg_processid
       save /pwhg_flg/

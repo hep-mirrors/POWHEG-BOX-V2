@@ -111,6 +111,7 @@ c initialize Lambda values for radiation
       call init_rad_lambda
 c
       call init_processes
+      call setup_reson
 
       call init_couplings
 
@@ -142,3 +143,23 @@ c initialize number of singular regions
       endif
       end
 
+
+      subroutine setup_reson
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer j,res
+      flst_nreson=1
+      flst_reslist(1)=0
+      do j=1,flst_nreal
+         res=flst_real(nlegreal,j)
+         do k=1,flst_nreson
+            if(flst_reslist(k).eq.res) exit
+         enddo
+         if(k.eq.flst_nreson+1) then
+c it didn't find the resonance on the list; add it up
+            flst_nreson=flst_nreson+1
+            flst_reslist(flst_nreson)=res
+         endif
+      enddo
+      end

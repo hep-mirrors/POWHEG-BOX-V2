@@ -3,6 +3,7 @@
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       include 'LesHouches.h'
@@ -23,7 +24,7 @@ c it is an event with radiation
          spinup(nup)=9
          vtimup(nup)=0
          mothup(1,nup)=1
-         mothup(2,nup)=2            
+         mothup(2,nup)=2
          alr=rad_realalr
          em=flst_emitter(alr)
          rad=nlegreal
@@ -62,6 +63,9 @@ c conjugate their colours in the output, to make them outgoing.
          idup(rad)=flrad
       endif
 c add resonances, perform decays, put particles on shell, etc.(or nothing!)
+      if(flg_withresrad) then
+         call lh_resonances
+      endif
       call finalize_lh
       end
 
@@ -194,6 +198,35 @@ c gluons are numbered 21 in pdg
       call borncolour_lh
       end
 
+      subroutine lh_resonances
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_rad.h'
+      include 'LesHouches.h'
+      integer moth,j,iub,em
+      iub = rad_ubornidx
+      do j=1,nlegborn
+         moth=flst_bornres(j,iub)
+         if(moth.ne.0) then
+            mothup(1,j)=moth
+            mothup(2,j)=moth
+         endif
+         if(flst_isres(j)) then
+            istup(j)=+2
+         endif
+      enddo
+      if(nup.eq.nlegreal) then
+         em = flst_emitter(rad_realalr)
+         if(em.ne.0) then
+            moth=flst_bornres(flst_emitter(rad_realalr),iub)
+            if(moth.ne.0) then
+               mothup(1,nlegreal)=moth
+               mothup(2,nlegreal)=moth
+            endif
+         endif
+      endif
+      end
 
       subroutine getnewcolor(newcolor)
       implicit none

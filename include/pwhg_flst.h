@@ -34,12 +34,23 @@ c This is the case for most QCD NLO calculation.
       integer maxalr
       parameter (maxalr=maxprocreal*nlegreal*(nlegreal-1)/2)
       integer flst_nborn, flst_born(nlegborn,maxprocborn),
-     1        flst_borntags(nlegborn,maxprocborn)
+     1     flst_borntags(nlegborn,maxprocborn),
+     2     flst_bornres(nlegborn,maxprocborn),
+     3     flst_nreson,flst_reslist(nlegborn)
+c res arrays contain pointers to the mother resonance for
+c resonace's decay products, zero for the other particles.
       integer flst_nreal, flst_real(nlegreal,maxprocreal),
-     1        flst_realtags(nlegreal,maxprocreal)
-      integer flst_nalr,flst_alr(nlegreal,maxalr)
-      integer flst_nregular,flst_regular(nlegreal,maxprocreal)
-      integer flst_uborn(nlegborn,maxalr)
+     1     flst_realtags(nlegreal,maxprocreal),
+     2     flst_realres(nlegreal,maxprocreal)
+      integer flst_nalr,flst_alr(nlegreal,maxalr),
+     1     flst_alrtags(nlegreal,maxalr),
+     2     flst_alrres(nlegreal,maxalr)
+      integer flst_nregular,flst_regular(nlegreal,maxprocreal),
+     1     flst_regulartags(nlegreal,maxprocreal),
+     2     flst_regularres(nlegreal,maxprocreal)
+      integer flst_uborn(nlegborn,maxalr),
+     1     flst_uborntags(nlegborn,maxalr),
+     2     flst_ubornres(nlegborn,maxalr)
       integer flst_mult(maxalr), flst_ubmult(maxalr),
      1        flst_emitter(maxalr)
       integer maxregions
@@ -53,9 +64,15 @@ c     born2alr(0,k) = number of alpha_r with underlying born k
 c     born2alr(1.. born2alr(0,k),k)= pointer to corresponding alpha_r
       integer flst_born2alr(0:maxalr,maxprocborn)
       integer flst_lightpart
-      common/pwhg_flst/flst_nborn, flst_born,flst_borntags,
-     1         flst_nreal,flst_real,flst_realtags,
-     2         flst_nalr,flst_alr,flst_nregular,flst_regular,
-     3         flst_uborn,flst_mult,flst_ubmult,flst_emitter,
-     4         flst_allreg,flst_alr2born,flst_born2alr,flst_lightpart
+      logical flst_sonof,flst_isfs,flst_isres(nlegborn)
+      common/pwhg_flst/
+     1     flst_nborn, flst_born,flst_borntags,flst_bornres,
+     2     flst_nreal,flst_real,flst_realtags,flst_realres,
+     3     flst_nalr,flst_alr,flst_alrtags,flst_alrres,
+     4     flst_nregular,flst_regular,flst_regulartags,flst_regularres,
+     5     flst_uborn,flst_uborntags,flst_ubornres,flst_mult,
+     7     flst_ubmult,flst_emitter,flst_allreg,flst_alr2born,
+     8     flst_born2alr,flst_lightpart,
+     9     flst_nreson,flst_reslist,
+     1     flst_isres
       save /pwhg_flst/

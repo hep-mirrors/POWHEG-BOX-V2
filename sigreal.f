@@ -266,8 +266,10 @@ c are consistent with total Born
       include 'nlegborn.h'
       include 'pwhg_math.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_br.h'
-      integer  iborn,j,k,mu
+      include 'pwhg_st.h'
+      integer  iborn,j,k,mu,kres,ires
       real * 8 tot
       real * 8 gtens(0:3,0:3),ap
       data gtens/1d0, 0d0, 0d0, 0d0,
@@ -275,28 +277,42 @@ c are consistent with total Born
      #           0d0, 0d0,-1d0, 0d0,
      #           0d0, 0d0, 0d0,-1d0/
       save gtens
-      do iborn=1,flst_nborn
-         do j=1,nlegborn
-            if(abs(flst_born(j,iborn)).le.6) then
-               tot=0
-               do k=1,nlegborn
-                  if(abs(flst_born(k,iborn)).le.6) then
-                     if(k.ne.j) then
-                        tot=tot+br_bornjk(j,k,iborn)
+      logical colcorr
+      external colcorr
+      if(.not.flg_withresrad) then
+         flst_nreson=1
+         flst_reslist(1)=0
+         do iborn=1,flst_nborn
+            do j=1,nlegborn
+               flst_bornres(j,iborn)=0
+            enddo
+         enddo
+      endif
+      do ires=1,flst_nreson         
+         do iborn=1,flst_nborn
+            kres=flst_reslist(ires)
+            do j=1,nlegborn
+               if(colcorr(j,iborn,kres)) then
+                  tot=0
+                  do k=1,nlegborn
+                     if(colcorr(k,iborn,kres)) then
+                        if(k.ne.j) then
+                           tot=tot+br_bornjk(j,k,iborn)
+                        endif
                      endif
+                  enddo
+                  if(flst_born(j,iborn).eq.0) then
+                     tot=tot/(ca*br_born(iborn))
+                  else
+                     tot=tot/(cf*br_born(iborn))
                   endif
-               enddo
-               if(flst_born(j,iborn).eq.0) then
-                  tot=tot/(ca*br_born(iborn))
-               else
-                  tot=tot/(cf*br_born(iborn))
+                  if(abs((tot-1)/tot).gt.1d-8) then
+                     write(iun,'(f6.3,a,20(i3,1x))') tot,
+     1                    ' colour check fails for flav. struct:',kres,
+     2                    (flst_born(k,iborn),k=1,nlegborn)
+                  endif
                endif
-               if(abs((tot-1)/tot).gt.1d-8) then
-                  write(iun,'(f6.3,a,20(i2,1x))') tot,
-     1   ' colour check fails for flav. struct:',
-     2     (flst_born(k,iborn),k=1,nlegborn)
-               endif
-            endif
+            enddo
          enddo
       enddo
       do iborn=1,flst_nborn
@@ -326,6 +342,7 @@ c are consistent with total Born
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
+      include 'pwhg_st.h'
       character *(*) label
       integer iun
       real * 8 xborn(ndiminteg-3),xrad(3)
@@ -386,8 +403,9 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
                write(iun,*) ' some vanish and some do not'
             endif
             if(isnonzero.and..not.iszero) then
-               write(iun,*) ' emitter ',kn_emitter, ', process ',
-     $              (flst_alr(j,alr),j=1,nlegreal),', ',label,':'
+               write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
+     $              ' emitter ',kn_emitter, ', process ',
+     $              (flst_alr(j,alr),j=1,nlegreal)!,', ',label,':'
                do alrp=alr+1,flst_nalr
                   isequal=.true.
                   do jexp=1,nexp
@@ -395,8 +413,9 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
      $                    .ne.r0s(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
-                     write(iun,*) ' emitter ',kn_emitter, ', process ',
-     $                    (flst_alr(j,alrp),j=1,nlegreal),', ',label,':'
+                     write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
+     $                    ' emitter ',kn_emitter, ', process ',
+     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
                      ident(alrp)=.true.
                   endif
                enddo
@@ -415,7 +434,8 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
                   endif
                   write(iun,*) (r0(alr,jexp)-r0s(alr,jexp))/ 
      $            (r0(alr,jexp-1)-r0s(alr,jexp-1)),
-     $             r0s(alr,jexp)/r0(alr,jexp),flag
+     $             r0s(alr,jexp)/r0(alr,jexp),
+     $                 r0s(alr,jexp),r0(alr,jexp),flag
                enddo
             endif
          enddo
@@ -505,8 +525,8 @@ c               if(r0(alr,jexp).ne.0) isnonzero=.true.
             enddo
  111        continue
             if(jexpfirst.le.nexp) then
-               write(iun,*) ' emitter ',kn_emitter,
-     #', process ',(flst_alr(j,alr),j=1,nlegreal),', ',label,':'
+               write(iun,'(2a,i2,a,20(1x,i3))') label,'  emitter ',
+     #kn_emitter,', process ',(flst_alr(j,alr),j=1,nlegreal)
                do alrp=alr+1,flst_nalr
                   isequal=.true.
                   do jexp=1,nexp
@@ -514,8 +534,8 @@ c               if(r0(alr,jexp).ne.0) isnonzero=.true.
      #r0c(alr,jexp).ne.r0c(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
-                     write(iun,*) ' emitter ',kn_emitter,
-     #', process ',(flst_alr(j,alrp),j=1,nlegreal),', ',label,':'
+                     write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
+     # kn_emitter,', process ',(flst_alr(j,alrp),j=1,nlegreal)
                      ident(alrp)=.true.
                   endif
                enddo
@@ -577,6 +597,13 @@ c     Added this 'if' to be sure that no division by zero occurs
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
+               if(flg_withresrad) then
+                  if(kn_emitter.eq.0) then
+                     kn_resemitter=0
+                  else
+                     kn_resemitter=flst_alrres(nlegreal,alr)
+                  endif
+               endif
                do j=1,nmomset
                   call realgr(
      1                 flst_alr(1,alr),preal(0,1,j),res(j,alr))
@@ -643,6 +670,13 @@ c            if(equivto(alr).lt.0.or..not.computed(equivto(alr))) then
                condition=.false.
             endif
             if(condition) then
+               if(flg_withresrad) then
+                  if(kn_emitter.eq.0) then
+                     kn_resemitter=0
+                  else
+                     kn_resemitter=flst_alrres(nlegreal,alr)
+                  endif
+               endif
                call realgr(flst_alr(1,alr),kn_cmpreal,r0(alr))
                sumdijinv=0
                do k=1,flst_allreg(1,0,alr)
@@ -752,6 +786,13 @@ c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
                do j=1,nmomset
+                  if(flg_withresrad) then
+                     if(kn_emitter.eq.0) then
+                        kn_resemitter=0
+                     else
+                        kn_resemitter=flst_alrres(nlegreal,alr)
+                     endif
+                  endif
                   call realgr(
      1                 flst_alr(1,alr),preal(0,1,j),res(j,alr))
                enddo
@@ -789,6 +830,13 @@ c Only R_alpha (namely alr) with the current emitter:
 c Not equal to any previous one, compute explicitly.
 c First mark as being computed
                markused(alr)=1
+               if(flg_withresrad) then
+                  if(kn_emitter.eq.0) then
+                     kn_resemitter=0
+                  else
+                     kn_resemitter=flst_alrres(nlegreal,alr)
+                  endif
+               endif
                call realgr(flst_alr(1,alr),kn_preal,r0(alr))
 c Supply FKS factor to separate singular region:
                sumdijinv=0
@@ -986,3 +1034,5 @@ c     check if amp2 is finite
       if (.not.pwhg_isfinite(amp2)) amp2=0d0
       amp2 = amp2*st_alpha/(2*pi)
       end
+
+

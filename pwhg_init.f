@@ -5,6 +5,7 @@
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
       include 'pwhg_st.h'
+      include 'pwhg_em.h'
       include 'pwhg_pdf.h'
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
@@ -13,6 +14,14 @@
       integer i1,n1,n2
       call init_flsttag
       flg_debug=.false.
+c default for scheme in Virtual
+c flg_drscheme=.false. Traditional MSbar
+c flg_drscheme=.true.  Dimensional reduction
+      flg_drscheme=.false.
+c On if there are electromagnetic corrections
+      flg_with_em=.false.
+c default is 6; if em is included, it is 22 to include photons
+      pdf_nparton=6
       if(powheginput("#flg_debug").eq.1) flg_debug=.true.
 c whether to output negative weights or not
       flg_withnegweights=.false.
@@ -175,11 +184,13 @@ c now the cross section is available
       do j=1,maxprocreal
          do l=1,nlegreal
             flst_realtags(l,j)=0
+            flst_realres(l,j)=0
          enddo
       enddo
       do j=1,maxprocborn
          do l=1,nlegborn
             flst_borntags(l,j)=0
+            flst_bornres(l,j)=0
          enddo
       enddo
       end

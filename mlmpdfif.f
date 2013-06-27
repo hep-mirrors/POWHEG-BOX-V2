@@ -1,8 +1,10 @@
       subroutine genericpdf(ndns,ih,xmu2,x,fx)
 c Interface to mlmpdf package.
       implicit none
+      include 'nlegborn.h'
+      include 'pwhg_pdf.h'
       integer ndns,ih
-      real * 8 xmu2,x,fx(-6:6)
+      real * 8 xmu2,x,fx(-pdf_nparton:pdf_nparton)
       real * 4 sxmu2,sx,sfx(-5:5)
       integer j
       sx=x
@@ -15,8 +17,12 @@ c Interface to mlmpdf package.
       fx(-1)=sfx(-2)
       fx(2)=sfx(1)
       fx(-2)=sfx(-1)
-      fx(6)=0
-      fx(-6)=0
+      do j=-22,-6
+         fx(j)=0
+      enddo
+      do j=6,21
+         fx(j)=0
+      enddo
       end
 
 c This subroutine is in LHAPDF, and is invoked in

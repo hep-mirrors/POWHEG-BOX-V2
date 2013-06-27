@@ -124,18 +124,21 @@ c restart from here
       implicit none
       include 'pwhg_math.h'
       include 'nlegborn.h'
+      include 'pwhg_flg.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       real * 8 t,csi,y,azi,sig,born
       real * 8 tmax
       common/ctmax/tmax
-      integer kinreg,firstreg,lastreg
+      integer kinreg,firstreg,lastreg,fl1,fl2,flemitter
       logical ini
       data ini/.true./
       real * 8 pwhg_pt2,powheginput
       external pwhg_pt2,powheginput
       save ini,firstreg,lastreg
+      logical is_charged,is_coloured
+      external is_charged,is_coloured
       if(ini) then
          firstreg=powheginput("#radregion")
          if(firstreg.le.0) then
@@ -153,9 +156,25 @@ c Use highest bid procedure (see appendix B of FNO2006)
          if(rad_kinreg_on(rad_kinreg)) then
             if(rad_kinreg.eq.1) then
 c     initial state radiation
+               fl1=flst_born(1,rad_ubornidx)
+               fl2=flst_born(2,rad_ubornidx)
+               if((.not.is_coloured(fl1).and..not.is_coloured(fl2))
+     1          .and.(is_charged(fl1).or.is_charged(fl2))) then
+                  flg_em_rad = .true.
+               else
+                  flg_em_rad = .false.
+               endif
                call gen_rad_isr(t)
             else
 c     final state radiation
+               kn_emitter=flst_lightpart+rad_kinreg-2
+               flemitter=flst_born(kn_emitter,rad_ubornidx)
+               if(.not.is_coloured(flemitter).and.is_charged(flemitter))
+     1              then
+                  flg_em_rad = .true.
+               else
+                  flg_em_rad = .false.
+               endif
                call gen_rad_fsr(t)
             endif
             if(t.gt.tmax) then
@@ -204,16 +223,29 @@ c flavour
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
+      real * 8 pres(0:3),q2
+      integer em,ires
       if(rad_kinreg.eq.1) then
          pwhg_pt2=(kn_sreal/4)*(1-kn_y**2)*kn_csi**2
       else
-         pwhg_pt2=(kn_sreal/2)*(1-kn_y)*kn_csi**2
+         em=flst_lightpart+rad_kinreg-2
+         if(kn_masses(em).eq.0) then
+            if(flg_withresrad.and.flst_bornres(em,1).ne.0) then
+               ires=flst_bornres(em,1)
+               pres=kn_cmpborn(:,ires)
+               q2=pres(0)**2-pres(1)**2-pres(2)**2-pres(3)**2
+            else
+               q2=kn_sreal
+            endif
+            pwhg_pt2=(q2/2)*(1-kn_y)*kn_csi**2
+         else
+            call comppt2fsrmv(kn_y,kn_csi,pwhg_pt2)
+         endif
       endif
       end
-
-
 
       function pwhg_upperb_rad()
       implicit none
@@ -221,41 +253,57 @@ c flavour
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       include 'pwhg_st.h'
+      include 'pwhg_em.h'
       real * 8 x,y,csi
+      integer em
       csi=kn_csi
       x=1-csi
       y=kn_y
       if(rad_kinreg.eq.1) then
          if(rad_iupperisr.eq.1) then
-            pwhg_upperb_rad = st_alpha/((1-x)*(1-y**2))
+            pwhg_upperb_rad = 1/((1-x)*(1-y**2))
 c Possible alternatives:
-c rad_iupper=2   pwhg_upperb_rad = st_alpha/(x*(1-x)*(1-y**2))
+c rad_iupper=2   pwhg_upperb_rad = 1/(x*(1-x)*(1-y**2))
 c 
-c rad_iupper=3:  pwhg_upperb_rad = st_alpha/(x**2*(1-x)*(1-y**2))
+c rad_iupper=3:  pwhg_upperb_rad = 1/(x**2*(1-x)*(1-y**2))
          else
             write(*,*) ' rad_iupper=',rad_iupperisr,
      1        'alternative not implemented'
             call exit(1)
          endif
       else
+c Final state radiation
+         em=flst_lightpart+rad_kinreg-2
+         if(kn_masses(em).eq.0) then
 c for now use the same
-         if(rad_iupperfsr.eq.1) then
-            pwhg_upperb_rad = st_alpha/(csi*(1-y))
-         elseif(rad_iupperfsr.eq.2) then
-            pwhg_upperb_rad = st_alpha/(csi**2*(1-y)*(1-csi/2*(1-y))**2)
-     2          *csi
-         elseif(rad_iupperfsr.eq.3) then
-            pwhg_upperb_rad = st_alpha/(csi*(1-y)*
-     2         (1-csi/2*(1-y)))
+            if(rad_iupperfsr.eq.1) then
+               pwhg_upperb_rad = 1/(csi*(1-y))
+            elseif(rad_iupperfsr.eq.2) then
+               pwhg_upperb_rad = 1/(csi**2*(1-y)*(1-csi/2*(1-y))**2)
+     2              *csi
+            elseif(rad_iupperfsr.eq.3) then
+               pwhg_upperb_rad = 1/(csi*(1-y)*
+     2              (1-csi/2*(1-y)))
+            else
+               write(*,*) ' rad_iupper=',rad_iupperfsr,
+     1              'alternative not implemented'
+               call exit(1)
+            endif
          else
-            write(*,*) ' rad_iupper=',rad_iupperfsr,
-     1            'alternative not implemented'
-            call exit(1)
+c     massive emitter
+            call compubradmv(y,csi,pwhg_upperb_rad)
          endif
       endif
+      if(flg_em_rad) then
+         pwhg_upperb_rad = pwhg_upperb_rad * em_alpha
+      else
+         pwhg_upperb_rad = pwhg_upperb_rad * st_alpha
+      endif
+
       end
 
 
@@ -266,19 +314,25 @@ c We use it to find its zero in pt2.
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
+      include 'pwhg_em.h'
       include 'pwhg_rad.h'
       include 'pwhg_math.h'
       real * 8 pt2solve,pt2
 c i set by dzero: 1 for first call, 2 for subsequent calls, 3 for last call
 c before a normal exit; not used here
-      integer i
-      real * 8 xlr,q2,xlam2c,kt2max,cunorm
+      integer i,em
+      real * 8 xlr,q2,xlam2c,kt2max,unorm,cunorm,sborn
       integer nlc
-      common/cpt2solve/xlr,q2,kt2max,xlam2c,cunorm,nlc
-      real * 8 b0,sborn,xm,p
-      sborn=kn_sborn
+      common/cpt2solve/xlr,q2,kt2max,xlam2c,unorm,sborn,nlc
+      real * 8 b0,xm,p,tmp
       b0=(11*CA-4*TF*nlc)/(12*pi)
+      if(flg_em_rad) then
+         cunorm=unorm*em_alpha
+      else
+         cunorm=unorm
+      endif
       if(rad_kinreg.eq.1) then
          if(rad_iupperisr.eq.1) then
 c see Notes/upperbounding-isr.pdf
@@ -309,30 +363,41 @@ c     #        *(log(q2/xlam2c)*log(log(kt2max/xlam2c)/log(pt2/xlam2c))
 c     #        - log(kt2max/pt2)) + xlr
          endif
       else
-         if(rad_iupperfsr.eq.1) then
-c final state radiation
-         pt2solve=cunorm*pi/b0*(
-     #     (log(kt2max/xlam2c)*log(log(kt2max/xlam2c)/log(pt2/xlam2c))
-     #        - log(kt2max/pt2)) )
-     #           + xlr
-         elseif(rad_iupperfsr.eq.2) then
-            xm=kn_csimax
-            p=sqrt(pt2/sborn)
-            pt2solve=cunorm*2*pi*2*(
-     3   (log(xm-xm**2)+(2*xm-2)*log(xm)-2*log(1-xm)*xm-2)/xm/2.d+0
-     1   -(p*log(xm-p**2)+(2*p*log(p)-2*log(1-p)*p-2)*xm-2*p*log(p))
-     2   /(p*xm)/2.d+0) + xlr
-         elseif(rad_iupperfsr.eq.3) then
-            xm=kn_csimax
-            p=sqrt(pt2/sborn)
-            pt2solve=cunorm*2*pi*2*(
-     3   (log(xm-xm**2)+(2*xm-2)*log(xm)-2*log(1-xm)*xm-2)/xm/2.d+0
-     1   -(p*log(xm-p**2)+(2*p*log(p)-2*log(1-p)*p-2)*xm-2*p*log(p))
-     2   /(p*xm)/2.d+0) + xlr
+         em = flst_lightpart+rad_kinreg-2
+         if(kn_masses(em).ne.0) then
+            call compintub(pt2,pt2solve)
+c The following lines are used to test the analytic integration
+c versus a vegas one; uncomment to test
+c            call compintubveg(pt2,tmp)
+c            write(*,'(a,3(1x,d10.4))') ' testintub:',pt2,pt2solve,tmp
+            pt2solve=cunorm*pt2solve+xlr
          else
-            write(*,*) ' rad_iupper=',rad_iupperfsr,' not implemented'
-            call exit(1)
-         endif            
+            if(rad_iupperfsr.eq.1) then
+c final state radiation
+               pt2solve=cunorm*pi/b0*(
+     1       (log(kt2max/xlam2c)*log(log(kt2max/xlam2c)/log(pt2/xlam2c))
+     2              - log(kt2max/pt2)) )
+     3              + xlr
+            elseif(rad_iupperfsr.eq.2) then
+               xm=kn_csimax
+               p=sqrt(pt2/sborn)
+               pt2solve=cunorm*2*pi*2*(
+     3        (log(xm-xm**2)+(2*xm-2)*log(xm)-2*log(1-xm)*xm-2)/xm/2.d+0
+     1     -(p*log(xm-p**2)+(2*p*log(p)-2*log(1-p)*p-2)*xm-2*p*log(p))
+     2    /(p*xm)/2.d+0) + xlr
+            elseif(rad_iupperfsr.eq.3) then
+               xm=kn_csimax
+               p=sqrt(pt2/sborn)
+               pt2solve=cunorm*2*pi*2*(
+     3     (log(xm-xm**2)+(2*xm-2)*log(xm)-2*log(1-xm)*xm-2)/xm/2.d+0
+     1   -(p*log(xm-p**2)+(2*p*log(p)-2*log(1-p)*p-2)*xm-2*p*log(p))
+     2   /(p*xm)/2.d+0) + xlr
+            else
+               write(*,*)
+     1 ' rad_iupper=',rad_iupperfsr,' not implemented'
+               call exit(1)
+            endif            
+         endif
       endif
       end
 
@@ -351,11 +416,11 @@ c
       include 'pwhg_st.h'
       real * 8 t
       real * 8 x,y,x1b,x2b
-      real * 8 xlr,q2,xlam2c,kt2max,unorm
+      real * 8 xlr,q2,xlam2c,kt2max,unorm,sborn
       integer nlc
-      common/cpt2solve/xlr,q2,kt2max,xlam2c,unorm,nlc
+      common/cpt2solve/xlr,q2,kt2max,xlam2c,unorm,sborn,nlc
       real * 8 xmin,rv,xp,xm,chi,tk,uk,ubound,ufct,
-     #   sborn,value,err,tmp1,tmp2,tmp,rvalue,born,sig
+     #   value,err,tmp1,tmp2,tmp,rvalue,born,sig
       common/cdfxmin/xmin
       real * 8 tmax
       common/ctmax/tmax
@@ -502,39 +567,58 @@ c that some pdf vanish (typically heavy flavour pdf's)
       end
 
 
+      subroutine getkt2maxands(kt2,s)
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_mvem.h'
+      real * 8 kt2,s
+c setupmvemitter fixed to works also in the massless case
+      call setupmvemitter
+      kt2=kt2max
+      s=q**2
+      end
+
       subroutine gen_rad_fsr(t)
 c Generates final state hard radiation kinematics according to
 c Notes/upperbounding-fsr.pdf
-c 
       implicit none
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       include 'pwhg_st.h'
       real * 8 t
       real * 8 csi,y
-      real * 8 xlr,q2,xlam2c,kt2max,unorm
+      real * 8 xlr,q2,xlam2c,kt2max,unorm,sborn
       integer nlc
-      common/cpt2solve/xlr,q2,kt2max,xlam2c,unorm,nlc
+      common/cpt2solve/xlr,q2,kt2max,xlam2c,unorm,sborn,nlc
       real * 8 xmin,rv,ubound,ufct,
      #   s,value,err,tmp,rvalue,born,sig
       common/cdfxmin/xmin
       real * 8 tmax
       common/ctmax/tmax
-      real * 8 random,pt2solve,pwhg_alphas0,pwhg_upperb_rad
-      external random,pt2solve,pwhg_alphas0,pwhg_upperb_rad
+      real *8 ktmaxqed
+      common/showerqed/ktmaxqed
+      real * 8 random,pt2solve,pwhg_alphas0,pwhg_upperb_rad,pwhg_pt2
+      external random,pt2solve,pwhg_alphas0,pwhg_upperb_rad,pwhg_pt2
       unorm=rad_norms(rad_kinreg,rad_ubornidx)
 c kn_sborn=kn_sreal:
-      s=kn_sborn
-      kn_emitter=flst_lightpart+rad_kinreg-2
-      kn_csimax=kn_csimax_arr(kn_emitter)
-c See Notes/kt2max.pdf
-      kt2max = kn_csimax**2*s
-      if(kt2max.lt.rad_ptsqmin.or.kt2max.lt.tmax) then
-         t=-1
-         goto 3
+      call getkt2maxands(kt2max,s)
+      sborn=s
+c below is for the QED case; it will never hit that limit anyhow ...
+      if(flg_em_rad) then
+         if(kt2max.lt.ktmaxqed.or.kt2max.lt.tmax) then
+            t=-1
+            goto 3
+         endif
+      else
+         if(kt2max.lt.rad_ptsqmin.or.kt2max.lt.tmax) then
+            t=-1
+            goto 3
+         endif
       endif
 c see section 4 in ZZ paper, last paragraph
       xlam2c=rad_lamll**2
@@ -570,51 +654,70 @@ c radiation in highest bid loop): generate a born event
 c vetoes:
       rv=random()
       call set_rad_scales(t)
-      if(rad_iupperfsr.eq.1) then
-         tmp=st_alpha / pwhg_alphas0(t,rad_lamll,nlc)
-      elseif(rad_iupperfsr.eq.2) then
-         tmp=st_alpha
-      elseif(rad_iupperfsr.eq.3) then
+      if(kn_masses(kn_emitter).eq.0) then
+         if(rad_iupperfsr.eq.1) then
+            tmp=st_alpha / pwhg_alphas0(t,rad_lamll,nlc)
+         elseif(rad_iupperfsr.eq.2) then
+            tmp=st_alpha
+         elseif(rad_iupperfsr.eq.3) then
+            tmp=st_alpha
+         endif
+      else
          tmp=st_alpha
       endif
-      if(tmp.gt.1) then
+c Only for pp ->W, to account for em radiation from the electron
+      if(flg_em_rad) then
+c This probably does not work for rad_iupperfsr=1, yielding tmp>1
+         tmp=tmp/st_alpha
+      endif
+      if(tmp.gt.1.000000001d0) then
          write(*,*) ' Error: upper bound lower than actual value',
-     #        tmp,t
+     1        tmp,t
          call exit(1)
       endif
       if(rv.gt.tmp) then
          goto 1
       endif
-      if(rad_iupperfsr.eq.1) then         
+
+      if(kn_masses(kn_emitter).eq.0) then
+         if(rad_iupperfsr.eq.1) then         
 c At this stage: pt generated according to (1) of upperbounding-fsr.pdf;
 c generate csi uniformly in 1/csi
 c in the range t/s < csi^2 < csimax^2
-         rv=random()
-         csi=exp(rv*log(t/s)/2+(1-rv)*log(kn_csimax))
+            rv=random()
+            csi=exp(rv*log(t/s)/2+(1-rv)*log(kn_csimax))
 c get y
-         y=1-2*t/(s*csi**2)
+            y=1-2*t/(s*csi**2)
 c At this point a csi-y pair is generated according to the
 c distribution upper(). It is automatically within range.
-      elseif(rad_iupperfsr.eq.2) then
+         elseif(rad_iupperfsr.eq.2) then
 c     csi distributed uniformly in 1/(csi-t/s)
-         rv=random()
-         csi=1/(rv/(sqrt(t/s)-t/s)+(1-rv)/(kn_csimax-t/s))+t/s
+            rv=random()
+            csi=1/(rv/(sqrt(t/s)-t/s)+(1-rv)/(kn_csimax-t/s))+t/s
 c extra csi dependent factor
-         if(random().gt.csi) goto 1
+            if(random().gt.csi) goto 1
 c get y
-         y=1-2*t/(s*csi**2)
+            y=1-2*t/(s*csi**2)
 c At this point a csi-y pair is generated according to the
-c distribution upper(). It is automatically within range.
-      elseif(rad_iupperfsr.eq.3) then
+c distribution upper(). It is automatically within range,
+c unless we have a massive emitter
+         elseif(rad_iupperfsr.eq.3) then
 c     csi distributed uniformly in 1/(csi-t/s)
-         rv=random()
-         csi=1/(rv/(sqrt(t/s)-t/s)+(1-rv)/(kn_csimax-t/s))+t/s
+            rv=random()
+            csi=1/(rv/(sqrt(t/s)-t/s)+(1-rv)/(kn_csimax-t/s))+t/s
 c get y
-         y=1-2*t/(s*csi**2)
-         if(random().gt.(csi-t/s)) goto 1
+            y=1-2*t/(s*csi**2)
+            if(random().gt.(csi-t/s)) goto 1
+         else
+            write(*,*) ' gen_rad_fsr:  rad_iupper=',rad_iupperfsr,
+     1           ' invalid'
+         endif
       else
-         write(*,*) ' gen_rad_fsr:  rad_iupper=',rad_iupperfsr,
-     1        ' invalid'
+c massive emitter case
+         rv=random()
+         call gencsiymv(t,rv,csi,y)
+c Now veto if we are out of range
+         if(csi.gt.1) goto 1
       endif
 c
 c extra suppression factor of upper bounding function (may depend upon radiation variables)

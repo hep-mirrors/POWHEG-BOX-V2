@@ -18,182 +18,15 @@ c      end
 
 
 
-      subroutine mapflavours
-c Sometimes it is convenient to treat lines with the same
-c flavour as if they were different. In particular, in Higgs
-c production by vector boson fusion, it is convenient to treat
-c the lines attatched to the vector bosons as if they were all
-c different. This is done by setting the arrays
-c flst_realtags(nlegreal,flst_nreal) and flst_borntags(nlegborn,flst_nborn)
-c to an integer labeling the particular fermion line.
-c If the flst_borntags and flst_realtags are set, lines with different
-c tags are treated as different lines from the point of view of finding
-c the singular regions.
-c
-c The routine mapflavours changes the flavour value of each line in such
-c a way that all lines that should be treated as different get a unique
-c internal flavour number. The mapping between internal flavour number
-c and real flavour and tags is held in the arrays fllist (flavour list),
-c taglist (list of corresponding tags) and intfl (internal flavour list).
-c
-c Once the regions are all found, the internal flavour numbers are replaced
-c by the original flavour numbers (routine unmapflavour)
-c
-      implicit none
-      include 'pwhg_flg.h'
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      integer fllist(nlegreal*maxprocreal),
-     1    taglist(nlegreal*maxprocreal),intfl(nlegreal*maxprocreal),
-     2    nflmap
-      common/cmapflavours/fllist,taglist,intfl,nflmap
-      integer l,ip,nflmapsav,k
-      logical debug
-      parameter(debug=.false.)
-      nflmap=0
-      do ip=1,flst_nreal
-         do l=1,nlegreal
-            call addflavour(flst_real(l,ip),flst_realtags(l,ip))
-         enddo
-      enddo
-c now do the same with Born terms; nflmap should not change;
-      nflmapsav=nflmap
-      do ip=1,flst_nborn
-         do l=1,nlegborn
-            call addflavour(flst_born(l,ip),flst_borntags(l,ip))
-         enddo
-      enddo
-      if(nflmap.gt.nflmapsav) then
-         write(*,*) ' found Born flavour not present in real graphs'
-         stop
-      endif
-      if (debug) then 
-         write(*,*) ' flavour mapping'
-         do k=1,nflmap
-            write(*,*) fllist(k),taglist(k),intfl(k)
-         enddo
-         write(*,*) ' end flavour mapping'
-      endif
-      end
-
-      subroutine unmapflavours
-c Replace internal flavour numbers with real ones
-c in all relevant flavour arrays
-      implicit none
-      include 'pwhg_flg.h'
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      call unmaparr(flst_nreal,nlegreal,flst_real)
-      call unmaparr(flst_nalr,nlegreal,flst_alr)
-      call unmaparr(flst_nregular,nlegreal,flst_regular)
-      call unmaparr(flst_nalr,nlegborn,flst_uborn)
-      call unmaparr(flst_nborn,nlegborn,flst_born)
-      end
-      
-      subroutine unmaparr(n,nlegs,arr)
-      implicit none
-      integer n,nlegs,arr(nlegs,n)
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      integer fllist(nlegreal*maxprocreal),
-     1    taglist(nlegreal*maxprocreal),intfl(nlegreal*maxprocreal),
-     2    nflmap
-      common/cmapflavours/fllist,taglist,intfl,nflmap
-      integer ileg,iproc,getrealflav
-      external getrealflav
-      do iproc=1,n
-         do ileg=1,nlegs
-            arr(ileg,iproc)=getrealflav(arr(ileg,iproc))
-         enddo
-      enddo
-      end
-
-      function getrealflav(fl)
-      implicit none
-      include 'pwhg_flg.h'
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      integer getrealflav,fl
-      integer fllist(nlegreal*maxprocreal),
-     1    taglist(nlegreal*maxprocreal),intfl(nlegreal*maxprocreal),
-     2    nflmap
-      common/cmapflavours/fllist,taglist,intfl,nflmap
-      integer ifl
-      if(fl.eq.0) then
-         getrealflav=0
-         return
-      endif
-      do ifl=1,nflmap
-         if(abs(fl).eq.intfl(ifl)) then
-            getrealflav=fllist(ifl)*(fl/abs(fl))
-            return
-         endif
-      enddo
-      write(*,*) ' internal flavour not found in list'
-      stop
-      end
-
-      subroutine addflavour(flav,tag)
-c look if the pair flav, tag is already in the list fllist,taglist.
-c If so, replace flav with the corresponding intfl. If it corresponds
-c to the antiparticle of something in the list, replace it with minus
-c the corresponding intfl.
-      implicit none
-      integer flav,tag
-      include 'pwhg_flg.h'
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      integer fllist(nlegreal*maxprocreal),
-     1    taglist(nlegreal*maxprocreal),intfl(nlegreal*maxprocreal),
-     2    nflmap
-      common/cmapflavours/fllist,taglist,intfl,nflmap
-      integer jfl
-      if(flav.eq.0) then
-         if(tag.ne.0) then
-            write(*,*) ' addflavour: should not tag a gluon!'
-            stop
-         endif
-      endif
-      do jfl=1,nflmap
-         if(flav.eq.fllist(jfl).and.tag.eq.taglist(jfl)) then
-            flav=intfl(jfl)
-            return
-         elseif(flav.eq.-fllist(jfl).and.tag.eq.taglist(jfl)) then
-            flav=-intfl(jfl)
-            return
-         endif
-      enddo
-c     new flavour to add
-      nflmap=nflmap+1
-      taglist(nflmap)=tag
-      fllist(nflmap)=abs(flav)
-      intfl(nflmap)=abs(flav)+tag*10000
-      if(flav.eq.0) return
-c see if this value is already in use; make it unique
- 10   continue
-      do jfl=1,nflmap-1
-         if(intfl(nflmap).eq.intfl(jfl)) then
-            intfl(nflmap)=intfl(nflmap)+1000
-            if(intfl(nflmap).gt.1000000000) then
-               write(*,*) ' cannot make unique id!'
-               stop
-            endif
-            goto 10
-         endif
-      enddo
-c     now it is unique
-      flav=intfl(nflmap)*(flav/abs(flav))
-      end
-                  
-
-      subroutine find_regions(nleg,rflav,nregions,iregions)
-c the process has n particles, 1,2: initial, > 2 final
-c integer rflav(n):  flavour of particles; 1,2: incoming flavour,
-c                    > 2 outgoing flavour.
-c                    Particles are labelled with PDG number scheme,
-c                    EXCEPT for gluons, that are numbered ZERO
-c                    (instead of 21)
-c
+      subroutine find_regions(a,ares,atags,indexreal,nregions,iregions)
+c Finds all singular regions for the real graph indexed by indexreal.
+c a(nlegreal,*): input array of real graph structures
+c ares(nlegreal,*): input, if an entry is > 0, it points to the mother resonance
+c                   of the given parton (if it is 0 the parton comes from the
+c                   hard reaction. This array describes the structure of the event
+c                   from the point of view of resonance decays
+c atags(nlegreal,*): it is use to tag fermion lines to appear as being different,
+c                    even if they have the same flavour (see arXiv:0911.5299)
 c It returns:
 c integer nregions
 c integer iregion(2,nregions): the indices of particles forming singular
@@ -204,83 +37,82 @@ c                              particles,
 c                              and if the radiated particle is a gluon,
 c                              only one region is generated with first
 c                              index equal to zero.
-c It calls: logical validBorn(n-1,bflav), that returns true if the flavour
-c                                         configuration bflav admits
-c                                         a non-vanishing Born amplitude.
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
-      integer nleg,rflav(nleg),nregions,iregions(2,maxregions)
+      integer a(nlegreal,*),ares(nlegreal,*),atags(nlegreal,*)
+      integer indexreal,nregions,iregions(2,maxregions)
       logical ireg(2)
       logical validBorn
       external validBorn
-      integer i,j,k,ibornfl,iborn,bflav(100)
+      integer itag,iret,i,j,k,ibornfl,iborn,flrad,
+     1     bflav(nlegborn),res(nlegborn),tags(nlegborn)
       nregions=0
 c final state regions
-      do i=flst_lightpart,nleg
-         do j=i+1,nleg
+      do i=flst_lightpart,nlegreal
+         do j=i+1,nlegreal
 c find if they can arise from the same splitting
-            if(rflav(i)+rflav(j).eq.0) then
-c     It is g-> q qbar or g->gg: ibornfl is a gluon
-               ibornfl=0
-            elseif(rflav(i).eq.0) then
-               ibornfl=rflav(j)
-            elseif(rflav(j).eq.0) then
-               ibornfl=rflav(i)
-            else
+            call same_splitting(a,ares,atags,
+     1           indexreal,i,j,ibornfl,itag,iret)
 c cannot come from the same splitting
-               goto 10
+            if(iret.lt.0) then
+               cycle
             endif
 c build the underlying born flavour structure in bflav
             iborn=0
-            do k=1,nleg
+            do k=1,nlegreal
                if(k.eq.i) then
                   iborn=iborn+1
                   bflav(iborn)=ibornfl
+                  res(iborn)=ares(k,indexreal)
+                  tags(iborn)=itag
                elseif(k.ne.j) then
                   iborn=iborn+1
-                  bflav(iborn)=rflav(k)
+                  bflav(iborn)=a(k,indexreal)
+                  res(iborn)=ares(k,indexreal)
+                  tags(iborn)=atags(k,indexreal)
                endif
             enddo
-            if(validBorn(nleg-1,bflav)) then
+            if(validBorn(bflav,tags,res)) then
                nregions=nregions+1
                iregions(1,nregions)=i
                iregions(2,nregions)=j
             endif
- 10         continue
          enddo
       enddo
 c initial state region
-      do j=flst_lightpart,nleg
+      do j=flst_lightpart,nlegreal
          do i=1,2
             ireg(i)=.false.
-            if(rflav(j).eq.rflav(i)) then
-               ibornfl=0
-            elseif(rflav(j).eq.0) then
-               ibornfl=rflav(i)
-            elseif(rflav(i).eq.0) then
-               ibornfl=-rflav(j)
-            else
+            call same_splitting(a,ares,atags,
+     1           indexreal,i,j,ibornfl,itag,iret)
+            if(iret.lt.0) then
                goto 11
             endif
             iborn=0
-            do k=1,nleg
+            do k=1,nlegreal
                if(k.eq.i) then
                   iborn=iborn+1
                   bflav(iborn)=ibornfl
+                  res(iborn)=0
+                  tags(iborn)=itag
                elseif(k.ne.j) then
                   iborn=iborn+1
-                  bflav(iborn)=rflav(k)
+                  bflav(iborn)=a(k,indexreal)
+                  res(iborn)=ares(k,indexreal)
+                  tags(iborn)=atags(k,indexreal)
                endif
             enddo
-            if(validBorn(nleg-1,bflav)) then
+            if(validBorn(bflav,tags,res)) then
                ireg(i)=.true.
             endif
  11         continue
          enddo
-         if(ireg(1).and.ireg(2).and.rflav(j).eq.0) then
+         flrad=a(nlegreal,indexreal)
+         if(ireg(1).and.ireg(2).and.(flrad.eq.0.or.flrad.eq.22))
+     1        then
 c if both regions are singular and the radiated parton is a gluon
-c emit a single region with emitter 0
+c or a photon emit a single region with emitter 0
             nregions=nregions+1
             iregions(1,nregions)=0
             iregions(2,nregions)=j
@@ -299,107 +131,137 @@ c emit a single region with emitter 0
       enddo
       end
 
-      subroutine ubornflav(n,j,rflav,bflav)
-c finds the underlying Born flavour
+      subroutine ubornflav(alr)
+      implicit none
+      integer alr
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+c finds the underlying Born flavour of the alr region in flst_alr
+c stores it in flst_uborn,flst_uborntags,flst_ubornres
 c integer n: number of legs in real graph
 c integer rflav(n): flavours of legs in real graph
 c                   (1 and 2 incoming)
-c integer j:        singularity in region j,n
-c                   j=0 (1 and 2), j=1, j=2: initial state sing.
-c                   j>2 final state sing.
-      integer n,j,rflav(n),bflav(n-1)
-      integer ibornfl
-      if(j.eq.0) then
-         if(rflav(n).ne.0) goto 998
+      integer itag,ibornfl,iret,l,n,j
+c j:  singularity in region j,n
+c     j=0 (1 and 2), j=1, j=2: initial state sing.
+c     j>2 final state sing.
+      j=flst_emitter(alr)
+c if it is both 1 and 2, pretend it is 1
+      if(j.eq.0) j=1
+      iret=0
+      n=nlegreal
+c this is only to find itag and ibornfl. We already now that j and n
+c come from the same splitting.
+      if(j.eq.1.or.j.eq.2) then
+         call same_splitting0('isr',flst_alr(j,alr),flst_alr(n,alr),
+     1       flst_alrtags(j,alr),flst_alrtags(n,alr),itag,ibornfl,iret)
       elseif(j.gt.2) then
-         if(rflav(j)+rflav(n).ne.0.and.rflav(n).ne.0.and.rflav(j).ne.0)
-     1        goto 998
-      else
-         if(rflav(j)-rflav(n).ne.0.and.rflav(n)*rflav(j).ne.0.) goto 998
+         call same_splitting0('fsr',flst_alr(j,alr),flst_alr(n,alr),
+     1       flst_alrtags(j,alr),flst_alrtags(n,alr),itag,ibornfl,iret)
       endif
-      if(j.eq.0) then
-         continue
-      elseif(j.gt.2) then
-         ibornfl=rflav(j)+rflav(n)
-      else
-         ibornfl=rflav(j)-rflav(n)
+      if(iret.lt.0) then
+         write(*,*) ' ubornflav: error'
+         write(*,*) ' j: ',j
+         call print_lists(nlegreal,flst_alr(l,alr),
+     1              flst_alrres(l,alr),flst_alrtags(l,alr))
+         write(*,*) ' emitter:',flst_emitter(alr)
+         call exit(-1)
       endif
-      do l=1,n-1
+      do l=1,nlegborn
          if(l.eq.j) then
-            bflav(l)=ibornfl
+            flst_uborn(l,alr)=ibornfl
+            flst_uborntags(l,alr)=itag
+            flst_ubornres(l,alr)=flst_alrres(l,alr)
          else
-            bflav(l)=rflav(l)
+            flst_uborn(l,alr)=flst_alr(l,alr)
+            flst_uborntags(l,alr)=flst_alrtags(l,alr)
+            flst_ubornres(l,alr)=flst_alrres(l,alr)
          endif
       enddo
       return
  998  continue
-      write(*,*) ' ubornflav: error'
-      write(*,*) ' rflav:',rflav
-      write(*,*) ' j: ',j
-      stop
       end
 
-      function flavequiv(n,aflav,bflav)
-c returns true if the flavour structures aflav and bflav are
+
+      function flavequivl(m,n,ja,jb,arr1,arr2,arr3)
+c arr1(m,*),arr2(m,*),arr3(m,*) are typically the flavour list,
+c                               the tag list, and the resonance list
+c returns true if the ja and jb arr123(1:n,ja)  arr123(1:n,jb)
+c are equivalent up to a permutation, false otherwise
 c equivalent up to a permutation of the final state lines,
 c false otherwise.
       implicit none
-      logical flavequiv
-      integer n, aflav(n),bflav(n)
+      logical flavequivl
+      integer m,n,ja,jb,arr1(m,*),arr2(m,*),arr3(m,*)
 c we need the parameter nlegreal
       include 'nlegborn.h'
       include 'pwhg_flst.h'
-      integer j,k,itmp,ib(nlegreal)
-      call intassign(n,bflav,ib)
+      integer j,k,itmp,i1(nlegreal),i2(nlegreal),i3(nlegreal)
+      call intassign(n,arr1(1,jb),i1)
+      call intassign(n,arr2(1,jb),i2)
+      call intassign(n,arr3(1,jb),i3)
       do j=1,n
-         if(aflav(j).ne.ib(j)) then
+         if(
+     1         arr1(j,ja).ne.i1(j)
+     2     .or.arr2(j,ja).ne.i2(j)
+     2     .or.arr3(j,ja).ne.i3(j) ) then
             if(j.le.2) then
-               flavequiv=.false.
+               flavequivl=.false.
                return
             endif
             do k=j+1,n
-               if(aflav(j).eq.ib(k)) then
-                  itmp=ib(j)
-                  ib(j)=ib(k)
-                  ib(k)=itmp
+               if(
+     1          arr1(j,ja).eq.i1(k)
+     2     .and.arr2(j,ja).eq.i2(k)
+     2     .and.arr3(j,ja).eq.i3(k) ) then
+                  call exchange_ind(j,k,i1,i2,i3)
                   goto 10
                endif
             enddo
-            flavequiv=.false.
+            flavequivl=.false.
             return
          endif
  10      continue
       enddo
-      flavequiv=.true.
+      flavequivl=.true.
       end
 
-      function validBorn(n,bflav)
+      function validBorn(bflav,tags,res)
 c Find if the flavour structure bflav is equivalent to an element
 c in the list of Born processes. Equivalence means that it can be
 c made identical with a permutation of final state particles.
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
-      integer n, bflav(n)
+      integer bflav(nlegborn),tags(nlegborn),res(nlegborn)
       logical validBorn
-      integer j,k,kb,itmp,ib(nlegborn)
-      call intassign(n,bflav,ib)
+      integer j,k,kb,itmp,ib(nlegborn),it(nlegborn),ir(nlegborn)
+      call intassign(nlegborn,bflav,ib)
+      call intassign(nlegborn,tags,it)
+      call intassign(nlegborn,res,ir)
       do kb=1,flst_nborn
-         do j=1,n
+         do j=1,nlegborn
 c recursive exit
-            if(j.eq.n.and.flst_born(j,kb).eq.ib(j)) then
+            if(j.eq.nlegborn
+     1           .and.flst_born(j,kb).eq.ib(j)
+     2           .and.flst_borntags(j,kb).eq.it(j)
+     3           .and.flst_bornres(j,kb).eq.ir(j) ) then
                validBorn=.true.
                return
             endif
-            if(flst_born(j,kb).ne.ib(j)) then
+            if(
+     1                flst_born(j,kb).ne.ib(j)
+     2           .or.flst_borntags(j,kb).ne.it(j)
+     3           .or.flst_bornres(j,kb).ne.ir(j) ) then
                if(j.le.2) then
                   goto 999
                endif
-               do k=j+1,n
-                  if(flst_born(j,kb).eq.ib(k)) then
-                     itmp=ib(j)
-                     ib(j)=ib(k)
-                     ib(k)=itmp
+               do k=j+1,nlegborn
+                  if(
+     1                flst_born(k,kb).eq.ib(j)
+     2           .and.flst_borntags(k,kb).eq.it(j)
+     3           .and.flst_bornres(k,kb).eq.ir(j) ) then
+                     call exchange_ind(j,k,ib,ir,it)
                      goto 10
                   endif
                enddo
@@ -472,9 +334,25 @@ c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t
       enddo
 
       end
-
-
-
+      function isalightparton(ipart)
+      implicit none
+      include 'pwhg_st.h'
+      logical isalightparton
+      integer ipart
+      if(abs(ipart).le.st_nlight) then
+         isalightparton=.true.
+         return
+      endif
+      if(ipart.eq.22) then
+         isalightparton=.true.
+         return
+      endif
+      if(abs(ipart).ge.11.and.abs(ipart).le.16) then
+         isalightparton=.true.
+         return
+      endif
+      isalightparton=.false.
+      end
 
       subroutine genflavreglist
       implicit none
@@ -483,61 +361,57 @@ c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       integer nregions,iregions(2,maxregions)
-      integer iflregl,k,l,ipart,j,itmp,nreg,iret,tmpfl
+      integer iflregl,k,l,ipart,j,itmp,nreg,iret,tmpfl,fl1,fl2
       logical equalintlists
       external equalintlists
       logical verbose
       parameter (verbose=.true.)
-      logical flavequiv
-      external flavequiv      
-      if (flg_lightpart_check) then
+      logical flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
+      external flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
 c check that there are no coloured light partons before flst_lightpart
       do j=1,flst_nreal
-         do ipart=3,flst_lightpart-1
-            if(abs(flst_real(ipart,j)).le.st_nlight) then
+         do ipart=3,flst_lightpart -1
+            if(isalightparton(flst_real(ipart,j))) then
                write(*,*) 
      1      ' genflavreglist: light parton before flst_lightpart'
-               stop
+c               stop
             endif
          enddo
          do ipart=flst_lightpart,nlegreal
-            if(abs(flst_real(ipart,j)).gt.st_nlight) then
+            if(.not.isalightparton(flst_real(ipart,j))) then
                write(*,*) 
      1      ' genflavreglist: not a light parton after flst_lightpart'
-               stop
+c               stop
             endif
          enddo
       enddo
       do j=1,flst_nborn
          do ipart=3,flst_lightpart-1
-            if(abs(flst_born(ipart,j)).le.st_nlight) then
+            if(isalightparton(flst_born(ipart,j))) then
                write(*,*) 
      1      ' genflavreglist: light parton before flst_lightpart'
-               stop
+c               stop
             endif
          enddo
          do ipart=flst_lightpart,nlegborn
-            if(abs(flst_born(ipart,j)).gt.st_nlight) then
+            if(.not.isalightparton(flst_born(ipart,j))) then
                write(*,*) 
      1      ' genflavreglist: not a light parton after flst_lightpart'
-               stop
+c               stop
             endif
          enddo
       enddo
-      endif
-c map flavours to internal flavour numbers      
-      call mapflavours
 c sanity check on real flavour configurations;
 c they should all be inequivalent
       do j=1,flst_nreal
          do k=j+1,flst_nreal
-            if(flavequiv(nlegreal,flst_real(1,j),flst_real(1,k))) then
+            if(flavequivl(nlegreal,nlegreal,j,k,flst_real,
+     1           flst_realres,flst_realtags)) then               
                write(*,*)'found two equivalent real flavour processes:'
-               write(*,*)'process',j,', flavours ',
-     1                     (flst_real(l,j),l=1,nlegreal)
-               write(*,*)'process',k,', flavours ',
-     1                     (flst_real(l,k),l=1,nlegreal)
-               stop
+               write(*,*)'process',j
+               call print_lists(nlegreal,flst_real(l,j)
+     1              ,flst_realres(l,j),flst_realtags(l,j))
+               call exit(-1)
             endif
          enddo
       enddo
@@ -545,13 +419,13 @@ c sanity check on Born flavour configurations;
 c they should all be inequivalent
       do j=1,flst_nborn
          do k=j+1,flst_nborn
-            if(flavequiv(nlegborn,flst_born(1,j),flst_born(1,k))) then
+            if(flavequivl(nlegborn,nlegborn,j,k,flst_born,flst_bornres,
+     1           flst_borntags)) then
                write(*,*)'found two equivalent Born flavour processes:'
-               write(*,*)'process',j,', flavours ',
-     1                     (flst_born(l,j),l=1,nlegborn)
-               write(*,*)'process',k,', flavours ',
-     1                     (flst_born(l,k),l=1,nlegborn)
-               stop
+                write(*,*)'process',j,', flavours '
+               call print_lists(nlegborn,flst_born(l,j),
+     1              flst_bornres(l,j),flst_borntags(l,j))
+               call exit(-1)
             endif
          enddo
       enddo
@@ -565,24 +439,29 @@ c current number of alr found
       endif
       flg_withreg=.false.
       do k=1,flst_nreal
-         call find_regions(nlegreal,flst_real(1,k),nregions,iregions)
+         call find_regions(flst_real,flst_realres,flst_realtags,
+     1        k,nregions,iregions)
          if(nregions.eq.0) then
             flst_nregular=flst_nregular+1
 c There are remnants! set up the appropriate flag:
             flg_withreg=.true.
             call intassign
      #(nlegreal,flst_real(1,k),flst_regular(1,flst_nregular))
+            call intassign
+     #(nlegreal,flst_realres(1,k),flst_regularres(1,flst_nregular))
+            call intassign
+     #(nlegreal,flst_realtags(1,k),flst_regulartags(1,flst_nregular))
          endif
          do l=1,nregions
             iflregl=iflregl+1
-            if(iflregl.ge.maxalr) then
-               write(*,*)' genflavreglist: increase maxalr'
-               call exit(-1)
-            endif
             if(iregions(1,l).le.2) then
                flst_emitter(iflregl)=iregions(1,l)
             else
                flst_emitter(iflregl)=nlegreal-1
+            endif
+            if(iflregl.ge.maxalr) then
+               write(*,*)' genflavreglist: increase maxalr'
+               stop
             endif
             ipart=0
 c final state singularity
@@ -592,12 +471,20 @@ c final state singularity
      #                  .and.j.ne.iregions(2,l)) then
                      ipart=ipart+1
                      flst_alr(ipart,iflregl)=flst_real(j,k)
+                     flst_alrres(ipart,iflregl)=flst_realres(j,k)
+                     flst_alrtags(ipart,iflregl)=flst_realtags(j,k)
                   endif
                enddo
                ipart=ipart+1
                flst_alr(ipart,iflregl)=flst_real(iregions(1,l),k)
+               flst_alrres(ipart,iflregl)=flst_realres(iregions(1,l),k)
+               flst_alrtags(ipart,iflregl)=
+     1              flst_realtags(iregions(1,l),k)
                ipart=ipart+1
                flst_alr(ipart,iflregl)=flst_real(iregions(2,l),k)
+               flst_alrres(ipart,iflregl)=flst_realres(iregions(2,l),k)
+               flst_alrtags(ipart,iflregl)=
+     1              flst_realtags(iregions(2,l),k)
                if(flg_doublefsr) then
 c     c emit regions with opposite ordering for q g and q q~
                   if(flst_alr(nlegreal,iflregl)*
@@ -608,27 +495,25 @@ c     c emit regions with opposite ordering for q g and q q~
                         write(*,*)' genflavreglist: increase maxalr'
                         call exit(-1)
                      endif
-                     flst_alr(1:nlegreal-2,iflregl+1)=
-     1                    flst_alr(1:nlegreal-2,iflregl)
-                     flst_alr(nlegreal,iflregl+1)=
-     1                    flst_alr(nlegreal-1,iflregl)
-                     flst_alr(nlegreal-1,iflregl+1)=
-     1                    flst_alr(nlegreal,iflregl)
+                     flst_alr(:,iflregl+1)=flst_alr(:,iflregl)
+                     flst_alrres(:,iflregl+1)=flst_alrres(:,iflregl)
+                     flst_alrtags(:,iflregl+1)=flst_alrtags(:,iflregl)
                      iflregl = iflregl+1
+                     call exchange_ind(nlegreal,nlegreal-1,
+     1                    flst_alr(1,iflregl),flst_alrres(1,iflregl),
+     2                    flst_alrtags(1,iflregl))
                      flst_emitter(iflregl)=nlegreal-1
                   endif
                else
 c put always in the order q g and q q~, i.e. fl(i)>fl(j)
-                  if((flst_alr(nlegreal,iflregl)*
-     1                 flst_alr(nlegreal-1,iflregl).eq.0
-     2                 .and.flst_alr(nlegreal,iflregl).ne.0) .or.
-     3                 (flst_alr(nlegreal,iflregl)
-     4                 *flst_alr(nlegreal-1,iflregl).ne.0
-     5                 .and.flst_alr(nlegreal,iflregl).gt.0)) then
-                     itmp=flst_alr(nlegreal,iflregl)
-                     flst_alr(nlegreal,iflregl)=
-     1                    flst_alr(nlegreal-1,iflregl)
-                     flst_alr(nlegreal-1,iflregl)=itmp
+                  fl1=flst_alr(nlegreal-1,iflregl)
+                  fl2=flst_alr(nlegreal,iflregl)
+                  if(  (fl2.ne.22 .and. fl2.ne.0)  .and.
+     1                 (  (fl1.eq.0 .or. fl1.eq.22) .or.
+     1                 (fl1.lt.fl2)    )  ) then
+                     call exchange_ind(nlegreal,nlegreal-1,
+     1                    flst_alr(1,iflregl),flst_alrres(1,iflregl),
+     2                    flst_alrtags(1,iflregl))
                   endif
                endif
             else
@@ -637,16 +522,23 @@ c initial state singularity
                   if(j.ne.iregions(2,l)) then
                      ipart=ipart+1
                      flst_alr(ipart,iflregl)=flst_real(j,k)
+                     flst_alrres(ipart,iflregl)=flst_realres(j,k)
+                     flst_alrtags(ipart,iflregl)=flst_realtags(j,k)
                   endif
                enddo
                ipart=ipart+1
                flst_alr(ipart,iflregl)=flst_real(iregions(2,l),k)
+               flst_alrres(ipart,iflregl)=flst_realres(iregions(2,l),k)
+               flst_alrtags(ipart,iflregl)=
+     1              flst_realtags(iregions(2,l),k)
             endif
 c            write(*,*) (flst_alr(ipart,iflregl),ipart=1,nlegreal),
 c     #     '   em:',flst_emitter(iflregl)
          enddo
       enddo
       nreg=iflregl
+      flst_nalr=nreg
+      call pretty_print_flst
 c bunch together identical elements, increasing their multiplicities
       do j=1,nreg
          flst_mult(j)=1
@@ -664,16 +556,26 @@ c  without permutations
                   if(flst_emitter(j).eq.flst_emitter(k).and.
 c     ISR: is ISR, has same radiated parton, is equivalent
 c          (excluding the radiated parton)
-     1           ( (flst_emitter(j).lt.3 .and.
-     2              flst_alr(nlegreal,j).eq.flst_alr(nlegreal,k).and.
-     3              flavequiv(nlegreal-1,flst_alr(1,j),flst_alr(1,k)))
-     4                   .or.
+     1           ( (flst_emitter(j).le.2 .and.
+     2              equiv_entry_alr_real(nlegreal,j,k).and.
+     3              flavequivl(nlegreal,nlegreal-1,j,k,
+     4              flst_alr,flst_alrres,flst_alrtags))
+     5                   .or.
 c     FSR: has the same radiated and emitter parton, is equivalent
 c          (excluding emitter and emitted parton)
-     5             (flst_alr(nlegreal,j).eq.flst_alr(nlegreal,k).and.
-     6              flst_alr(nlegborn,j).eq.flst_alr(nlegborn,k).and.
-     7              flavequiv(nlegreal-2,flst_alr(1,j),flst_alr(1,k)))
-     8           )) then
+     6             (flst_emitter(j).gt.2 .and.
+     7              equiv_entry_alr_real(nlegreal,j,k).and.
+     8              equiv_entry_alr_real(nlegreal-1,j,k).and.
+     9              flavequivl(nlegreal,nlegreal-2,j,k,
+     1              flst_alr,flst_alrres,flst_alrtags))
+     2           )) then
+c
+c                     call print_lists(nlegreal,flst_alr(1,j),
+c     1                 flst_alrres(1,j),flst_alrtags(1,j))
+c
+c                     call print_lists(nlegreal,flst_alr(1,k),
+c     1                 flst_alrres(1,k),flst_alrtags(1,k))
+c
                      flst_mult(j)=flst_mult(j)+flst_mult(k)
                      flst_mult(k)=0
                   endif
@@ -683,22 +585,22 @@ c          (excluding emitter and emitted parton)
       enddo
 c browse the list, put together identical elements, compute
 c associated underlying Born
+      flst_nalr=nreg
+      call pretty_print_flst
       iflregl=0
       do j=1,nreg
          if(flst_mult(j).gt.0) then
             iflregl=iflregl+1
             if(j.gt.iflregl) then
                flst_emitter(iflregl)=flst_emitter(j)
-               call intassign
-     #          (nlegreal,flst_alr(1,j),flst_alr(1,iflregl))
+               call alr_move(j,iflregl)
                flst_mult(iflregl) = flst_mult(j)
             endif
-            call ubornflav(nlegreal,flst_emitter(iflregl),
-     #flst_alr(1,iflregl),flst_uborn(1,iflregl))
+            call ubornflav(iflregl)
          endif
       enddo
       flst_nalr=iflregl
-
+      call pretty_print_flst
 c
 c Build unique list of underlying Born; reorder flavours in alpha_r, uborn, emitter
 c so that the underlying Born matches exactly a Born flavour structure in the flst_born array
@@ -706,24 +608,25 @@ c flavour structures arising as underlying Born
       do j=1,flst_nalr
          do k=1,flst_nborn
 c are they the same permutation?
-            call reorder_regions(nlegborn,flst_born(1,k),
-     #  flst_uborn(1,j),flst_alr(1,j),flst_emitter(j),iret)
+            call reorder_regions(j,k,iret)
 c            if(iret.eq.1) write(*,*) ' reordering took place'
             if(iret.ne.-1) goto 11
          enddo
 c they are inequivalent
          write(*,*) ' error: underlying born not present in born list'
-         write(*,*) (flst_uborn(l,k),l=1,nlegborn)
-         stop
+         call print_lists(nlegborn,flst_uborn(1,j),flst_ubornres(1,j),
+     1        flst_uborntags(1,j))
+         call pwhg_exit(-1)
  11      continue
       enddo
-
+      call pretty_print_flst
 
 c Build pointers from alpha_r -> born
       do j=1,flst_nalr
          do k=1,flst_nborn
-            if(equalintlists(nlegborn,flst_uborn(1,j),flst_born(1,k)))
-     #      then
+            if(equal_lists(nlegborn,j,k,
+     1           flst_uborn,flst_ubornres,flst_uborntags(1,j),
+     2           flst_born,flst_bornres,flst_borntags)) then
                flst_alr2born(j)=k
             endif
          enddo
@@ -732,8 +635,9 @@ c Build pointers from born -> alpha_r
       do j=1,flst_nborn
          flst_born2alr(0,j)=0
          do k=1,flst_nalr
-            if(equalintlists(nlegborn,flst_uborn(1,k),flst_born(1,j)))
-     #      then
+            if(equal_lists(nlegborn,k,j,
+     1           flst_uborn,flst_ubornres,flst_uborntags(1,j),
+     2           flst_born,flst_bornres,flst_borntags)) then
                flst_born2alr(0,j)=flst_born2alr(0,j)+1
                flst_born2alr(flst_born2alr(0,j),j)=k
             endif
@@ -742,12 +646,15 @@ c Sanity check: each Born should be the underlying Born of some alr
          if(flst_born2alr(0,j).eq.0) then
             write(*,*) ' Born graph ',j,' is never the underlying Born'
      #           //' of some alr'
-            stop
+            call print_lists(nlegborn,flst_born(1,j),
+     1           flst_bornres(1,j),flst_borntags(1,j))
+c            stop
          endif
       enddo
 c Find regions for each alpha_r
       do j=1,flst_nalr
-         call find_regions(nlegreal,flst_alr(1,j),nregions,iregions)
+         call find_regions(flst_alr,flst_alrres,flst_alrtags,
+     1        j,nregions,iregions)
          do k=1,nregions
             flst_allreg(1,k,j)=iregions(1,k)
             flst_allreg(2,k,j)=iregions(2,k)
@@ -759,9 +666,11 @@ c For each region, compute the underlying Born multiplicity
          if(flst_emitter(j).gt.2) then
             flst_ubmult(j)=0
 c find flavour of emitter IN THE UNDERLYING BORN
-            tmpfl=flst_uborn(flst_emitter(j),j)
             do k=3,nlegborn
-               if(flst_uborn(k,j).eq.tmpfl) then
+               if(flst_uborn(k,j).eq.flst_uborn(flst_emitter(j),j)
+     1  .and.  flst_ubornres(k,j).eq.flst_ubornres(flst_emitter(j),j)
+     2  .and.  flst_uborntags(k,j).eq.flst_uborntags(flst_emitter(j),j))
+     3              then
                   flst_ubmult(j)=flst_ubmult(j)+1
                endif
             enddo
@@ -769,11 +678,26 @@ c find flavour of emitter IN THE UNDERLYING BORN
             flst_ubmult(j)=1
          endif
       enddo
-      call unmapflavours
 c     debug information
       if (verbose) then
          call pretty_print_flst
       endif
+      end
+
+      function equal_lists(n,j,k,a,ares,atags,b,bres,btags)
+      logical equal_lists
+      integer n,j,k,a(n,*),ares(n,*),atags(n,*),
+     1     b(n,*),bres(n,*),btags(n,*)
+      integer l
+      do l=1,n
+         if(a(l,j).ne.b(l,k) .or.
+     1      ares(l,j).ne.bres(l,k) .or.
+     1      atags(l,j).ne.btags(l,k)) then
+            equal_lists=.false.
+            return
+         endif
+      enddo
+      equal_lists=.true.
       end
 
       subroutine from_number_to_madgraph(n,flav,emitter,string)
@@ -781,39 +705,54 @@ c     debug information
       integer n,flav(n),emitter
       include 'nlegborn.h'
       character * (*) string
-      integer max_partnames
-      parameter (max_partnames=16)
-      character * 3 partnames(-max_partnames:max_partnames)
-      data partnames/'vt~','ta+','vm~','mu+','ve~','e+',' ','  ',' ',
+      integer min_partnames,max_partnames
+      parameter (min_partnames=-25)
+      parameter (max_partnames=25)
+      character * 3 partnames(min_partnames:max_partnames)
+      data partnames/ 
+     &     '   ','W- ','   ','   ','   ','   ','   ','   ','   ',
+     $     'vt~','ta+','vm~','mu+','ve~','e+',' ','  ',' ',
      $     '  ','t~','b~','c~','s~','u~','d~','g ','d ','u ','s ' ,'c ',
-     $     'b ','t ','  ','  ','',' ','e-','ve','mu-','vmu','ta-','vta'/
-      integer j,nsp
-      parameter (nsp=4)
-      if(len(string).lt.nsp*(n+1)+7) then
-         write(*,*)'from_number_to_madgraph: string too short;'
-         write(*,*)'Increase its size'
-         call exit(-1)
-      endif
+     $     'b ','t ','  ','  ','',' ','e-','ve','mu-','vmu','ta-','vta',
+     $     '  ','  ','  ','  ','  ','gam','   ','W+ ','H  '/
+      integer lastnb,j,next
+      external lastnb
       string=' '
-      do j=1,n
-         if (abs(flav(j)).le.max_partnames) then
-            string(nsp*j:nsp*j+1)=partnames(flav(j))
-         else 
-            string(nsp*j:nsp*j+1)='**'
+      if(emitter.eq.0) then
+         string='('//partnames(flav(1))//' '//partnames(flav(2))//').'
+      elseif(emitter.eq.1) then
+         string='('//partnames(flav(1))//')'//partnames(flav(2))//' .'
+      elseif(emitter.eq.2) then
+         string=' '//partnames(flav(1))//'('//partnames(flav(2))//').'
+      else
+         string=' '//partnames(flav(1))//' '//partnames(flav(2))//' .'
+      endif
+      next=lastnb(string)
+      string(next:)=' ==> .'
+      next=lastnb(string)
+      do j=3,n
+         if(emitter.eq.j) then
+            string(next:)='('//partnames(flav(j))//').'
+         else
+            string(next:)=' '//partnames(flav(j))//' .'
+         endif
+         next=lastnb(string) 
+      enddo
+      string(next:)='    |'
+      end
+
+      function lastnb(string)
+      implicit none
+      integer lastnb
+      character *(*) string
+      integer ll,l
+      ll=len(string)
+      do l=ll,1,-1
+         if(string(l:l).ne.' ') then
+            lastnb=l
+            return
          endif
       enddo
-      string(nsp*j:nsp*j)='|'
-      if(emitter.gt.0) then
-         string(nsp*emitter-1:nsp*emitter-1)='('
-         string(nsp*emitter+2:nsp*emitter+2)=')'
-      elseif(emitter.eq.0) then
-         string(nsp-1:nsp-1)='('
-         string(3*nsp-2:3*nsp-2)=')'
-      endif
-      do j=len(string)-7,2*nsp+1,-1
-         string(j+7:j+7)=string(j:j)
-      enddo
-      string(2*nsp+3:2*nsp+9)='  ==>  '
       end
 
       subroutine pretty_print_flst
@@ -821,26 +760,33 @@ c     debug information
       include 'nlegborn.h'
       character * 200 string,stringb
       include 'pwhg_flst.h'
-      integer j,k,l,iun,lstring,lstringb
-      call newunit(iun)
-      open(unit=iun,file='FlavRegList',status='unknown')
+      integer j,k,l,iun,lstring,lstringb,lastnb
+      external lastnb
+c     logical ini
+c     data ini/.true./
+c     save ini,iun
+c     if(ini) then
+         call newunit(iun)
+         open(unit=iun,file='FlavRegList',status='unknown')
+c        ini=.false.
+c     endif
+c     write(unit=iun,fmt=*) ' index= ',index
       do j=1,flst_nalr
          call from_number_to_madgraph
      #         (nlegreal,flst_alr(1,j),flst_emitter(j),string)
          call from_number_to_madgraph
      #         (nlegborn,flst_uborn(1,j),-1,stringb)
-         do lstring=len(string),0,-1
-            if(string(lstring:lstring).ne.' ') goto 10
-         enddo
- 10      continue
-         do lstringb=len(stringb),0,-1
-            if(stringb(lstringb:lstringb).ne.' ') goto 11
-         enddo
- 11      continue
+         lstring=lastnb(string)
+         lstringb=lastnb(stringb)
+         if(flst_alrres(flst_emitter(j),j).ne.0) then
+            write(string(lstring:),'(a,i2)')
+     1           'res. ',flst_alrres(flst_emitter(j),j)
+         endif
+         lstring=lastnb(string)
          write(iun,'(a,i3)') string(1:lstring)//' mult=', flst_mult(j)
          write(iun,'(a,i3)') stringb(1:lstringb)//' uborn, mult=',
      1        flst_ubmult(j)
-         write(iun,'(20(1x,2(1x,i1)))')
+         write(iun,'(20(1x,2(1x,i2)))')
      #   ((flst_allreg(l,k,j),l=1,2),k=1,flst_allreg(1,0,j))
       enddo
       close(iun)
@@ -870,63 +816,99 @@ c     debug information
       equalintlists=.true.
       end
 
-      subroutine reorder_regions(n,uborn0,uborn,rflav,emit,iret)
-c reorders the amplitude in uborn according to the amplitude in uborn0
-c It also reorders rflav, and sets the emitter to its appropriate value
-c If the amplitudes have inequivalent flavour structures, it returns -1
-c without any other action.
-c If the flavour structures are identical, it returns 0, with no other action.
-c If the flavour structures have been reordered, it returns 1.
+      subroutine reorder_regions(alr,iborn,iret)
+c It reorders the particles in the alr region in such
+c a way that the corresponding underlying born is present with the
+c same ordering in the flst_born list. It also updates correspondingly
+c the underlying born array, and the res and tags arrays
+c On return:
+c if no reordering is possible (should never happen) iret=-1
+c if no reordering was needed, iret=0
+c if the flavour structures have been reordered, iret=1
       implicit none
-      integer n,uborn0(n),uborn(n),rflav(n),emit,iret
-      integer j,k,itmp,ib(100)
+      integer alr,iborn,iret
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer emit
+      integer j,k,itmp,ib(nlegborn),ir(nlegborn),it(nlegborn)
       iret=0
-      call intassign(n,uborn,ib)
-      do j=1,n
-         if(uborn0(j).ne.ib(j)) then
+      emit=flst_emitter(alr)
+      call intassign(nlegborn,flst_uborn(1,alr),ib)
+      call intassign(nlegborn,flst_ubornres(1,alr),ir)
+      call intassign(nlegborn,flst_uborntags(1,alr),it)
+      do j=1,nlegborn
+         if(
+     1        flst_born(j,iborn).ne.ib(j)    .or.
+     2        flst_bornres(j,iborn).ne.ir(j) .or.
+     3        flst_borntags(j,iborn).ne.it(j) ) then
             if(j.le.2) then
                iret=-1
-               goto 999
+               return
             endif
             iret=1
-            do k=j+1,n
-               if(uborn0(j).eq.ib(k)) then
-                  itmp=ib(j)
-                  ib(j)=ib(k)
-                  ib(k)=itmp
-                  goto 10
+            do k=j+1,nlegborn
+               if(
+     1              flst_born(j,iborn).eq.ib(k)    .and.
+     2              flst_bornres(j,iborn).eq.ir(k) .and.
+     3              flst_borntags(j,iborn).eq.it(k) ) then
+
+                  call exchange_ind(j,k,ib,ir,it)
+
+                  cycle
                endif
             enddo
 c they differ in flavour content
             iret=-1
-            goto 999
- 10         continue
+            return
          endif
       enddo
 c they are identical; no reordering needed
       if(iret.eq.0) return
 c reorder
-      do j=3,n
-         if(uborn0(j).ne.uborn(j)) then
+      do j=3,nlegborn
+         if(
+     1        flst_born(j,iborn).ne.flst_uborn(j,alr)   .or.
+     2        flst_bornres(j,iborn).ne.flst_ubornres(j,alr) .or.
+     3        flst_borntags(j,iborn).ne.flst_uborntags(j,alr) ) then
             iret=1
-            do k=j+1,n
-               if(uborn0(j).eq.uborn(k)) then
-                  itmp=uborn(j)
-                  uborn(j)=uborn(k)
-                  uborn(k)=itmp
-                  itmp=rflav(j)
-                  rflav(j)=rflav(k)
-                  rflav(k)=itmp
-                  if(emit.eq.j) emit=k
-                  if(emit.eq.k) emit=j
-                  goto 11
+            do k=j+1,nlegborn
+               if(
+     1              flst_born(j,iborn).eq.flst_uborn(k,alr)   .and.
+     2              flst_bornres(j,iborn).eq.flst_ubornres(k,alr) .and.
+     3              flst_borntags(j,iborn).eq.flst_uborntags(k,alr))then
+
+                  call exchange_ind(j,k,flst_uborn(1,alr),
+     1                 flst_ubornres(1,alr),flst_uborntags(1,alr))
+                  call exchange_ind(j,k,flst_alr(1,alr),
+     1                 flst_alrres(1,alr),flst_alrtags(1,alr))
+
+                  if(flst_emitter(alr).eq.j) then
+                     flst_emitter(alr)=k
+                  elseif(flst_emitter(alr).eq.k) then
+                     flst_emitter(alr)=j
+                  endif
+                  cycle
                endif
             enddo
             write(*,*) ' should never get here'
- 11         continue
+            call exit(-1)
          endif
       enddo
- 999  continue
+      end
+
+      subroutine exchange_ind(j,k,a,ares,atags)
+      implicit none
+      integer j,k,a(*),ares(*),atags(*)
+      integer itmp
+      itmp=a(j)
+      a(j)=a(k)
+      a(k)=itmp
+      itmp=ares(j)
+      ares(j)=ares(k)
+      ares(k)=itmp
+      itmp=atags(j)
+      atags(j)=atags(k)
+      atags(k)=itmp
       end
 
       function valid_emitter(j)
@@ -956,4 +938,197 @@ c reorder
          validarr(j)=-1
          return
       endif
+      end
+
+
+      subroutine same_splitting(a,ares,atags,
+     1     indexreal,i1,i2,ibornfl,itag,iret)
+c returns iret=1 if partons i1,i2 in real indexreal come from the
+c same splitting.
+c a(nlegreal,*): input array of real graph structures
+c ares(nlegreal,*): input, if an entry is > 0, it points to the mother resonance
+c                   of the given parton (if it is 0 the parton comes from the
+c                   hard reaction. This array describes the structure of the event
+c                   from the point of view of resonance decays
+c atags(nlegreal,*): it is use to tag fermion lines to appear as being different,
+c                    even if they have the same flavour (see arXiv:0911.5299)
+c i1,i2: the two partons being enquired
+c ibornfl: in case of positive outcome, what would be the flavour of the merged partons
+c itag: in case of positive outcome, what would be the tag of the merged parton
+      implicit none
+      character * 3 iof
+      integer indexreal,i1,i2,ibornfl,itag,iret
+      integer fl1,fl2,tag1,tag2
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer a(nlegreal,*),ares(nlegreal,*),atags(nlegreal,*)
+      if(ares(i1,indexreal).ne.
+     1     ares(i2,indexreal)) then
+c do not come from the same resonance
+         iret=-1
+         return
+      endif
+      fl1=a(i1,indexreal)
+      fl2=a(i2,indexreal)
+      tag1=atags(i1,indexreal)
+      tag2=atags(i2,indexreal)
+      if(i1.le.2) then
+         call same_splitting0('isr',fl1,fl2,tag1,tag2,itag,ibornfl,iret)
+      elseif(i2.le.2) then
+         call same_splitting0('isr',fl2,fl1,tag2,tag1,itag,ibornfl,iret)
+      else
+         call same_splitting0('fsr',fl1,fl2,tag1,tag2,itag,ibornfl,iret)
+      endif
+      end
+
+      subroutine same_splitting0
+     1     (iof,fl1,fl2,tag1,tag2,itag,ibornfl,iret)
+      implicit none
+      character * 3 iof
+      integer fl1,fl2,tag1,tag2,itag,ibornfl,iret
+      logical is_charged, is_coloured
+      external is_charged, is_coloured
+      if(iof.eq.'isr'.and.fl2.ne.22) then
+c in the isr case, 2 is the outgoing parton
+         fl2=-fl2
+      endif
+      iret=1
+      if(fl1+fl2.eq.0.and.is_coloured(fl1).and.tag1.eq.tag2) then
+         ibornfl=0
+         itag=0
+      elseif(fl2.eq.0.and.is_coloured(fl1)) then
+         ibornfl=fl1
+         itag=tag1
+      elseif(fl1.eq.0.and.is_coloured(fl2)) then
+         ibornfl=fl2
+         itag=tag2
+      elseif(fl1.eq.22.and.is_charged(fl2)) then
+         ibornfl=fl2
+         itag=tag2
+      elseif(fl2.eq.22.and.is_charged(fl1)) then
+         ibornfl=fl1
+         itag=tag1
+      else
+c cannot come from the same splitting
+         iret=-1
+      endif
+      if(iof.eq.'isr'.and.fl2.ne.22) then
+         fl2=-fl2
+      endif
+      end
+
+      function is_charged(fl)
+      implicit none
+      logical is_charged
+      integer fl
+      if(fl.eq.0) then
+         is_charged=.false.
+      elseif(abs(fl).le.6) then
+         is_charged=.true.
+      elseif(abs(fl).ge.11.and.abs(fl).le.15.and.2*(fl/2).ne.fl) then
+         is_charged=.true.
+      else
+         is_charged=.false.
+      endif
+      end
+
+      function is_coloured(fl)
+      implicit none
+      logical is_coloured
+      integer fl
+      if(abs(fl).le.6) then
+         is_coloured=.true.
+      else
+         is_coloured=.false.
+      endif
+      end
+
+
+      function equiv_entry_alr_real(j,alr1,alr2)
+      implicit none 
+      logical equiv_entry_alr_real
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer j,alr1,alr2
+      equiv_entry_alr_real=
+     1     flst_alr(j,alr1).eq.flst_alr(j,alr2)   .and.
+     2     flst_alrres(j,alr1).eq.flst_alrres(j,alr2) .and.
+     3     flst_alrtags(j,alr1).eq.flst_alrtags(j,alr2)
+      end
+
+
+      subroutine alr_move(j,k)
+      implicit none 
+      integer j,k
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer i
+      do i=1,nlegreal
+         flst_alr(i,k) = flst_alr(i,j)
+         flst_alrres(i,k) = flst_alrres(i,j)
+         flst_alrtags(i,k) = flst_alrtags(i,j)
+      enddo
+      end
+
+      subroutine print_lists(n,a,ares,atags)
+      implicit none
+      integer n,a(n),ares(n),atags(n)
+      integer j,k
+      character * 50 format1,format2,format3
+      format1 = "('flavours:          ',        (i3,1x))"
+      format2 = "('Resonance mapping: ',        (i3,1x))"
+      format3 = "('Tags:              ',        (i3,1x))"
+      write(format1(24:31),'(i8)') n
+      write(format2(24:31),'(i8)') n
+      write(format3(24:31),'(i8)') n
+c   Flavours
+      write(*,format1) (a(j),j=1,n)
+      do k=1,n
+         if(ares(k).gt.0) then
+c   Resonances
+            write(*,format2) (ares(j),j=1,n)
+            exit
+         endif
+      enddo
+      do k=1,n
+         if(atags(k).gt.0) then
+c   Tags
+            write(*,format3) (atags(j),j=1,n)
+            exit
+         endif
+      enddo
+      end
+
+      function flavequiv(n,aflav,bflav)
+c returns true if the flavour structures aflav and bflav are
+c equivalent up to a permutation of the final state lines,
+c false otherwise.
+      implicit none
+      logical flavequiv
+      integer n, aflav(n),bflav(n)
+c we need the parameter nlegreal
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer j,k,itmp,ib(nlegreal)
+      call intassign(n,bflav,ib)
+      do j=1,n
+         if(aflav(j).ne.ib(j)) then
+            if(j.le.2) then
+               flavequiv=.false.
+               return
+            endif
+            do k=j+1,n
+               if(aflav(j).eq.ib(k)) then
+                  itmp=ib(j)
+                  ib(j)=ib(k)
+                  ib(k)=itmp
+                  goto 10
+               endif
+            enddo
+            flavequiv=.false.
+            return
+         endif
+ 10      continue
+      enddo
+      flavequiv=.true.
       end

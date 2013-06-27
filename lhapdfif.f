@@ -124,16 +124,29 @@ c Value and Derivative of alfa with respect to t
       subroutine genericpdf(ndns,ih,xmu2,x,fx)
 c Interface to lhapdf package.
       implicit none
+      include 'nlegborn.h'
+      include 'pwhg_pdf.h'
       integer ndns,ih
-      real * 8 xmu2,x,fx(-6:6)
+      real * 8 xmu2,x,fx(-pdf_nparton:pdf_nparton)
+      real * 8 fxlha(-6:6)
       integer j
       real * 8 tmp
+      real*8 photon
       call genericpdfset(ndns)
-      call evolvePDF(x,sqrt(xmu2),fx)
+
+c photon induced work only with MRST2004QED (ndns = 20460)
+      if (ndns.eq.20460) then
+          call evolvePDFphoton(x,sqrt(xmu2),fxlha,photon)
+      else
+          call evolvePDF(x,sqrt(xmu2),fxlha)
+          photon=0d0
+      endif
 c pftopdg returns density times x
-      do j=-6,6
-         fx(j)=fx(j)/x
-      enddo
+      fx=0
+      fx(-6:6)=fxlha/x
+      if(pdf_nparton.ge.22) then
+         fx(22)=photon/x
+      endif
 c 1 is proton, -1 is antiproton, 3 is pi+, -3 is pi-
       if(ih.eq.1) then
          return
@@ -143,23 +156,6 @@ c 1 is proton, -1 is antiproton, 3 is pi+, -3 is pi-
             fx(j)=fx(-j)
             fx(-j)=tmp
          enddo
-c Do the neutron (Suggested by Jan Kretzschmar, 17/4/2013)
-      elseif(abs(ih).eq.2) then
-c 2 is neutron: exchange u and d pdfs
-         tmp=fx(1)
-         fx(1)=fx(2)
-         fx(2)=tmp
-         tmp=fx(-1)
-         fx(-1)=fx(-2)
-         fx(-2)=tmp
-         if(ih.eq.-2) then
-c -2 is anti-neutron: exchange quarks and anti-quarks, then u and d pdfs
-            do j=1,6
-               tmp=fx(j)
-               fx(j)=fx(-j)
-               fx(-j)=tmp
-            enddo
-         endif
       elseif(ih.eq.3) then
          tmp=fx(1)
          fx(1)=fx(-1)
@@ -182,12 +178,12 @@ c photon pdf
          stop
       endif
 c Bug fixes for version 5.3 of lhapdf
-      if(ndns.eq.363) then
-         do j=1,6
-            fx(j)=fx(j)/2
-            fx(-j)=fx(-j)/2
-         enddo
-      endif
+c      if(ndns.eq.363) then
+c         do j=1,6
+c            fx(j)=fx(j)/2
+c            fx(-j)=fx(-j)/2
+c         enddo
+c      endif
       
       end
 

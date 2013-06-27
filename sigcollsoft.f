@@ -52,8 +52,9 @@ c            kinematic regions).
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
       include 'pwhg_kn.h'
+      include 'pwhg_pdf.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
       real * 8 rescfac
       integer alr
       call collfsrnopdf(rc)
@@ -77,18 +78,14 @@ c            kinematic regions).
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      integer alr,em
+      integer alr,em,kres
       real * 8 kperp(0:3),kperp2,q0,xocsi,csi,x,phi
       em=kn_emitter
-      q0=2*kn_cmpborn(0,1)
-      xocsi=q0/2/kn_cmpborn(0,em)
-c for fsr csi is y independent
       csi=kn_csi
-      phi=kn_azi
-      x=csi*xocsi
-      call buildkperp(em,phi,kperp,kperp2)
+      call buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
       do alr=1,flst_nalr
          if(em.eq.flst_emitter(alr)) then
             call collfsralr(alr,csi,xocsi,x,q0,kperp,kperp2,rc(alr))
@@ -98,37 +95,70 @@ c for fsr csi is y independent
       enddo
       end
 
-      subroutine buildkperp(em,phi,kperp,kperp2)
+      subroutine buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
       implicit none
+      integer em
+      real * 8 q0,xocsi,x,kperp(0:3),kperp2
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
-      integer em
-      real * 8 phi,kperp(0:3),kperp2,dir(1:3)
+      integer kres
+      real * 8 pem(0:3),pres(0:3),phi
+      real * 8 dotp
+      external dotp
+      if(flg_withresrad) then
+         if(em.eq.0) then
+            kres=0
+         else
+            kres=flst_bornres(em,1)
+         endif
+      else
+         kres=0
+      endif
+      if(kres.eq.0) then
+         pres=kn_cmpborn(:,1)+kn_cmpborn(:,2)
+         pem=kn_cmpborn(:,em)
+      else
+         call boost2reson(kn_cmpborn(:,kres),1,kn_cmpborn(:,em),pem)
+         pres(1:3)=0
+         pres(0)=sqrt(dotp(kn_cmpborn(:,kres),kn_cmpborn(:,kres)))
+      endif
+      q0=pres(0)
+      xocsi=q0/2/pem(0)
+c for fsr csi is y independent
+      phi=kn_azi
+      x=kn_csi*xocsi
+      call buildkperp(phi,pem,kperp,kperp2)
+      end
+
+      subroutine buildkperp(phi,pem,kperp,kperp2)
+      implicit none
+      real * 8 phi,pem(0:3),kperp(0:3),kperp2,dir(1:3)
 c     Construct kperp; First construct a vector in the plane of p_em and
 c     the third axis, orthogonal to p_em.
 c     Then rotate it counterclockwise around the em direction
-      kperp(1)=kn_cmpborn(1,em)
-      kperp(2)=kn_cmpborn(2,em)
-      kperp(3)=-(kn_cmpborn(2,em)**2+kn_cmpborn(1,em)**2)
-     #/kn_cmpborn(3,em)
+      kperp(1)=pem(1)
+      kperp(2)=pem(2)
+      kperp(3)=-(pem(2)**2+pem(1)**2)
+     #/pem(3)
       kperp2=(kperp(1)**2+kperp(2)**2+kperp(3)**2)
-      dir(1)=kn_cmpborn(1,em)/kn_cmpborn(0,em)
-      dir(2)=kn_cmpborn(2,em)/kn_cmpborn(0,em)
-      dir(3)=kn_cmpborn(3,em)/kn_cmpborn(0,em)
+      dir(1)=pem(1)/pem(0)
+      dir(2)=pem(2)/pem(0)
+      dir(3)=pem(3)/pem(0)
       call mrotate(dir,sin(phi),cos(phi),kperp(1))
       kperp(0)=0
       end
-      
 
       subroutine softcollfsr(rc)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
+      include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csi
@@ -174,9 +204,10 @@ c     Then rotate it counterclockwise around the em direction
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
+      include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csip
@@ -205,8 +236,9 @@ c     Then rotate it counterclockwise around the em direction
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
       include 'pwhg_kn.h'
+      include 'pwhg_pdf.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csim
@@ -235,9 +267,11 @@ c     Then rotate it counterclockwise around the em direction
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
+      include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-6:6),pdf2(-6:6),x1,x2
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton),
+     1     x1,x2
       integer alr
       real * 8 rescfac
       call collisrnopdf(i,rc)
@@ -310,10 +344,11 @@ c softvec(0:3): real * 8, 4-vector of soft gluon normalized to softvec(0)=1
       include 'pwhg_math.h'
       include 'pwhg_st.h'
       include 'pwhg_br.h'
+      include 'pwhg_pdf.h'
       real * 8 r0(maxalr)
       integer alr,em
       real * 8 y
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
       real * 8 rescfac
 c Boost Born momenta to their rest frame
 c find boost velocity
@@ -351,8 +386,8 @@ c find boost velocity
       include 'pwhg_par.h'
       integer alr
       real * 8 csi,xocsi,x,q0,kperp(0:3),kperp2,res
-      integer iub,em,emflav,raflav,mu,nu
-      real * 8 gtens(0:3,0:3),ap
+      integer iub,em,emflav,raflav,mu,nu,kres
+      real * 8 gtens(0:3,0:3),ap,q2
       data gtens/1d0, 0d0, 0d0, 0d0,
      #           0d0,-1d0, 0d0, 0d0,
      #           0d0, 0d0,-1d0, 0d0,
@@ -360,6 +395,32 @@ c find boost velocity
       save gtens
       iub=flst_alr2born(alr)
       em=flst_emitter(alr)
+c no collinear subtraction for massive particle
+      if(kn_masses(em).gt.0) then
+         res=0
+         return
+      endif
+      if(flg_withresrad) then
+         if(em.eq.0) then
+            kres=0
+         else
+            kres=flst_bornres(em,iub)
+         endif
+      else
+         kres=0
+      endif
+      if(kres.eq.0) then
+         q2=kn_cmpborn(0,em)**2
+      else
+         q2= ( kn_cmpborn(0,kres)*kn_cmpborn(0,em)
+     1        -kn_cmpborn(1,kres)*kn_cmpborn(1,em)
+     2        -kn_cmpborn(2,kres)*kn_cmpborn(2,em)
+     3        -kn_cmpborn(3,kres)*kn_cmpborn(3,em) )**2/
+     4            (   kn_cmpborn(0,kres)**2
+     5               -kn_cmpborn(1,kres)**2
+     6               -kn_cmpborn(2,kres)**2
+     7               -kn_cmpborn(3,kres)**2 )
+      endif
       emflav=flst_alr(em,alr)
       raflav=flst_alr(nlegreal,alr)
       if(emflav.eq.0.and.raflav.eq.0) then
@@ -413,6 +474,7 @@ c provide multiplicity of emitter in underlyng Born
       include 'pwhg_kn.h'
       include 'pwhg_math.h'
       include 'pwhg_st.h'
+      include 'pwhg_em.h'
       include 'pwhg_br.h'
       integer alr,i,em
       real * 8 csi,kperp(0:3),res
@@ -423,6 +485,10 @@ c provide multiplicity of emitter in underlyng Born
      #           0d0, 0d0,-1d0, 0d0,
      #           0d0, 0d0, 0d0,-1d0/
       save gtens
+      real * 8 chargeofparticle
+      logical is_em
+      external chargeofparticle
+      is_em=.false.
       x=1-csi
       iub=flst_alr2born(alr)
       em=flst_emitter(alr)
@@ -446,11 +512,30 @@ c provide multiplicity of emitter in underlyng Born
      #+4*(1-x)/x*(kperp(mu)*kperp(nu)))*br_bmunu(mu,nu,i,iub)
             enddo
          enddo
-         ap=ap*cf*(1-x)
+c gluon radiation case
+         if(flst_born(i,iub).eq.0) then
+            ap=ap*cf*(1-x)
+c photon radiation case
+         elseif(flst_born(i,iub).eq.22) then
+            is_em=.true.
+            ap=ap*(1-x)*chargeofparticle(emflav)**2
+         else
+            write(*,*) ' collisralr: unammissible ub flavour'
+            call pwhg_exit(-1)
+         endif
       elseif(raflav.eq.0.and.emflav.ne.0) then
          ap=cf*(1+x**2)*br_born(iub)
       elseif(emflav.eq.0.and.raflav.ne.0) then
          ap=tf*(x**2+(1-x)**2)*br_born(iub)*(1-x)
+      elseif(emflav.ne.0.and.raflav.eq.22) then
+c WEW, consider photon emission
+         is_em=.true.
+         ap=(1+x**2)*br_born(iub)*chargeofparticle(emflav)**2
+      elseif(emflav.eq.22.and.raflav.ne.0) then
+c WEW, consider emission by photon 
+         is_em=.true.
+         ap=(x**2+(1-x)**2)*br_born(iub)*(1-x)
+     +                         *3d0*chargeofparticle(raflav)**2
       else
          write(*,*) 'coll (isr): unammissible flavour structure'
       endif
@@ -460,10 +545,67 @@ c     where 1/(p^0_i)^2=1/(p^0_1 * p^0_2)=1/(pborn^0_1 * pborn^0_2/x),
 c     the last expression being boost invariant.
 c     Supplying che csi^2 (1-y^2) factor in the collinear limit,
 c     using csi=1-x we get
-      res=ap/(kn_pborn(0,1)*kn_pborn(0,2)/x) * 2
+      if(is_em) then
+c WEW, electromagnetic coupling
+         res=ap/(kn_pborn(0,1)*kn_pborn(0,2)/x) * 2
+c     ew coupling:
+     # *(4*pi*em_alpha)
+      else
+         res=ap/(kn_pborn(0,1)*kn_pborn(0,2)/x) * 2
 c     strong coupling:
      # *(4*pi*st_alpha)
 c     The remaining csi=1-x factor has been applied earlier
+      endif
+      end
+
+
+      function colcorr(j,iub,res)
+      implicit none
+      logical colcorr
+      integer iub,res,j
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
+      colcorr= abs(flst_born(j,iub)).le.6
+      if(flg_withresrad) then
+            colcorr=colcorr .and.
+     1           (j.eq.res .or. flst_bornres(j,iub).eq.res)
+      endif
+      end
+
+
+      function sigma(id,pos)
+c WEW, sigma() added
+c Returns the sigma of particle id
+c + 1 for incoming fermion or outgoing antifermion
+c - 1 for incoming antifermion or outgoing fermion
+      integer sigma
+      integer id,pos
+
+      if (id.gt.0.and.pos.le.2) then
+          sigma =  1
+      elseif (id.lt.0.and.pos.gt.2) then
+          sigma =  1
+      else
+          sigma = -1
+      endif
+
+      end
+
+      function colcorrem(j,iub,em)
+      implicit none
+      logical colcorrem
+      integer iub,em,res,j
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
+      logical colcorr
+      if(em.eq.0) then
+         res=0
+      else
+         res=flst_bornres(em,iub)
+      endif
+      colcorrem=colcorr(j,iub,res)
       end
 
 
@@ -471,25 +613,46 @@ c     The remaining csi=1-x factor has been applied earlier
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_math.h'
       include 'pwhg_st.h'
+      include 'pwhg_em.h'
       include 'pwhg_br.h'
       integer alr,em
-      real * 8 y,res
-      integer iub,j,k
-      real * 8 pjsq,sumdijinv,result
-      real * 8 dotp
-      external dotp
+      real * 8 y,res,chj,chk
+      integer iub,j,k,kres
+      real * 8 pjsq,sumdijinv,result,q2
+      real * 8 dotp,chargeofparticle
+      integer sigma
+      logical colcorrem
+      external dotp,chargeofparticle,colcorrem,sigma
       if(flst_emitter(alr).eq.em) then
          if(flst_alr(nlegreal,alr).eq.0) then
             iub=flst_alr2born(alr)
+            if(flg_withresrad) then
+               if(em.eq.0) then
+                  kres=0
+               else
+                  kres=flst_bornres(em,iub)
+               endif
+            else
+               kres=0
+            endif
+            if(kres.eq.0) then
+               q2=4*kn_cmpborn(0,1)*kn_cmpborn(0,2)
+            else
+               q2=abs(kn_cmpborn(0,kres)**2
+     1               -kn_cmpborn(1,kres)**2
+     2               -kn_cmpborn(2,kres)**2
+     3               -kn_cmpborn(3,kres)**2)
+            endif
 c     loop over pairs of coloured particles
             result=0
             do j=1,nlegborn
-               if(abs(flst_born(j,iub)).le.6) then
+               if(colcorrem(j,iub,em)) then
                   do k=j+1,nlegborn
-                     if(abs(flst_born(k,iub)).le.6) then
+                     if(colcorrem(k,iub,em)) then
                         result=result+
      #dotp(kn_cmpborn(0,j),kn_cmpborn(0,k))
      #/(dotp(kn_cmpborn(0,j),kn_softvec)*
@@ -502,7 +665,7 @@ c     the previous sum should run over all indexes. Since br_bornjk is
 c     symmetric, multiply by 2
             result = result*2
             do j=1,nlegborn
-               if(abs(flst_born(j,iub)).le.6.and.
+               if(colcorrem(j,iub,em) .and.
      #flst_born(j,iub).ne.0) then
                   pjsq=kn_cmpborn(0,j)**2-kn_cmpborn(1,j)**2-
      #kn_cmpborn(2,j)**2-kn_cmpborn(3,j)**2
@@ -514,6 +677,50 @@ c     having chosen a soft four momentum of energy 1, supply
 c     1/esoft^2. Multiply by csi^2, csi=2*esoft/q0, so net
 c     factor 4/q0^2
             if(em.gt.2) then
+               res=result*4/q2*(1-y)
+            else
+               res=result*4/q2*(1-y**2)
+            endif
+c     Coupling:
+            res=res*(4*pi*st_alpha)
+         elseif(flst_alr(nlegreal,alr).eq.22) then
+c WEW: soft photon emission
+            iub=flst_alr2born(alr)
+c     loop over pairs of charged particles
+            result=0
+            do j=1,nlegborn
+               chj=chargeofparticle(flst_born(j,iub))
+               if(chj.ne.0) then
+                  do k=j+1,nlegborn
+                     chk=chargeofparticle(flst_born(k,iub))
+                     if(chk.ne.0) then
+                        result= result+
+     1                          dotp(kn_cmpborn(0,j),kn_cmpborn(0,k))
+     2                         /( dotp(kn_cmpborn(0,j),kn_softvec)*
+     3                            dotp(kn_cmpborn(0,k),kn_softvec) )
+     4                           * chj * chk
+     5                           * sigma(flst_born(j,iub),j) 
+     6                           * sigma(flst_born(k,iub),k) * (-1)
+                     endif
+                  enddo
+               endif
+            enddo
+c     symmetric, multiply by 2
+            result = result*2
+            do j=1,nlegborn
+               chj=chargeofparticle(flst_born(j,iub))
+               if(chj.ne.0.and.kn_masses(j).ne.0) then
+                  pjsq   = dotp(kn_cmpborn(0,j),kn_cmpborn(0,j)) 
+                  result = result
+     +                    -pjsq/dotp(kn_cmpborn(0,j),kn_softvec)**2
+     +                     *chj**2
+               endif
+            enddo
+            result=result * br_born(iub)
+c     having chosen a soft four momentum of energy 1, supply
+c     1/esoft^2. Multiply by csi^2, csi=2*esoft/q0, so net
+c     factor 4/q0^2
+            if(em.gt.2) then
                res=result*4/
      #(4*kn_cmpborn(0,1)*kn_cmpborn(0,2))*(1-y)
             else
@@ -521,7 +728,7 @@ c     factor 4/q0^2
      #(4*kn_cmpborn(0,1)*kn_cmpborn(0,2))*(1-y**2)
             endif
 c     Coupling:
-            res=res*(4*pi*st_alpha)
+            res=res*(4*pi*em_alpha)
 c     The case of the emitter being a gluon requires no special treatment here!
 c     the extra (1-x) factor is simply 1!
          else
@@ -586,13 +793,9 @@ c cross section used in Btilde
       real * 8 kperp(0:3),kperp2,q0,xocsi,csi,x,phi,r1,r2
       em=kn_emitter
       if(em.gt.2) then
-         q0=2*kn_cmpborn(0,1)
-         xocsi=q0/2/kn_cmpborn(0,em)
 c     for fsr csi is y independent
          csi=kn_csi
-         phi=kn_azi
-         x=csi*xocsi
-         call buildkperp(em,phi,kperp,kperp2)
+         call buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
          do alr=1,flst_nalr
             if(em.eq.flst_emitter(alr)) then
                call collfsralr(alr,csi,xocsi,x,q0,kperp,kperp2,rc(alr))
@@ -675,11 +878,7 @@ c     Construct kperp
             rc(alr)=rc(alr)/(kn_csi**2*(1-kn_y**2))
          elseif(flst_lightpart+rad_kinreg-2.eq.em) then
             csi=kn_csi
-            phi=kn_azi
-            q0=2*kn_cmpborn(0,1)
-            xocsi=q0/2/kn_cmpborn(0,em)
-            x=csi*xocsi
-            call buildkperp(em,phi,kperp,kperp2)
+            call buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
             call collfsralr(alr,csi,xocsi,x,q0,kperp,kperp2,rc(alr))
             rc(alr)=rc(alr)/csi**2/(1-kn_y)
          else
