@@ -6,7 +6,8 @@
       include 'pwhg_kn.h'
       include 'pwhg_math.h'
       include 'pwhg_physpar.h'      
-      real * 8 masswindow_low,masswindow_high,powheginput
+      real * 8 masswindow_low,masswindow_high,wmasslow,wmasshigh
+      real * 8 powheginput
       external powheginput
       logical verbose
       parameter(verbose=.true.)
@@ -70,16 +71,29 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 c     set mass windows around W-mass peak in unit of ph_Wwidth
 c     It is used in the generation of the Born phase space
+c     set mass windows around Z-mass peak in unit of ph_Zwidth
+c     It is used in the generation of the Born phase space
+      wmasslow = powheginput("#min_W_mass")
+      wmasshigh = powheginput("#max_W_mass")
+      if(wmasslow.gt.0) then
+         ph_Wmass2low=wmasslow**2
+      else
 C     masswindow is an optonal  parameter passed by the user
 C     the default vale is 30 
-      masswindow_low = powheginput("#masswindow_low")
-      if(masswindow_low.lt.0d0) masswindow_low=30d0
-      ph_Wmass2low=max(0d0,ph_Wmass-masswindow_low*ph_Wwidth)
-      ph_Wmass2low= ph_Wmass2low**2
-      masswindow_high = powheginput("#masswindow_high")
-      if(masswindow_high.lt.0d0) masswindow_high=30d0
-      ph_Wmass2high=ph_Wmass+masswindow_high*ph_Wwidth
-      ph_Wmass2high= min(kn_sbeams,ph_Wmass2high**2)
+         masswindow_low = powheginput("#masswindow_low")
+         if(masswindow_low.lt.0d0) masswindow_low=30d0
+         ph_Wmass2low=max(0d0,ph_Wmass-masswindow_low*ph_Wwidth)
+         ph_Wmass2low= ph_Wmass2low**2
+      endif
+      if(wmasshigh.gt.0) then
+         ph_Wmass2high=wmasshigh**2
+      else
+         masswindow_high = powheginput("#masswindow_high")
+         if(masswindow_high.lt.0d0) masswindow_high=30d0
+         ph_Wmass2high=ph_Wmass+masswindow_high*ph_Wwidth
+         ph_Wmass2high= min(kn_sbeams,ph_Wmass2high**2)
+      endif
+
       ph_WmWw = ph_Wmass * ph_wwidth
 
       ph_unit_e = sqrt(4*pi*ph_alphaem)

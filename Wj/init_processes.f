@@ -31,7 +31,8 @@ c     the code and we change often from one process to the other
          write(*,*) ' for this process in nlegborn.h'
          stop
       endif
-
+      st_bornorder = 1
+      call minlo_checks
 *********************************************************************
 c     index of the first LIGHT coloured parton in the final state
       flst_lightpart=5

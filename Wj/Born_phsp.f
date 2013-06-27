@@ -120,7 +120,7 @@ c minimal final state mass
       logical ini
       data ini/.true./
       real * 8 fact,pt2,pt2supp,powheginput,pt
-      save ini,pt2supp,pt    
+      save ini,pt2supp,pt     
 c CAVEAT!!!  process dependent subroutine
       if (ini) then
          pt = powheginput("#ptsupp")
@@ -150,47 +150,38 @@ c CAVEAT!!!  process dependent subroutine
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
-      include 'pwhg_st.h'
-      real * 8 muf,mur
+      real * 8 muf,mur,powheginput
       logical ini
       data ini/.true./
       logical runningscales
-      parameter (runningscales=.true.)
       real * 8 pt2
-      if (runningscales) then
-c$$$         if (ini) then
-c$$$            write(*,*) '****************************************'
-c$$$            write(*,*) '****************************************'
-c$$$            write(*,*) '**   mur=M_T^W  used for Bbar function   **'
-c$$$            write(*,*) '**   muf=M_T^W  used for Bbar function   **'
-c$$$            write(*,*) '****************************************'
-c$$$            write(*,*) '****************************************'
-c$$$            ini=.false.            
-c$$$         endif
-c$$$         pt2=(kn_pborn(1,3)+kn_pborn(1,4))**2 +
-c$$$     $       (kn_pborn(2,3)+kn_pborn(2,4))**2 + 
-c$$$     $        ph_Wmass**2
-c$$$         mur=sqrt(pt2)
-c$$$         muf=mur
-         if (ini) then
-            write(*,*) '**************************************'
-            write(*,*) '**************************************'
-            write(*,*) '** mur=pt_W  used for Bbar function **'
-            write(*,*) '** muf=pt_W  used for Bbar function **'
-            write(*,*) '**************************************'
-            write(*,*) '**************************************'
-            ini=.false.            
+      save ini,runningscales
+      if(ini) then
+         if(powheginput("#runningscales").eq.1) then
+            runningscales = .true.
+            write(*,*) '****************************************'
+            write(*,*) '****************************************'
+            write(*,*) '**   mur=pt  used for Bbar function   **'
+            write(*,*) '**   muf=pt  used for Bbar function   **'
+            write(*,*) '****************************************'
+            write(*,*) '****************************************'
+         else
+c fixed scale is the default
+            runningscales = .false.
+            write(*,*) '********************************************'
+            write(*,*) '********************************************'
+            write(*,*) '**   mur=W mass  used for Bbar function   **'
+            write(*,*) '**   muf=W mass  used for Bbar function   **'
+            write(*,*) '********************************************'
+            write(*,*) '********************************************'
          endif
+         ini=.false.
+      endif
+      if (runningscales) then
          pt2=kn_pborn(1,5)**2+kn_pborn(2,5)**2
          mur=sqrt(pt2)
          muf=mur
       else
-         write(*,*) '****************************************'
-         write(*,*) '****************************************'
-         write(*,*) '**   mur=M_W  used for Bbar function  **'
-         write(*,*) '**   muf=M_W  used for Bbar function  **'
-         write(*,*) '****************************************'
-         write(*,*) '****************************************'
          muf=ph_Wmass
          mur=ph_Wmass
       endif
