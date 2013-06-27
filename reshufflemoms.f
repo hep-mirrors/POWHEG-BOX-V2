@@ -487,9 +487,9 @@ c     beta.  Lorents convention: (t,x,y,z).
       subroutine lhfm_checkmom
       implicit none
       include 'LesHouches.h'
-      real * 8 sum,tmp,total(4)
+      real * 8 msum,tmp,total(4)
       integer mu,i,moth,iret
-      sum()=abs(total(1))+abs(total(2))+abs(total(3))+abs(total(3))
+      msum()=abs(total(1))+abs(total(2))+abs(total(3))+abs(total(3))
       do mu=1,4
          total(mu)=pup(mu,1)+pup(mu,2)
       enddo
@@ -506,8 +506,8 @@ c     beta.  Lorents convention: (t,x,y,z).
             enddo
          endif
       enddo
-      if(sum().gt.1d-6) then
-         write(*,*) ' total mom. cons.:',sum()
+      if(msum().gt.1d-6) then
+         write(*,*) ' total mom. cons.:',msum()
       endif
       do moth=3,nup
          if(istup(moth).eq.2) then
@@ -522,8 +522,8 @@ c     beta.  Lorents convention: (t,x,y,z).
                   enddo
                endif
             enddo
-            if(sum().gt.1d-6) then
-               write(*,*) 'res.',moth,' mom. cons.:',sum()
+            if(msum().gt.1d-6) then
+               write(*,*) 'res.',moth,' mom. cons.:',msum()
             endif
          endif
       enddo

@@ -11,7 +11,7 @@ c  pwhgfill  :  fills the histograms with data
       implicit none
       include     'LesHouches.h'
       include     'pwhg_math.h'
-      include     'pwhg_bookhist-new.h'
+      include     'pwhg_bookhist-multi.h'
       integer      maxjet
       parameter   (maxjet=2)
       integer      nptmin
@@ -279,7 +279,6 @@ C - End loop over jet pT cuts
 C - End loop over CA and AkT algorithms
       enddo
 
-      write(*,*) 'booked ',jhist,' histograms !'
       end
      
       subroutine analysis(dsig0)
@@ -1058,7 +1057,7 @@ c     loop over the hardest 3 jets
 
       subroutine pwhgfinalopshist
       implicit none
-      include     'pwhg_bookhist-new.h'
+      include     'pwhg_bookhist-multi.h'
       integer      maxjet
       parameter   (maxjet=2048)
       integer      nptmin

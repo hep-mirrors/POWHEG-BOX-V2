@@ -45,4 +45,4 @@ wait
 done
 
 # Uncomment the following to compute new weights for all scale variations
-# $dir/reweight.sh
+$dir/reweight.sh

@@ -148,7 +148,7 @@ c initialize number of singular regions
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
-      integer j,res
+      integer j,k,res
       flst_nreson=1
       flst_reslist(1)=0
       do j=1,flst_nreal

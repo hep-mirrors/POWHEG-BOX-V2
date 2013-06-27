@@ -2,6 +2,11 @@
       implicit none
       integer n
       include 'pwhg_bookhist-multi.h'
+      real * 8 weirdnum
+      common/c_setupmulti/weirdnum
+      save /c_setupmulti/
+c if this is set we are sure that setupmulti was called
+      weirdnum=317d0/12345d0
       if(n.gt.maxmulti) then
          write(*,*) ' ************** ERROR **************'
          write(*,*) ' multi-weight histogramming requested with',n,
@@ -47,6 +52,22 @@ c x(i) is the low extreme of bin i.
       include 'pwhg_bookhist-multi.h'
       integer j,k
       integer indexhist
+      real * 8 weirdnum
+      common/c_setupmulti/weirdnum
+      save /c_setupmulti/
+      logical ini
+      data ini/.true./
+      save ini
+
+c We assume that this routine is always called first when the package is used
+      if(ini) then
+         if(.not.weirdnum.eq.317d0/12345d0) then
+c setupmulti was not called! setup default value!
+            call setupmulti(1)
+         endif
+         ini=.false.
+      endif
+
       if(n.gt.maxbins) then
          write(*,*) ' maximum number of bins=',maxbins
          write(*,*) ' asked for ',n
