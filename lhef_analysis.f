@@ -30,22 +30,19 @@ c     let the analysis subroutine know that it is run by this program
       end
 
       subroutine lheanend
-      implicit none
       character * 20 pwgprefix
+      character * 100 filename
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
       include 'pwhg_rnd.h'
       if(rnd_cwhichseed.ne.'none') then
-         open(unit=99,file=pwgprefix(1:lprefix)//'LHEF_analysis-'
-     1        //rnd_cwhichseed//'.top'
-     2     ,status='unknown')
+         filename=pwgprefix(1:lprefix)//'LHEF_analysis-'
+     1        //rnd_cwhichseed
       else
-         open(unit=99,file=pwgprefix(1:lprefix)//'LHEF_analysis.top'
-     1     ,status='unknown')
+         filename=pwgprefix(1:lprefix)//'LHEF_analysis'
       endif
       call pwhgsetout
-      call pwhgtopout
-      close(99)
+      call pwhgtopout(filename)
       end
       
       subroutine UPINIT

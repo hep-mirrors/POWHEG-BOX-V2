@@ -1763,13 +1763,24 @@ c not found
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
+      real * 8 powheginput
+      integer stage
+      character * 3 cst
       call newunit(iun)
       if(rnd_cwhichseed.eq.'none') then
          open(unit=iun,file=pwgprefix(1:lprefix)//'counters.dat'
      1     ,status='unknown')
       else
-         open(unit=iun,file=pwgprefix(1:lprefix)//'counters'//
-     1        rnd_cwhichseed//'.dat',status='unknown')
+         stage=powheginput("#parallelstage")
+         if(stage.gt.0) then
+            write(cst(3:3),'(i1)') stage
+            cst(1:2)='st'
+            open(unit=iun,file=pwgprefix(1:lprefix)//'counters'//'-'
+     1       //cst//'-'//rnd_cwhichseed//'.dat',status='unknown')
+         else
+            open(unit=iun,file=pwgprefix(1:lprefix)//'counters'//
+     1           rnd_cwhichseed//'.dat',status='unknown')
+         endif
       endif
       call printcnt(iun)
       close(iun)
@@ -1825,31 +1836,54 @@ c not found
 
       subroutine reset_timer
       implicit none
-      integer i1,i2,i3
-      common/pwhg_cmytimer/i1,i2,i3
+      integer nmax
+      parameter (nmax=10)
+      integer n,i1(nmax),i2(nmax),i3(nmax)
+      common/pwhg_cmytimer/n,i1,i2,i3
       save /pwhg_cmytimer/
-      call system_clock(i1,i2,i3)
+      logical ini
+      data ini/.true./
+      save ini
+      if(ini) then
+         n=0
+         ini=.false.
+      endif
+      if(n.ge.nmax) then
+         write(*,*) ' more than ',nmax,'reentrant calls of reset_timer'
+         write(*,*) ' increase the parameter nmax in reset_timer'
+         call pwhg_exit(-1)
+      endif
+      n=n+1
+      call system_clock(i1(n),i2(n),i3(n))
       end
 
       subroutine get_timer(seconds)
       implicit none
       real * 8 seconds
       integer j1,j2,j3
-      integer i1,i2,i3
-      common/pwhg_cmytimer/i1,i2,i3
+      integer nmax
+      parameter (nmax=10)
+      integer n,i1(nmax),i2(nmax),i3(nmax)
+      common/pwhg_cmytimer/n,i1,i2,i3
       save /pwhg_cmytimer/
+      if(n.le.0) then
+         write(*,*) ' ************ ERROR ******************'
+         write(*,*) ' get_timer called with no previous set_timer call'
+         call pwhg_exit(-1)
+      endif
 c j1: seconds*j2;
 c j3: max value of j1; after that j1 restart from zero
 c With gfortran, j3 corresponds roughly to 24 days.
       call system_clock(j1,j2,j3)
 c the whole point is to make sure we are not wrapping around
-      if(j1.ge.i1) then
+      if(j1.ge.i1(n)) then
 c No wrap around
-         seconds=dble(j1-i1)/i2
+         seconds=dble(j1-i1(n))/i2(n)
       else
 c Assume we wrapped around
-         seconds=dble(j1)/i2+dble(i3-i1)/i2
+         seconds=dble(j1)/i2(n)+dble(i3(n)-i1(n))/i2(n)
       endif
+      n=n-1
       end
 
 
@@ -1947,7 +1981,7 @@ c Assume we wrapped around
       real * 8 tmp,powheginput
       tmp=powheginput('print unused tokens')
       call write_counters
-      call exit(-1)
+      call exit(iret)
       end
 
 

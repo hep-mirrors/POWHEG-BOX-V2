@@ -21,7 +21,7 @@
       save c,gamma,gammap,ini
       real * 8 tiny
       parameter (tiny=1d-14)
-      real * 8 ll
+      real * 8 ll,rescfac
       real * 8 Intm_ep,Int0m_0,Int0m_ep,Intmm_0,Intmm_ep
       external Intm_ep,Int0m_0,Int0m_ep,Intmm_0,Intmm_ep
       logical pwhg_isfinite
@@ -41,17 +41,30 @@ c from 2.100 of FNO2007
          enddo
          ini=.false.
       endif
+      if(.not.flg_minlo) then
 c get pdfs
-      call pdfcall(1,kn_xb1,pdfb1)
-      call pdfcall(2,kn_xb2,pdfb2)      
+         call pdfcall(1,kn_xb1,pdfb1)
+         call pdfcall(2,kn_xb2,pdfb2)   
+      endif
 
       call sigvirtual(virt_arr)
 
       etot=2*kn_cmpborn(0,1)
       s=etot**2
       tot=0d0
-      ll = log(par_csicut**2*s/st_muren2)
+      if(.not.flg_minlo) then
+         ll = log(par_csicut**2*s/st_muren2)
+         rescfac = 1
+      endif
       do jb=1,flst_nborn
+         if(flg_minlo) then
+            call setlocalscales(jb,2,rescfac)
+            ll = log(par_csicut**2*s/st_muren2)
+c get pdfs
+            call pdfcall(1,kn_xb1,pdfb1)
+            call pdfcall(2,kn_xb2,pdfb2)      
+         endif
+
          fl1=flst_born(1,jb)
          fl2=flst_born(2,jb)
 c     initial-state parton contribution
@@ -128,7 +141,7 @@ c         write(*,*) 'jb,Q,I',jb,Q,I
 c we only summed over j>i, multiply by 2
          I=I*2
          resvirt(jb)=(Q+I+virt_arr(jb))*st_alpha/(2*pi)
-     #       *pdfb1(fl1)*pdfb2(fl2)*kn_jacborn
+     #       *pdfb1(fl1)*pdfb2(fl2)*kn_jacborn * rescfac
          tot=tot+resvirt(jb)
       enddo
       if (.not.pwhg_isfinite(tot)) then

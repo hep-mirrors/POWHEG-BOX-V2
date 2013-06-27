@@ -3,7 +3,14 @@ c non-singular contributions using standard mint-gen method
 c These contributions arise from real graphs without singular regions,
 c or, when damping of R/B value is adopted, from the remnant of the
 c damping
-      function sigremnant(xx,ww,ifirst)
+      function sigremnant(xx,ww,ifirst,imode,retval,retval0)
+c retval is the function return value
+c retvavl0 is an 'avatar' function the has similar value, but is much
+c easier to compute (i.e. the Born term in this case)
+c imode = 0 compute retval0 only.
+c imode = 1 compute retval, retval0
+c return value: output, 0: success; 1: retval0 was not computed
+c                 (this function does not support an avatar function)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
@@ -11,9 +18,8 @@ c damping
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
       include 'pwhg_math.h'
-      logical pwhg_isfinite 
-      external pwhg_isfinite
-      real * 8 sigremnant,xx(ndiminteg),ww
+      integer sigremnant,imode
+      real * 8 retval,retval0,xx(ndiminteg),ww
       integer ifirst
       real * 8 xrad(3)
       real * 8 xborn(ndiminteg-3)
@@ -24,8 +30,9 @@ c damping
       real * 8 xjac,suppfact
       logical valid_emitter
       external valid_emitter
+      sigremnant = 1
       if(ifirst.eq.2) then
-         sigremnant=rad_reg_tot+rad_damp_rem_tot
+         retval=rad_reg_tot+rad_damp_rem_tot
          if(flg_nlotest) call pwhgaccumup
          return
       endif
@@ -55,10 +62,6 @@ c This subroutine may set the scales with values depending
 c upon the real emission kinematics
          call setscalesbtlreal
          call sigreal_reg(xjac,rad_reg_tot,rad_reg_arr)
-         if (.not.pwhg_isfinite(rad_reg_tot)) then 
-            rad_reg_tot = 0d0 
-            sigremnant = 0d0
-         endif
          if(flg_nlotest) then
             call analysis_driver(rad_reg_tot/suppfact,1)
          endif
@@ -76,10 +79,6 @@ c upon the real emission kinematics
 c     No need to generate phase space; it is already available
                   call setscalesbtlreal
                   call sigreal_damp_rem(xjac,ttt,rad_damp_rem_arr)
-                  if (.not.pwhg_isfinite(ttt)) then 
-                     ttt = 0d0 
-                     sigremnant = 0d0
-                  endif
                   if(flg_nlotest) then
                      call analysis_driver(ttt/suppfact,1)
                   endif
@@ -91,10 +90,6 @@ c     No need to generate phase space; it is already available
      #                *kn_jacborn*suppfact*ww*hc2
                   call setscalesbtlreal
                   call sigreal_damp_rem(xjac,ttt,rad_damp_rem_arr)
-                  if (.not.pwhg_isfinite(ttt)) then 
-                     ttt = 0d0 
-                     sigremnant = 0d0
-                  endif
                   if(flg_nlotest) then
                      call analysis_driver(ttt/suppfact,1)
                   endif
@@ -105,7 +100,7 @@ c     No need to generate phase space; it is already available
       else
          rad_damp_rem_tot=0
       endif
-      sigremnant=rad_reg_tot+rad_damp_rem_tot
+      retval=rad_reg_tot+rad_damp_rem_tot
       end
 
       subroutine sigreal_reg(xjac,sig,r0)

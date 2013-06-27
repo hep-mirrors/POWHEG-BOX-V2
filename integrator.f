@@ -9,8 +9,8 @@ c     and gen for the integration-generation of different functions, provided
 c     the arguments are kept different.
 c
 
-      subroutine mint(fun,ndim,ncalls0,nitmax,ifold,imode,iun,
-     #     xgrid,xint,ymax,ans,err)
+      subroutine mint(fun,ndim,ncalls,nitmax,ifold,imode,iun,
+     #     xgrid,xint,xacc,nhits,ymax,ymaxrat,ans,err)
 c     returns the function to be integrated multiplied by www;
 c     xx(1:ndim) are the variables of integration
 c     ifirst=0: normal behaviour
@@ -18,7 +18,7 @@ c     ifirst=1 and 2: see the explanation of ifold
 c
 c ndim=number of dimensions
 c
-c ncalls0=# of calls per iteration
+c ncalls =# of calls per iteration
 c
 c nitmax =# of iterations
 c
@@ -60,6 +60,13 @@ c xint: real
 c     Output value of the integral when called with imode=0,
 c     input value of the integral when called with imode=1 (cannot be zero here!)
 c
+c xacc(0:nintervals,ndim):
+c     distribution of the accumulated value for each dimension; it is used to compute the optimal grid.
+c     So, the sum of the array at fixed ndim is the total accumulated value
+c
+c nhits(0:nintervals,ndim):
+c     distribution of number of hits for each dimension; it is used to compute the optimal grid
+c
 c ymax(nintervals,ndim):
 c     integrand upper bounds, set up by mint when called with imode=1, to be used
 c     by the subroutine gen for the generation of unweighted events
@@ -73,21 +80,23 @@ c
       implicit none
       integer nintervals,ndimmax
       include 'nlegborn.h'
+      include 'pwhg_flg.h'
       parameter (nintervals=50,ndimmax=ndiminteg)
-      integer ncalls0,ndim,nitmax,imode,iun
-      real * 8 fun,xgrid(0:nintervals,ndim),xint,ymax(nintervals,ndim),
-     #  ans,err
+      integer ncalls,ndim,nitmax,imode,iun
+      real * 8 xgrid(0:nintervals,ndim),xint,ymax(nintervals,ndim),
+     1  ymaxrat(nintervals,ndim),ans,err
       real * 8 x(ndimmax),vol
-      real * 8 xacc(0:nintervals,ndimmax)
+      real * 8 xacc(0:nintervals,ndim)
       integer icell(ndimmax),ncell(ndimmax)
       integer ifold(ndimmax),kfold(ndimmax)
       integer nhits(1:nintervals,ndimmax)
       real * 8 rand(ndimmax)
-      real * 8 dx(ndimmax),f,vtot,etot,prod,vfun
-      integer kdim,kint,kpoint,nit,ncalls,ibin,iret,nintcurr,ifirst
-      real * 8 random
-      logical pwhg_isfinite
-      external random,pwhg_isfinite,fun
+      real * 8 dx(ndimmax),f,vtot,etot,prod,vfun,vfun0,prodrat
+      integer kdim,kint,kpoint,nit,ibin,iret,nintcurr,ifirst
+      real * 8 random,powheginput
+      logical pwhg_isfinite,gridinfo
+      integer fun,ifun
+      external random,pwhg_isfinite,fun,powheginput
       if(ndim.gt.ndiminteg) then
          write(*,*) 'Mint: at most ',ndiminteg,' dimensions'
          write(*,*) 'Got ',ndim
@@ -96,26 +105,23 @@ c
       if(imode.eq.0) then
          do kdim=1,ndim
             ifold(kdim)=1
-            do kint=0,nintervals
-               xgrid(kint,kdim)=dble(kint)/nintervals
-            enddo
          enddo
       elseif(imode.eq.1) then
          do kdim=1,ndim
             nintcurr=nintervals/ifold(kdim)
             if(nintcurr*ifold(kdim).ne.nintervals) then
                write(*,*)
-     # 'mint: the values in the ifold array shoud be divisors of',
-     #  nintervals
+     1    'mint: the values in the ifold array shoud be divisors of',
+     2              nintervals
                stop
             endif
             do kint=1,nintcurr
                ymax(kint,kdim)=
-     #              xint**(1d0/ndim)
+     1              xint**(1d0/ndim)
+               ymaxrat(kint,kdim)=1
             enddo
          enddo
       endif
-      ncalls=ncalls0
       nit=0
       ans=0
       err=0
@@ -139,6 +145,7 @@ c
       vtot=0
       etot=0
       do kpoint=1,ncalls
+c if a NaN is found, go back here to repeat
  12      continue
 c find random x, and its random cell
          do kdim=1,ndim
@@ -161,23 +168,23 @@ c find random x, and its random cell
          enddo
 c contribution to integral
          if(imode.eq.0) then
-            vfun=abs(fun(x,vol,ifirst))
+            ifun = fun(x,vol,ifirst,1,vfun,vfun0)
 c If you get NaN or Inf, skip this value
             if(.not.pwhg_isfinite(vfun)) goto 12
-            f=vfun+f
-            f=fun(x,vol,2)
+            ifun = fun(x,vol,2,1,vfun,vfun0)
+            f=vfun
             if(.not.pwhg_isfinite(f)) goto 12
          else
 c this accumulated value will not be used
-            vfun=fun(x,vol,ifirst)
+            ifun = fun(x,vol,ifirst,1,vfun,vfun0)
             if(.not.pwhg_isfinite(vfun)) goto 12
-            f=vfun+f
             ifirst=1
             call nextlexi(ndim,ifold,kfold,iret)
             if(iret.eq.0) goto 1
 c closing call: accumulated value with correct sign
-            f=fun(x,vol,2)
+            ifun = fun(x,vol,2,1,vfun,vfun0)
             if(.not.pwhg_isfinite(f)) goto 12
+            f=vfun
          endif
 c
          if(imode.eq.0) then
@@ -186,31 +193,49 @@ c accumulate the function in xacc(icell(kdim),kdim) to adjust the grid later
                xacc(icell(kdim),kdim)=xacc(icell(kdim),kdim)+f
             enddo
          else
-c update the upper bounding envelope
-            prod=1
-            do kdim=1,ndim
-               prod=prod*ymax(ncell(kdim),kdim)
-            enddo
-            prod=(f/prod)
-            if(prod.gt.1) then
-c This guarantees a 10% increase of the upper bound in this cell
-               prod=1+0.1d0/ndim
+c update the upper bounding envelope. In case multiple runs are performed, the
+c results of the call in the cell is stored in a file, to be processed later
+c to find the upper bounding envelope
+            if(flg_storemintupb) then
+               if(flg_fastbtlbound.and.ifun.eq.0) then
+                  call storemintupb(ndim,ncell,0,f,vfun0)
+               else
+                  call storemintupb(ndim,ncell,1,f,vfun0)
+               endif
+            else
+               prod=1
+               if(flg_fastbtlbound.and.ifun.eq.0) prodrat=1
                do kdim=1,ndim
-                  ymax(ncell(kdim),kdim)=ymax(ncell(kdim),kdim)
-     #          * prod
+                  prod=prod*ymax(ncell(kdim),kdim)
+                  if(ifun.eq.0)
+     1                 prodrat=prodrat*ymaxrat(ncell(kdim),kdim)
                enddo
+               prod=(f/prod)
+               if(flg_fastbtlbound.and.ifun.eq.0)
+     1              prodrat=(f/vfun0/prodrat)
+               if(prod.gt.1) then
+c     This guarantees a 10% increase of the upper bound in this cell
+                  prod=1+0.1d0/ndim
+                  do kdim=1,ndim
+                     ymax(ncell(kdim),kdim)=ymax(ncell(kdim),kdim)
+     1                    * prod
+                  enddo
+               endif
+               if(flg_fastbtlbound.and.ifun.eq.0) then
+                  if(prodrat.gt.1) then
+c     This guarantees a 10% increase of the upper bound in this cell
+                     prodrat=1+0.1d0/ndim
+                     do kdim=1,ndim
+                        ymaxrat(ncell(kdim),kdim)=
+     1                       ymaxrat(ncell(kdim),kdim) * prodrat
+                     enddo
+                  endif
+               endif
             endif
          endif
          vtot=vtot+f/ncalls
          etot=etot+f**2/ncalls
       enddo
-      if(imode.eq.0) then
-c iteration is finished; now rearrange the grid
-         do kdim=1,ndim
-            call regrid(xacc(0,kdim),xgrid(0,kdim),
-     #           nhits(1,kdim),kdim,nintervals,nit,iun)
-         enddo
-      endif
 c the abs is to avoid tiny negative values
       etot=sqrt(abs(etot-vtot**2)/ncalls)
       write(*,*) vtot,etot
@@ -239,17 +264,50 @@ c nitmax*ncalls calls.
      1     +(nit-1)*(ans-vtot)**2/(ncalls*nit**3))
          ans=((nit-1)*ans+vtot)/nit
       endif
+      if(imode.eq.0) then
+         do kdim=1,ndim
+            call regrid(xacc(0,kdim),xgrid(0,kdim),
+     #           nhits(1,kdim),kdim,nintervals)
+         enddo
+      endif
+
       goto 10
       end
 
-      subroutine regrid(xacc,xgrid,nhits,kdim,nint,nit,iun)
+
+      subroutine regridplotopen(filename)
       implicit none
-      integer  nint,nhits(nint),kdim,nit,iun
-      real * 8 xacc(0:nint),xgrid(0:nint)
+      character *(*) filename
+      integer iun
+      logical iunopen
+      common/cregrid/iun,iunopen
+      data iunopen/.false./
+      call newunit(iun)
+      open(unit=iun,file=filename,status='unknown')
+      iunopen=.true.
+      end
+
+      subroutine regridplotclose
+      implicit none
+      integer iun
+      logical iunopen
+      common/cregrid/iun,iunopen
+      close(iun)
+      iunopen=.false.
+      end
+
+      subroutine regrid(xacc0,xgrid,nhits,kdim,nint)
+      implicit none
+      integer  nint,nhits(nint),kdim,nit
+      real * 8 xacc(0:nint),xacc0(0:nint),xgrid(0:nint)
       integer nintervals
       parameter (nintervals=50)
       real * 8 xn(nintervals),r
       integer kint,jint
+      integer iun
+      logical iunopen
+      common/cregrid/iun,iunopen
+      xacc = xacc0
       do kint=1,nint
 c xacc (xerr) already contains a factor equal to the interval size
 c Thus the integral of rho is performed by summing up
@@ -265,25 +323,26 @@ c If there is no value, keep old grid!
       do kint=1,nint
          xacc(kint)=xacc(kint)/xacc(nint)
       enddo
-      write(iun,*) 'set limits x 0 1 y 0 1'
-      write(iun,*) ' title top "dim=',kdim,'"'
-      write(iun,*) 0, 0
-      do kint=1,nint
-         write(iun,*) xgrid(kint),xacc(kint)
-      enddo
-      write(iun,*) 'join 0'
-
+      if(iunopen) then
+         write(iun,*) 'set limits x 0 1 y 0 1'
+         write(iun,*) ' title top "dim=',kdim,'"'
+         write(iun,*) 0, 0
+         do kint=1,nint
+            write(iun,*) xgrid(kint),xacc(kint)
+         enddo
+         write(iun,*) 'join 0'
+      endif
       do kint=1,nint
          r=dble(kint)/nint
-
-         write(iun,*) 0, r
-         write(iun,*) 1, r
-         write(iun,*) ' join'
-
+         if(iunopen) then
+            write(iun,*) 0, r
+            write(iun,*) 1, r
+            write(iun,*) ' join'
+         endif
          do jint=1,nint
             if(r.lt.xacc(jint)) then
                xn(kint)=xgrid(jint-1)+(r-xacc(jint-1))
-     #        /(xacc(jint)-xacc(jint-1))*(xgrid(jint)-xgrid(jint-1))
+     1           /(xacc(jint)-xacc(jint-1))*(xgrid(jint)-xgrid(jint-1))
                goto 11
             endif
          enddo
@@ -296,31 +355,16 @@ c If there is no value, keep old grid!
       enddo
       do kint=1,nint
          xgrid(kint)=xn(kint)
-c         xgrid(kint)=(xn(kint)+2*xgrid(kint))/3
-c         xgrid(kint)=(xn(kint)+xgrid(kint)*log(dble(nit)))
-c     #        /(log(dble(nit))+1)
-         write(iun,*) xgrid(kint), 0
-         write(iun,*) xgrid(kint), 1
-         write(iun,*) ' join'
       enddo
-      write(iun,*) ' newplot'
+      if(iunopen) then
+         do kint=1,nint
+            write(iun,*) xgrid(kint), 0
+            write(iun,*) xgrid(kint), 1
+            write(iun,*) ' join'
+         enddo
+         write(iun,*) ' newplot'
+      endif
       end
-
-
-c      implicit none
-c      integer ndim
-c      parameter (ndim=3)
-c      integer iii(ndim),kkk(ndim)
-c      integer j,iret
-c      data kkk/1,1,1/
-c      data iii/2,3,2/
-c 1    continue
-c      write(*,*) (kkk(j),j=1,3)
-c      call nextlexi(ndim,iii,kkk,iret)
-c      if(iret.eq.0) then
-c         goto 1
-c      endif
-c      end
 
       subroutine nextlexi(ndim,iii,kkk,iret)
 c kkk: array of integers 1 <= kkk(j) <= iii(j), j=1,ndim
@@ -362,7 +406,7 @@ c 12        2           3           2       1
       end
 
 
-      subroutine gen(fun,ndim,xgrid,ymax,xmmm,ifold,
+      subroutine gen(fun,ndim,xgrid,ymax,ymaxrat,xmmm,ifold,
      #     imode,mcalls,icalls,x)
 c Subroutine to generated x(ndim) point distributed
 c according to the function fun.
@@ -382,6 +426,8 @@ c
 c imode:
 c     imode=0 to initialize
 c     imode=1 to generate
+c     imode=2 to generate with a single try (don't use hit and miss).
+c             This is used for reweighting.
 c     imode=3 store generation efficiency in x(1)
 c
 c mcalls:
@@ -396,17 +442,21 @@ c     the returned coordinate vector of the generated point
       integer ndim,imode
       integer nintervals,ndimmax
       include 'nlegborn.h'
+      include 'pwhg_flg.h'
       parameter (nintervals=50,ndimmax=ndiminteg)
-      real * 8 fun,xgrid(0:nintervals,ndim),
-     #         ymax(nintervals,ndim),x(ndim)
+      integer fun
+      real * 8 xgrid(0:nintervals,ndim),
+     1         ymax(nintervals,ndim),ymaxrat(nintervals,ndim),x(ndim)
       real * 8 dx(ndimmax)
       integer icell(ndimmax),ncell(ndimmax)
       integer ifold(ndimmax),kfold(ndimmax)
-      real * 8 r,f,ubound,vol,vfun,random,xmmm(nintervals,ndimmax)
-      real * 8 rand(ndimmax)
-      logical pwhg_isfinite
-      external fun,random,pwhg_isfinite
-      integer icalls,mcalls,kdim,kint,nintcurr,iret,ifirst
+      real * 8 r,f,ubound,vol,vfun,vfun0,random,xmmm(nintervals,ndimmax)
+      real * 8 rand(ndimmax),strictubound,ub,fsu,f0
+      logical savelogical,pwhg_isfinite
+      external fun,random,strictubound,pwhg_isfinite
+      integer icalls,mcalls,kdim,kint,nintcurr,iret,ifirst,istep,ifun
+      integer gen_seed,gen_n1,gen_n2
+      common/cgenrand/gen_seed,gen_n1,gen_n2
       if(ndim.gt.ndiminteg) then
          write(*,*) 'Mint: at most ',ndiminteg,' dimensions'
          write(*,*) 'Got ',ndim
@@ -436,7 +486,10 @@ c     the returned coordinate vector of the generated point
          return
       endif
       mcalls=mcalls+1
+c this is the main hit and miss loopo
  10   continue
+c save random status for each iteration
+      call readcurrentrandom(gen_seed,gen_n1,gen_n2)
       do kdim=1,ndim
          nintcurr=nintervals/ifold(kdim)
          r=random()
@@ -453,9 +506,22 @@ c     the returned coordinate vector of the generated point
       do kdim=1,ndim
          ubound=ubound*ymax(ncell(kdim),kdim)
       enddo
+      fsu=ubound
       do kdim=1,ndim
          kfold(kdim)=1
       enddo
+      ub=ubound*random()
+c The block from here to <go to 4> is to be executed
+c twice in the computation,
+c the first time to compute the 'avatar' function (istep=0), the second
+c to compute the full contribution (istep=1).
+c If imode=2, only the full contribution is needed
+      if(flg_fastbtlbound.and.imode.ne.2) then
+         istep=0
+      else
+         istep=1
+      endif
+ 4    continue
       f=0
       ifirst=0
  5    continue
@@ -467,30 +533,66 @@ c     the returned coordinate vector of the generated point
          vol=vol*dx(kdim)*nintervals/ifold(kdim)
          x(kdim)=xgrid(icell(kdim)-1,kdim)+rand(kdim)*dx(kdim)
       enddo
-      vfun=fun(x,vol,ifirst)
+      ifun = fun(x,vol,ifirst,istep,vfun,vfun0)
+c if ifun is nonzero the function does not support the avatar function;
+c do only one iteration
+      if(ifun.ne.0) istep = 1
       if(.not.pwhg_isfinite(vfun)) goto 10
       f=f+vfun
       ifirst=1
       call nextlexi(ndim,ifold,kfold,iret)
       if(iret.eq.0) goto 5
 c get final value (x and vol not used in this call)
-      f=fun(x,vol,2)
+      ifun = fun(x,vol,2,istep,vfun,vfun0)
+      f = vfun
+      if(imode.eq.2) then
+         return
+      endif
+      if(istep.eq.0) then
+         if(.not.flg_bornonly) then
+            ubound=f
+            do kdim=1,ndim
+               ubound=ubound*ymaxrat(ncell(kdim),kdim)
+            enddo
+c ubound is now an upper bound on the full (not avatar) f;
+c if it fails the hit and miss, f also fails
+            if(ub.gt.ubound) goto 10
+c now go back to compute the full f, if required
+            istep=1
+            goto 4
+         endif
+      endif
       if(.not.pwhg_isfinite(f)) goto 10
       if(f.lt.0) then
          write(*,*) 'gen: non positive function',f
 c         f=fun(x,vol,2)
 c         stop
       endif
-      if(f.gt.ubound) then
+      if(f.gt.fsu) then
+         call monitorubound(f/fsu,icalls)
          call increasecnt
      #       ('upper bound failure in inclusive cross section')
       endif
-      ubound=ubound*random()
       icalls=icalls+1
-      if(ubound.gt.f) then
+      if(ub.gt.f) then
          call increasecnt
      #       ('vetoed calls in inclusive cross section')
          goto 10
       endif
+      end
+
+
+      subroutine initxgrid(xgrid,ndim)
+      implicit none
+      integer nintervals,ndimmax
+      include 'nlegborn.h'
+      parameter (nintervals=50,ndimmax=ndiminteg)
+      real * 8 xgrid(0:nintervals,ndim)
+      integer kdim,ndim,kint
+      do kdim=1,ndim
+         do kint=0,nintervals
+            xgrid(kint,kdim)=dble(kint)/nintervals
+         enddo
+      enddo
       end
 

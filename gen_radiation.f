@@ -12,10 +12,19 @@
       real * 8 random,powheginput
       external random,powheginput
       integer mcalls,icalls
+      data mcalls,icalls/0,0/
+      save mcalls,icalls
       real * 8 pwhg_pt2,pt2max_regular
       external pwhg_pt2,pt2max_regular
       real * 8 weight
       integer i
+      real * 8 seconds
+      integer lh_seed,lh_n1,lh_n2
+      common/lhseeds/lh_seed,lh_n1,lh_n2
+      flg_monitorubound = .true.
+c If at the end the event is not generated for some reason (nup=0)
+c restart from here
+ 1    continue
       if(idwtup.eq.3) then
          weight=1
       elseif(idwtup.eq.-4) then
@@ -25,10 +34,13 @@
          call exit(-1)
       endif
 c     store current random seeds. To be used to restart at problematic events
-      call savecurrentrandom
+      call readcurrentrandom(lh_seed,lh_n1,lh_n2)
       if(random().gt.rad_totrm/rad_totgen) then
 c     generate underlying Born kinematics
+         call reset_timer
          call gen_btilde(mcalls,icalls)
+         call get_timer(seconds)
+         call addtocnt('btilde time (sec)',seconds)
 c     generate underlying Born flavour
          call gen_uborn_idx
 c
@@ -36,7 +48,10 @@ c
             call testsuda
          endif
 c generate radiation
+         call reset_timer
          call gen_radiation
+         call get_timer(seconds)
+         call addtocnt('radiation time (sec)',seconds)         
 c add a random azimuthal rotation around beam axis
          call add_azimuth
 c --- set up les houches interface
@@ -51,7 +66,10 @@ c rad_type=1 for btilde events (used only for debugging purposes)
          call increasecnt("btilde event")
       else
 c generate remnant n+1 body cross section
+         call reset_timer
          call gen_sigremnant
+         call get_timer(seconds)
+         call addtocnt("remnant time (sec)",seconds)
 c pick a configuration according to its cross section
 c iret=1: rem contribution (leftover from damping factor on R)
 c iret=2: reg contribution (real graphs without singular regions)
@@ -95,6 +113,9 @@ c rad_type=3 for regular contributions
          endif
          weight=weight/suppfact
       endif
+c If at the end the event is not generated for some reason (nup=0)
+c restart from here
+      if(nup.eq.0) goto 1
       xwgtup = weight
       end
 

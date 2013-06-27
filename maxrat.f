@@ -1,5 +1,9 @@
-      subroutine do_maxrat(mcalls,icalls)
+      subroutine do_maxrat(mcalls,icalls,imode,iret)
+c imode = -1: load or generate
+c imode = 0: force generating
+c imode = 1: force load
       implicit none
+      integer imode,iret
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
@@ -39,15 +43,33 @@
          call exit(1)
       endif
       call newunit(iun)
+c force generation
+      if(imode.eq.0) goto 111
+c force load
+      if(imode.eq.1) then
+         call newunit(iun)
+         open(unit=iun,file=pwgprefix(1:lprefix)//'ubound.dat',
+     1        status='old',iostat=ios)
+         if(ios.eq.0) then
+            nfiles=1
+            manyfiles=.false.
+         else
+            nfiles=9999
+            manyfiles=.true.
+         endif
+         goto 100
+      endif
+c imode = -1, load or generate
       if(powheginput('use-old-ubound').eq.1) then
          call newunit(iun)
          open(unit=iun,file=pwgprefix(1:lprefix)//'ubound.dat',
      1        status='old',iostat=ios)
          if(ios.eq.0) then
             nfiles=1
+            manyfiles=.false.
          else
             if(rnd_cwhichseed.ne.'none') then
-c Are we required to generate a grid file or to load a bunch of them?
+c Are we required to generate a grid file or to load a bunch of them?v-
 c See if the grid file exists already
                inquire(file=pwgprefix(1:lprefix)//'ubound-'//
      1           rnd_cwhichseed//'.dat',exist=lpresent)
@@ -64,6 +86,7 @@ c try sequence of number files
 c new grid required: go to grid computation
          goto 111
       endif
+ 100  continue
       do jfile=1,nfiles
          if(nfiles.ne.1) then
 c sequence of number files
@@ -123,7 +146,11 @@ c all went well: override rad_ncsinorms, rad_nynorms
          write(*,*)
      1 ' normalization of upper bounding function for radiation',
      2 ' successfully loaded'
-         goto 998      
+         iret = 0
+         goto 998
+      elseif(imode.eq.1) then
+         iret = -1
+         return
       endif
 c Compute and store normalization grid
  111  continue
@@ -522,24 +549,32 @@ c
       integer mcalls,icalls
       integer ndimbornint
       parameter (ndimbornint=ndiminteg-3)
-      real * 8 xgrid(0:50,ndimbornint),ymax(50,ndimbornint)
-     1     ,xmmm(0:50,ndimbornint),xint,sigbtl,errbtl
-      integer ifold(ndimbornint),ncall1,ncall2,
+      real * 8 xgrid(0:50,ndimbornint),ymax(50,ndimbornint),
+     1     ymaxrat(50,ndimbornint),xacc(0:50,ndimbornint),
+     1     xmmm(0:50,ndimbornint),xint,sigbtl,errbtl
+      integer ifold(ndimbornint),nhits(0:50,ndimbornint),ncall1,ncall2,
      1     itmx1,itmx2,imode,j,k,iun
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
-      logical savenlotest,ini
+      logical savenlotest,save_storemintupb,save_fastbtlbound,ini,
+     1 save_monitorubound
       data ini/.true./
       real * 8 xx(ndimbornint)      
       real * 8 btilde,powheginput
       external btilde,powheginput
-      save xgrid,ymax,xmmm,ini
+      save xgrid,ymax,xmmm,ini,ifold
       if(flg_bornonly) then
          call gen_btilde(mcalls,icalls)
          return
       endif
       flg_bornonly=.true.
+      save_storemintupb = flg_storemintupb
+      save_fastbtlbound = flg_fastbtlbound
+      save_monitorubound = flg_monitorubound
+      flg_storemintupb = .false.
+      flg_fastbtlbound = .false.
+      flg_monitorubound = .false.
 c
       savenlotest=flg_nlotest
       flg_nlotest=.false.
@@ -558,6 +593,7 @@ c set up the grids
             enddo
             ifold(j)=1
          enddo
+         call initxgrid(xgrid,ndimbornint)
          call newunit(iun)
          open(unit=iun,file=pwgprefix(1:lprefix)//'borngrid.top',
      1        status='unknown')
@@ -568,20 +604,23 @@ c This is not really needed; the accumulated totals
 c will not be used;
          call resettotals
          call mint(btilde,ndimbornint,ncall1,itmx1,ifold,imode,iun,
-     1        xgrid,xint,ymax,sigbtl,errbtl)
+     1        xgrid,xint,xacc,nhits,ymax,ymaxrat,sigbtl,errbtl)
          close(iun)
          imode=1
          ncall2=powheginput('ncall2')
          itmx2=powheginput('itmx2')
          call mint(btilde,ndimbornint,ncall2,itmx2,ifold,imode,iun,
-     1        xgrid,xint,ymax,sigbtl,errbtl)
-         call gen(btilde,ndimbornint,xgrid,ymax,xmmm,ifold,0,
+     1        xgrid,xint,xacc,nhits,ymax,ymaxrat,sigbtl,errbtl)
+         call gen(btilde,ndimbornint,xgrid,ymax,ymaxrat,xmmm,ifold,0,
      1        mcalls,icalls,xx)
          ini=.false.
       endif
 C - N.B. if -fno-automatic isn't used the ifold array may need reset to 1 here.
-      call gen(btilde,ndimbornint,xgrid,ymax,xmmm,ifold,1,
+      call gen(btilde,ndimbornint,xgrid,ymax,ymaxrat,xmmm,ifold,1,
      #    mcalls,icalls,xx)
       flg_nlotest=savenlotest
       flg_bornonly=.false.
+      flg_storemintupb = save_storemintupb
+      flg_fastbtlbound = save_fastbtlbound
+      flg_monitorubound = save_monitorubound
       end

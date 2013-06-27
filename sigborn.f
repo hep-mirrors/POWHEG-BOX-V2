@@ -6,27 +6,27 @@
       include 'pwhg_br.h'
       include 'pwhg_flg.h'
       real * 8 pdf1(-6:6),pdf2(-6:6)
-      real * 8 res(flst_nborn),tot
+      real * 8 res(flst_nborn),tot,rescfac
       integer j
-      call pdfcall(1,kn_xb1,pdf1)
-      call pdfcall(2,kn_xb2,pdf2)
+      if(.not.flg_minlo) then
+         rescfac = 1
+         call pdfcall(1,kn_xb1,pdf1)
+         call pdfcall(2,kn_xb2,pdf2)
+      endif
       tot=0
       do j=1,flst_nborn
+         if(flg_minlo) then
+            call setlocalscales(j,1,rescfac)
+            call pdfcall(1,kn_xb1,pdf1)
+            call pdfcall(2,kn_xb2,pdf2)
+         endif
          res(j)=br_born(j) *
-     #  pdf1(flst_born(1,j))*pdf2(flst_born(2,j))*kn_jacborn
+     #  pdf1(flst_born(1,j))*pdf2(flst_born(2,j))*kn_jacborn*rescfac
          tot=tot+res(j)
 c     if one wants to do only the integration over the whole phase space, then
-c     uncomment the following
+c     uncomment the following (with or without the flux factor 1/(2*kn_sborn)
 c        
-c         res(j)=kn_jacborn/(kn_sborn**(n-4))/flst_nborn
-c     replacing n with the number of final state lines.
-c This should yield:
-c         phsp(n):=(%pi/2)^(n-1)/(gamma(n)*gamma(n-1))
-c               *(2*%pi)^4/(2*%pi)^(3*n) * 3.8937966d8 (GeV^-2 to pb) 
-c for massless final state partons (the last factor is hc), see
-c A New Monte Carlo Treatment Of Multiparticle Phase Space At High-Energies.
-c R. Kleiss, W.J.Stirling, S.D.Ellis, Comput.Phys.Commun.40:359,1986.
-c
+c         res(j)=kn_jacborn/(2*kn_sborn)/flst_nborn
       enddo
       end
 

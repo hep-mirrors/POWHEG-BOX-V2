@@ -50,7 +50,19 @@ c set to impossible values to begin with
          bottomthr2=bottomthr2**2
          ini=.false.
       endif
-      do j=1,nrec
+      do j=irec,1,-1
+         if(x.eq.ox(j)) then
+            if(xmu2.eq.oxmu2(j)) then
+               if(ns.eq.ons(j).and.ih.eq.oih(j)) then
+                  do k=-6,6
+                     fx(k)=ofx(k,j)
+                  enddo
+                  return
+               endif
+            endif
+         endif
+      enddo
+      do j=nrec,irec+1,-1
          if(x.eq.ox(j)) then
             if(xmu2.eq.oxmu2(j)) then
                if(ns.eq.ons(j).and.ih.eq.oih(j)) then

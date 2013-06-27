@@ -50,15 +50,26 @@ c            kinematic regions).
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
       real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 rescfac
       integer alr
       call collfsrnopdf(rc)
-      call pdfcall(1,kn_x1,pdf1)
-      call pdfcall(2,kn_x2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,kn_x1,pdf1)
+         call pdfcall(2,kn_x2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,kn_x1,pdf1)
+            call pdfcall(2,kn_x2,pdf2)
+         endif
          rc(alr)=rc(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -114,19 +125,29 @@ c     Then rotate it counterclockwise around the em direction
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
       real * 8 pdf1(-6:6),pdf2(-6:6)
       integer alr
-      real * 8 tmp
+      real * 8 tmp,rescfac
       tmp=kn_csi
       kn_csi=0
       call collfsrnopdf(rc)
       kn_csi=tmp
-      call pdfcall(1,kn_xb1,pdf1)
-      call pdfcall(2,kn_xb2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,kn_xb1,pdf1)
+         call pdfcall(2,kn_xb2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,kn_xb1,pdf1)
+            call pdfcall(2,kn_xb2,pdf2)
+         endif
          rc(alr)=rc(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -152,19 +173,29 @@ c     Then rotate it counterclockwise around the em direction
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
       real * 8 pdf1(-6:6),pdf2(-6:6)
       integer alr
-      real * 8 tmp
+      real * 8 tmp,rescfac
       tmp=kn_csip
       kn_csip=0
       call collisrnopdf(1,rc)
       kn_csip=tmp
-      call pdfcall(1,kn_xb1,pdf1)
-      call pdfcall(2,kn_xb2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,kn_xb1,pdf1)
+         call pdfcall(2,kn_xb2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,kn_xb1,pdf1)
+            call pdfcall(2,kn_xb2,pdf2)
+         endif
          rc(alr)=rc(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -172,19 +203,29 @@ c     Then rotate it counterclockwise around the em direction
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
       real * 8 pdf1(-6:6),pdf2(-6:6)
       integer alr
-      real * 8 tmp
+      real * 8 tmp,rescfac
       tmp=kn_csim
       kn_csim=0
       call collisrnopdf(2,rc)
       kn_csim=tmp
-      call pdfcall(1,kn_xb1,pdf1)
-      call pdfcall(2,kn_xb2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,kn_xb1,pdf1)
+         call pdfcall(2,kn_xb2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,kn_xb1,pdf1)
+            call pdfcall(2,kn_xb2,pdf2)
+         endif
          rc(alr)=rc(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -193,10 +234,12 @@ c     Then rotate it counterclockwise around the em direction
       integer i
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
       real * 8 pdf1(-6:6),pdf2(-6:6),x1,x2
       integer alr
+      real * 8 rescfac
       call collisrnopdf(i,rc)
       if(i.eq.1) then
          x1=kn_xb1/(1-kn_csip)
@@ -205,10 +248,19 @@ c     Then rotate it counterclockwise around the em direction
          x1=kn_xb1
          x2=kn_xb2/(1-kn_csim)
       endif
-      call pdfcall(1,x1,pdf1)
-      call pdfcall(2,x2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,x1,pdf1)
+         call pdfcall(2,x2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,x1,pdf1)
+            call pdfcall(2,x2,pdf2)
+         endif
          rc(alr)=rc(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -253,6 +305,7 @@ c softvec(0:3): real * 8, 4-vector of soft gluon normalized to softvec(0)=1
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_math.h'
       include 'pwhg_st.h'
@@ -261,6 +314,7 @@ c softvec(0:3): real * 8, 4-vector of soft gluon normalized to softvec(0)=1
       integer alr,em
       real * 8 y
       real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 rescfac
 c Boost Born momenta to their rest frame
 c find boost velocity
       em=kn_emitter
@@ -268,10 +322,19 @@ c find boost velocity
       do alr=1,flst_nalr
          call softalr(alr,em,y,r0(alr))
       enddo
-      call pdfcall(1,kn_xb1,pdf1)
-      call pdfcall(2,kn_xb2,pdf2)
+      if(.not.flg_minlo) then
+         call pdfcall(1,kn_xb1,pdf1)
+         call pdfcall(2,kn_xb2,pdf2)
+         rescfac=1
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            call pdfcall(1,kn_xb1,pdf1)
+            call pdfcall(2,kn_xb2,pdf2)
+         endif
          r0(alr)=r0(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo         
       end
 
@@ -280,6 +343,7 @@ c find boost velocity
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_math.h'
       include 'pwhg_st.h'
@@ -310,7 +374,8 @@ c find boost velocity
          ap=ap*2*ca
 c     In case of two equal gluon we also supply e E_em^p/(E_em^p+E_rad^p)
 c     factor, and divide by 2 for the identical particles
-         ap=ap*(1-x)**par_2gsupp/((1-x)**par_2gsupp+x**par_2gsupp)
+c         ap=ap*(1-x)**par_2gsupp/((1-x)**par_2gsupp+x**par_2gsupp)
+c Commented out: now this is done at the end of the if block
       elseif(emflav+raflav.eq.0) then
          ap=0d0
          do mu=0,3
@@ -322,8 +387,14 @@ c     factor, and divide by 2 for the identical particles
          ap=ap*tf*csi
       elseif(raflav.eq.0.and.emflav.ne.0) then
          ap=cf*(1+(1-x)**2)/xocsi*br_born(iub)
+      elseif(raflav.ne.0.and.emflav.eq.0) then
+         ap=cf*(1+x**2)/(1-x)*csi*br_born(iub)
       else
          write(*,*) 'coll (fsr): unammissible flavour structure'
+         call pwhg_exit(-1)
+      endif
+      if(flg_doublefsr.or.(emflav.eq.0.and.raflav.eq.0)) then
+         ap=ap*(1-x)**par_2gsupp/((1-x)**par_2gsupp+x**par_2gsupp)
       endif
 c     1/(p_em . p_ra) = 1/(p_bar_em(0,em)**2* x * (1-x) * (1-y);
 c     we multiply everything by (1-y) csi^2; one csi is included

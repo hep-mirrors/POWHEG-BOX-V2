@@ -8,7 +8,7 @@
       include 'pwhg_st.h'
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
-      real * 8 xrad,rescoll(flst_nborn),www
+      real * 8 xrad,rescoll(flst_nborn),www,rescfac
       real * 8 un
       parameter (un=1d0)
 c pdfb: born pdf's, pdfs: pdfs with scaled x->x/z
@@ -53,30 +53,60 @@ c      z2=1-par_isrtinycsi-(1-kn_xb2-par_isrtinycsi)*x
       xjac2=(1-kn_xb2)*xjac
 
       sb=kn_sborn
+      if(.not.flg_minlo) then
+         rescfac = 1
 c See 7.224 and 7.225 of FNO2007
 c Remnant: 1/(1-z)_csicut=1/(1-z)_(1-x)+log((1-x)/csicut) delta(1-z)
 c Remnant: log(1-z)/(1-z)_csicut=log(1-z)/(1-z)_(1-x)+
 c          (log(1-x)^2-log(csicut)^2)/2 delta(1-z)
-      rm1=log((1-kn_xb1)/par_csicut)*log(sb/st_mufact2)
-     #        +(log(1-kn_xb1)**2-log(par_csicut)**2)
-      rm2=log((1-kn_xb2)/par_csicut)*log(sb/st_mufact2)
-     #        +(log(1-kn_xb2)**2-log(par_csicut)**2)
+         rm1=log((1-kn_xb1)/par_csicut)*log(sb/st_mufact2)
+     1        +(log(1-kn_xb1)**2-log(par_csicut)**2)
+         rm2=log((1-kn_xb2)/par_csicut)*log(sb/st_mufact2)
+     1        +(log(1-kn_xb2)**2-log(par_csicut)**2)
 c get pdfs at underlying born x values
-      call pdfcall(1,kn_xb1,pdfb1)
-      call pdfcall(2,kn_xb2,pdfb2)
+         call pdfcall(1,kn_xb1,pdfb1)
+         call pdfcall(2,kn_xb2,pdfb2)
 c get pdfs at underlying born x/z value values
-      call pdfcall(1,kn_xb1/z1,pdfs1)
-      call pdfcall(2,kn_xb2/z2,pdfs2)
-c Compute the singlet
-      pdfs1sng=0
-      pdfs2sng=0
-      do j=1,st_nlight
-         pdfs1sng=pdfs1sng+pdfs1(j)+pdfs1(-j)
-         pdfs2sng=pdfs2sng+pdfs2(j)+pdfs2(-j)
-      enddo
-c loop over all Born configurations
+         call pdfcall(1,kn_xb1/z1,pdfs1)
+         call pdfcall(2,kn_xb2/z2,pdfs2)
+c     Compute the singlet
+         pdfs1sng=0
+         pdfs2sng=0
+         do j=1,st_nlight
+            pdfs1sng=pdfs1sng+pdfs1(j)+pdfs1(-j)
+            pdfs2sng=pdfs2sng+pdfs2(j)+pdfs2(-j)
+         enddo
+      endif
       tot=0
+c loop over all Born configurations
       do jb=1,flst_nborn
+         if(flg_minlo) then
+c the following also sets st_mufact2 according to the underlying Born index jb,
+c sets rescfac to the rescaling factors needed by the virtual, real and collinear remnants
+c (if the flag argument 2 is given)
+            call setlocalscales(jb,2,rescfac)
+c See 7.224 and 7.225 of FNO2007
+c Remnant: 1/(1-z)_csicut=1/(1-z)_(1-x)+log((1-x)/csicut) delta(1-z)
+c Remnant: log(1-z)/(1-z)_csicut=log(1-z)/(1-z)_(1-x)+
+c          (log(1-x)^2-log(csicut)^2)/2 delta(1-z)
+            rm1=log((1-kn_xb1)/par_csicut)*log(sb/st_mufact2)
+     1           +(log(1-kn_xb1)**2-log(par_csicut)**2)
+            rm2=log((1-kn_xb2)/par_csicut)*log(sb/st_mufact2)
+     2           +(log(1-kn_xb2)**2-log(par_csicut)**2)
+c     get pdfs at underlying born x values
+            call pdfcall(1,kn_xb1,pdfb1)
+            call pdfcall(2,kn_xb2,pdfb2)
+c     get pdfs at underlying born x/z value values
+            call pdfcall(1,kn_xb1/z1,pdfs1)
+            call pdfcall(2,kn_xb2/z2,pdfs2)
+c Compute the singlet
+            pdfs1sng=0
+            pdfs2sng=0
+            do j=1,st_nlight
+               pdfs1sng=pdfs1sng+pdfs1(j)+pdfs1(-j)
+               pdfs2sng=pdfs2sng+pdfs2(j)+pdfs2(-j)
+            enddo
+         endif
          fl1=flst_born(1,jb)
          fl2=flst_born(2,jb)
          if(fl1.eq.0) then
@@ -119,8 +149,10 @@ c gq remnant
             res2=res2 + (omzpgq(z2)*plfrc(z2)
      #                           - ppgq(z2))/z2   * pdfs2(0)*xjac2 
          endif
+c we assume that st_alpha is set to the hard scale of the basic process.
+c rescfac also includes the rescaling factor for this
          rescoll(jb)=( res1*pdfb2(fl2)+res2*pdfb1(fl1) )
-     #    *br_born(jb)*st_alpha/(2*pi)*kn_jacborn
+     #    *br_born(jb)*st_alpha/(2*pi)*kn_jacborn * rescfac
          tot=tot+rescoll(jb)
       enddo
       if (.not.pwhg_isfinite(tot)) then

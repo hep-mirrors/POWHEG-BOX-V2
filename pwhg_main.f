@@ -6,7 +6,11 @@
       include 'pwhg_st.h'
       include 'pwhg_kn.h'
       include 'pwhg_rnd.h'
-      integer j,iun,nev
+      include 'pwhg_flg.h'
+      include 'pwhg_par.h'
+      include 'pwhg_weights.h'
+      integer j,iun,nev,maxev
+      common/cnev/nev
       real * 8 weight,tmp
       real * 8 powheginput
       character * 20 pwgprefix
@@ -14,6 +18,7 @@
       common/cpwgprefix/pwgprefix,lprefix
       integer ios
       character * 6 WHCPRG
+      character * 100 filename
       common/cWHCPRG/WHCPRG
       integer iseed,n1,n2
       logical testplots
@@ -53,6 +58,14 @@ c The event file is called 'pwgprefix'events-'j'.lhe
      1           pwgprefix(1:lprefix)//'seeds.dat'
             call exit(-1)
          endif
+         if(rnd_iwhichseed.gt.par_maxseeds) then
+            write(*,*)
+     1           ' Powheg is compiled with a maximum number of seeds=',
+     2       par_maxseeds
+            write(*,*) ' edit the pwhg_par.h file and increase'
+            write(*,*) ' the par_maxseeds parameter to use more'
+            call exit(-1)
+         endif
          rewind(iun)
          do j=1,rnd_iwhichseed
 c Commented line to be used instead, for testing that manyseed runs
@@ -71,17 +84,31 @@ c     read(iun,*) rnd_initialseed,rnd_i1,rnd_i2
       else
          rnd_cwhichseed='none'
       endif
+c If multiple weights may be used in the analysis, set them
+c initially to 0 (no multiple weights). These are normally used
+c only when reading lh files containing multiple weights.
+      weights_num=0
+c
       if (testplots) WHCPRG='NLO   '
       call pwhginit
       if(nev.gt.0) then
-         if(rnd_cwhichseed.ne.'none') then
-            write(*,*) pwgprefix(1:lprefix)//'events-'//
-     1           rnd_cwhichseed//'.lhe', rnd_iwhichseed,rnd_initialseed
-            open(unit=iun,status='new',file=pwgprefix(1:lprefix)
-     1           //'events-'//rnd_cwhichseed//'.lhe')
+         if(flg_newweight) then
+            if (testplots) then 
+               write(*,*) '-------> Warning: testplots has been reset to
+     1 false since we are doing reweighting' 
+               testplots = .false. 
+            endif
+            continue
          else
-            open(unit=iun,status='new',
-     1           file=pwgprefix(1:lprefix)//'events.lhe')
+            if(rnd_cwhichseed.ne.'none') then
+               write(*,*) pwgprefix(1:lprefix)//'events-'//
+     1            rnd_cwhichseed//'.lhe', rnd_iwhichseed,rnd_initialseed
+               open(unit=iun,status='new',file=pwgprefix(1:lprefix)
+     1              //'events-'//rnd_cwhichseed//'.lhe')
+            else
+               open(unit=iun,status='new',
+     1              file=pwgprefix(1:lprefix)//'events.lhe')
+            endif
          endif
       else
          write(*,*) ' No events requested'
@@ -111,13 +138,27 @@ c to examine that event in particular
       call resetcnt('vetoed radiation')
       write(*,*)
       write(*,*)' POWHEG: generating events'
-      do j=1,nev
-         call pwhgevent
-         if(nup.eq.0) then
-            write(*,*) ' nup = 0 skipping event'
-            goto 111
+      if(flg_newweight) then
+         call opencount(maxev)
+         call openoutputrw
+         if(maxev.ne.nev) then
+            write(*,*) ' Warning: powheg.input says ',nev,' events'
+            write(*,*) ' the file contains ', maxev, ' events'
+            write(*,*) ' Doing ',maxev,' events'
+            nev = maxev 
          endif
-         call lhefwritev(iun)
+      endif
+      do j=1,nev
+         if(flg_newweight) then
+            call pwhgnewweight
+         else
+            call pwhgevent
+            if(nup.eq.0) then
+               write(*,*) ' nup = 0 skipping event'
+               goto 111
+            endif
+            call lhefwritev(iun)
+         endif
          if(idwtup.eq.3) then
             weight=rad_totgen*xwgtup*rad_branching
          elseif(idwtup.eq.-4) then
@@ -130,16 +171,16 @@ c to examine that event in particular
             call lhtohep
             call analysis(weight)
             call pwhgaccumup
-            if (mod(j,20000).eq.0) then
+            if (mod(j,5000).eq.0) then
                if(rnd_cwhichseed.eq.'none') then
-                  open(unit=99,file=pwgprefix(1:lprefix)//
-     1                 'pwhgalone-output.top')
+                  filename=pwgprefix(1:lprefix)//
+     1                 'pwhgalone-output'
                else
-                  open(unit=99,file=pwgprefix(1:lprefix)//
-     1                 'pwhgalone-output'//rnd_cwhichseed//'.top')
+                  filename=pwgprefix(1:lprefix)//
+     1                 'pwhgalone-output'//rnd_cwhichseed
                endif
                call pwhgsetout
-               call pwhgtopout
+               call pwhgtopout(filename)
                close(99)
             endif
          endif
@@ -147,14 +188,14 @@ c to examine that event in particular
       enddo
       if (testplots) then
          if(rnd_cwhichseed.eq.'none') then
-            open(unit=99,file=pwgprefix(1:lprefix)//
-     1           'pwhgalone-output.top')
+            filename=pwgprefix(1:lprefix)//
+     1           'pwhgalone-output'
          else
-            open(unit=99,file=pwgprefix(1:lprefix)//
-     1           'pwhgalone-output'//rnd_cwhichseed//'.top')
+            filename=pwgprefix(1:lprefix)//
+     1           'pwhgalone-output'//rnd_cwhichseed
          endif
          call pwhgsetout
-         call pwhgtopout
+         call pwhgtopout(filename)
          close(99)
       endif
       call lhefwritetrailer(iun)
@@ -165,4 +206,3 @@ c this causes powheginput to print all unused keywords
 c in the powheg.input file; useful to catch mispelled keywords
       tmp=powheginput('print unused tokens')
       end
-

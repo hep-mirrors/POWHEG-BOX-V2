@@ -16,12 +16,16 @@ c flg_jacsing:  importance sampling for singular jacobians in case of massless F
 c flg_weightedev:  allows weighted events
 c flg_pdfreweight: outputs extra infos useful for pdf's reweighting on the LHEF
 c flg_collremnsamp:  importance sampling for collinear remnants
+c flg_reweight: outputs extra infos for reweighting LH events
 
       logical flg_nlotest,flg_withsubtr,flg_withdamp,flg_withreg,
      1     flg_smartsig,flg_bornonly,flg_debug,flg_withnegweights,
      2     flg_jacsing,flg_weightedev,flg_pdfreweight,flg_collremnsamp,
      3     flg_lightpart_check,flg_btlscalereal,flg_btlscalect,
-     4     flg_bornzerodamp,flg_ckkwscalup
+     4     flg_bornzerodamp,flg_ckkwscalup,
+     5     flg_minlo,flg_minlo_nnll,flg_minlo_real,
+     6     flg_reweight,flg_newweight,flg_fastbtlbound,
+     7     flg_storemintupb,flg_doublefsr,flg_monitorubound
       character * 1 flg_btildepart
       character * 20 flg_processid
       common/pwhg_flg/flg_nlotest,flg_withsubtr,flg_withdamp,
@@ -30,5 +34,8 @@ c flg_collremnsamp:  importance sampling for collinear remnants
      4     flg_pdfreweight,flg_collremnsamp,flg_lightpart_check,
      5     flg_btlscalereal,flg_btlscalect,
      6     flg_bornzerodamp,flg_ckkwscalup,
-     7     flg_btildepart,flg_processid
+     7     flg_minlo,flg_minlo_nnll,flg_minlo_real,
+     8     flg_reweight,flg_newweight,flg_fastbtlbound,
+     9     flg_storemintupb,flg_doublefsr,flg_monitorubound,
+     $     flg_btildepart,flg_processid
       save /pwhg_flg/

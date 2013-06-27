@@ -72,6 +72,8 @@ c Hardest radiation kt2
 c Branching ratio (useful to change xsecup properly when a decay is
 c added a posteriori)
       real * 8 rad_branching
+c Current event weight, needed when doing reweghting    
+      real  * 8 rad_currentweight
       integer rad_iupperfsr,rad_iupperisr
       common/pwhg_rad/
      1     rad_totbtl,rad_etotbtl,
@@ -86,7 +88,7 @@ c added a posteriori)
      1     rad_csiynorms,rad_norms,rad_btilde_arr,rad_real_arr,
      2     rad_normfact,rad_ptsqmin,rad_charmthr2,rad_bottomthr2,
      3     rad_lamll,rad_xradremn,rad_pt2max,
-     4     rad_branching,
+     4     rad_branching,rad_currentweight,
 c     integers
      1     rad_ubornidx,rad_alr_list,rad_alr_nlist,
      2     rad_realidx,rad_realalr,rad_realreg,

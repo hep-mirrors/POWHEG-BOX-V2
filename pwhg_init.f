@@ -4,6 +4,7 @@
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
+      include 'pwhg_st.h'
       include 'pwhg_pdf.h'
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
@@ -25,6 +26,11 @@ c See if we have weighted events
          call flush(6)
          call exit(-1)
       endif
+c if true, suppress emitted particle energy with respect to the emitter
+c in all cases (i.e. not only for g g) in FSR. Thus, consider also
+c the emitter-emitted pairs qbar q, g q. 
+      flg_doublefsr=.false.
+      if(powheginput("#doublefsr").gt.0) flg_doublefsr=.true.
 c     Set to true to remember and use identical values of the computed 
 c     amplitudes, for Born, real and virtual contributions
       flg_smartsig=.true.
@@ -75,6 +81,20 @@ c select which upper bounding function form
 c info on pdf for each event
       flg_pdfreweight=.false.
       if(powheginput("#pdfreweight").eq.1)flg_pdfreweight=.true.
+c infos to write LH file with infos to reweight events
+      flg_reweight=.not.(powheginput('#storeinfo_rwgt').eq.0)
+c infos to read LH file with infos to reweight events,
+c and produce a new LH file with updated weights
+      flg_newweight=powheginput('#compute_rwgt').eq.1
+c Is MiNLO required?
+      flg_minlo=.false.
+      st_bornorder=0
+      if(powheginput("#minlo").eq.1) then
+         flg_minlo=.true.
+c set st_bornorder to an impossible value; later on we check
+c if the user has set it. This is only used by minlo
+         st_bornorder=-1000
+      endif
 c
       call setrandom(i1,n1,n2)
 c     assign a default id for the process at hand
@@ -84,6 +104,15 @@ c     inside the user-defined subroutine init_processes
       lprup(1)=10001
 c     initialize physical parameters
       call init_phys
+      if(flg_minlo.and.st_bornorder.eq.-1000) then
+         write(*,*) '************************************'
+         write(*,*) ' ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+         write(*,*) ' st_bornorder should be set by the user'
+         write(*,*) ' it should equal the powers of alpha_S'
+         write(*,*) ' present at the Born level'
+         write(*,*) ' Exiting ...'
+         call pwhg_exit(-1)
+      endif
 c ID of beam particles 1 and 2 (pdg convention)
 c proton:
       ebmup(1)=kn_beams(0,1)

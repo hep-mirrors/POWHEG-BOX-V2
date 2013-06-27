@@ -14,7 +14,7 @@
       integer j,iuborn
       logical valid_emitter
       external valid_emitter
-      logical pwhg_isfinite 
+      logical pwhg_isfinite
       external pwhg_isfinite
       do j=1,flst_nborn
          resreal(j)=0
@@ -561,13 +561,13 @@ c     Added this 'if' to be sure that no division by zero occurs
       integer j,k
       real * 8 sumdijinv,dampfac,r
       real * 8 pdf1(-6:6),pdf2(-6:6)
-      real * 8 ptsq,pwhg_pt2
+      real * 8 ptsq,pwhg_pt2,dijterm
       logical computed(maxalr)
       logical condition
       logical ini
       data ini/.true./
       save ini,equivto,equivcoef
-      external pwhg_pt2
+      external pwhg_pt2,dijterm
       if(ini) then
          do alr=1,flst_nalr
             equivto(alr)=-1
@@ -647,18 +647,30 @@ c            if(equivto(alr).lt.0.or..not.computed(equivto(alr))) then
                sumdijinv=0
                do k=1,flst_allreg(1,0,alr)
                   sumdijinv=sumdijinv
-     #+1/kn_dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr))
+     #+1/dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr),alr)
                enddo
-               r0(alr)=r0(alr)/kn_dijterm(em,nlegreal)/sumdijinv
-c If the emitter is in the final state, and if the emitted and emitter
-c are both gluons, supply a factor E_em/(E_em+E_rad) * 2
+               r0(alr)=r0(alr)/dijterm(em,nlegreal,alr)/sumdijinv
                if(em.gt.2) then
-                  if(flst_alr(em,alr).eq.0.and.
-     1              flst_alr(nlegreal,alr).eq.0) then
-                     r0(alr)=r0(alr)*2
-     1                    *kn_cmpreal(0,em)**par_2gsupp/
-     2                    (kn_cmpreal(0,em)**par_2gsupp
+                  if(flg_doublefsr) then
+c    supply a factor E_em/(E_em+E_rad), times 2 if both gluons
+                     r0(alr)=r0(alr)
+     1                    *kn_cmpreal(0,kn_emitter)**par_2gsupp/
+     2                    (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                    +kn_cmpreal(0,nlegreal)**par_2gsupp)
+                     if(flst_alr(kn_emitter,alr).eq.0.and.
+     1                    flst_alr(nlegreal,alr).eq.0) then
+                        r0(alr)=r0(alr)*2
+                     endif
+                  else
+c     If the emitter is in the final state, and if the emitted and emitter
+c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
+                     if(flst_alr(kn_emitter,alr).eq.0.and.
+     1                    flst_alr(nlegreal,alr).eq.0) then
+                        r0(alr)=r0(alr)*2
+     1                       *kn_cmpreal(0,kn_emitter)**par_2gsupp/
+     2                       (kn_cmpreal(0,kn_emitter)**par_2gsupp
+     3                       +kn_cmpreal(0,nlegreal)**par_2gsupp)
+                     endif
                   endif
                endif
                r0(alr)=r0(alr)*flst_mult(alr)
@@ -724,9 +736,12 @@ c    csi^2 (1-y)   for FSR regions
       integer j,k
       real * 8 sumdijinv,dampfac
       real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 rescfac
       logical ini
       data ini/.true./
       save ini,equivto,equivcoef
+      real * 8 dijterm
+      external dijterm
       if(ini) then
          do alr=1,flst_nalr
             equivto(alr)=-1
@@ -781,18 +796,33 @@ c Loop over all singular regions of the given contribution
                do k=1,flst_allreg(1,0,alr)
 c flst_allreg({1,2},...) are the two legs that identify the k'th region
                   sumdijinv=sumdijinv
-     #+1/kn_dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr))
+     1      +1/dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr),alr)
                enddo
-               r0(alr)=r0(alr)/kn_dijterm(kn_emitter,nlegreal)/sumdijinv
+               r0(alr)=r0(alr)/dijterm(kn_emitter,nlegreal,alr)
+     1              /sumdijinv
 c If the emitter is in the final state, and if the emitted and emitter
 c are both gluons, supply a factor E_em/(E_em+E_rad) * 2
                if(kn_emitter.gt.2) then
-                  if(flst_alr(kn_emitter,alr).eq.0.and.
-     1                 flst_alr(nlegreal,alr).eq.0) then
-                     r0(alr)=r0(alr)*2
+                  if(flg_doublefsr) then
+c    supply a factor E_em/(E_em+E_rad), times 2 if both gluons
+                     r0(alr)=r0(alr)
      1                    *kn_cmpreal(0,kn_emitter)**par_2gsupp/
      2                    (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                    +kn_cmpreal(0,nlegreal)**par_2gsupp)
+                     if(flst_alr(kn_emitter,alr).eq.0.and.
+     1                    flst_alr(nlegreal,alr).eq.0) then
+                        r0(alr)=r0(alr)*2
+                     endif
+                  else
+c     If the emitter is in the final state, and if the emitted and emitter
+c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
+                     if(flst_alr(kn_emitter,alr).eq.0.and.
+     1                    flst_alr(nlegreal,alr).eq.0) then
+                        r0(alr)=r0(alr)*2
+     1                       *kn_cmpreal(0,kn_emitter)**par_2gsupp/
+     2                       (kn_cmpreal(0,kn_emitter)**par_2gsupp
+     3                       +kn_cmpreal(0,nlegreal)**par_2gsupp)
+                     endif
                   endif
                endif
 c supply Born zero damping factor, if required
@@ -821,9 +851,19 @@ c supply Born zero damping factor, if required
             endif
          endif
       enddo
-      call pdfcall(1,kn_x1,pdf1)
-      call pdfcall(2,kn_x2,pdf2)
+      if(.not.flg_minlo) then
+         rescfac = 1
+         call pdfcall(1,kn_x1,pdf1)
+         call pdfcall(2,kn_x2,pdf2)
+      endif
       do alr=1,flst_nalr
+         if(flg_minlo) then
+            flg_minlo_real=.true.
+            call setlocalscales(flst_alr2born(alr),2,rescfac)
+            flg_minlo_real=.false.
+            call pdfcall(1,kn_x1,pdf1)
+            call pdfcall(2,kn_x2,pdf2)
+         endif
          r0(alr)=r0(alr)*flst_mult(alr)
          if(kn_emitter.gt.2) then
             r0(alr)=r0(alr)*(1-kn_y)*kn_csi**2
@@ -832,6 +872,7 @@ c supply Born zero damping factor, if required
          endif
 c include pdf's
          r0(alr)=r0(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+     1        *rescfac
       enddo
       end
 

@@ -1,4 +1,12 @@
-      function btilde(xx,www0,ifirst)
+      function btilde(xx,www0,ifirst,imode,
+     1     retval,retval0)
+c retval is the function return value
+c retvavl0 is an 'avatar' function the has similar value, but is much
+c easier to compute (i.e. the Born term in this case)
+c imode = 0 compute retval0 only.
+c imode = 1 compute retval, retval0
+c return value: 0: success; 1: retval0 was not computed
+c                 (this function does not support an avatar function)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
@@ -8,19 +16,21 @@
 c     independent variables for real graph: number of final state
 c     legs times 3, take away 4 for 4-momentum conservation, add 2
 c     for x_1 and x_2, and take away an overall azimuth
-      real * 8 btilde,xx(ndiminteg),www0
+      real * 8 xx(ndiminteg),www0,retval,retval0
       real * 8 xrad(3)
       real * 8 xborn(ndiminteg-3)
-      integer ifirst
+      integer btilde,ifirst,imode,iret
       real * 8 resborn(maxprocborn),resvirt(maxprocborn),
      #     resreal(maxprocborn),rescoll(maxprocborn)
       real * 8 results(maxprocborn)
       real * 8 tmp,suppfact,www,wwwtot
       integer j
       save resborn,resvirt,wwwtot,suppfact
-      real *8 totborn,totvirt
+      real * 8 seconds
+      real *8 totborn,totvirt,ptotborn
       logical pwhg_isfinite 
       external pwhg_isfinite
+      btilde=0
       www=www0*hc2
       do j=1,ndiminteg-3
          xborn(j)=xx(j)
@@ -38,17 +48,23 @@ c set scales
          call allborn
 c     sets xscaled, y, phi in kinematics common block
          call btildeborn(resborn)
-         if (.not.flg_bornonly) then
+         if (.not.flg_bornonly.and..not.imode.eq.0) then
+            call reset_timer
             call btildevirt(resvirt)
+            call get_timer(seconds)
+            call addtocnt('virt time (sec)',seconds)
+            call reset_timer
             call btildecoll(xrad,rescoll,www)
             call btildereal(xrad,resreal,www)
+            call get_timer(seconds)
+            call addtocnt('real time (sec)',seconds)
          endif
 c     accumulate values
-         btilde=0
+         retval=0
          do j=1,flst_nborn
 c     jacobians are already included in rescoll and resreal
             tmp=resborn(j)
-            if (.not.flg_bornonly) then
+            if (.not.flg_bornonly.and..not.imode.eq.0) then
                tmp = tmp   
      #              + resvirt(j)
      #              + rescoll(j) 
@@ -56,7 +72,7 @@ c     jacobians are already included in rescoll and resreal
             endif
 c     initial value in results
             results(j)=tmp*www*suppfact
-            btilde=btilde+tmp*www*suppfact
+            retval=retval+tmp*www*suppfact
          enddo
       elseif(ifirst.eq.1) then
 c     subsequent calls:
@@ -67,16 +83,19 @@ c     we need to accumulate all weight within a single folding sequence
 c     in order to later output the correct Born and Virtual contribution
 c     to the NLO analysis routine.
          wwwtot=wwwtot+www
-         if (.not.flg_bornonly) then
+         if (.not.flg_bornonly.and..not.imode.eq.0) then
 c btildecoll and btildereal take care themselves to invoke the NLO
 c analysis if required.
+            call reset_timer
             call btildecoll(xrad,rescoll,www)
             call btildereal(xrad,resreal,www)
+            call get_timer(seconds)
+            call addtocnt('real time (sec)',seconds)
          endif
-         btilde=0
+         retval=0
          do j=1,flst_nborn
             tmp=resborn(j)
-            if (.not.flg_bornonly) then
+            if (.not.flg_bornonly.and..not.imode.eq.0) then
                tmp = tmp   
      #              + resvirt(j)
      #              + rescoll(j) 
@@ -84,23 +103,30 @@ c analysis if required.
             endif
 c     accumulate values in results
             results(j)=results(j)+tmp*www*suppfact
-            btilde=btilde+tmp*www*suppfact
+            retval=retval+tmp*www*suppfact
          enddo
       elseif(ifirst.eq.2) then
+         totborn=0d0
+c compute Born, to return in retval0
+         ptotborn=0
+         do j=1,flst_nborn
+            totborn=totborn+resborn(j)
+            ptotborn=ptotborn+abs(resborn(j))
+         enddo
+         totborn=totborn*wwwtot
+         ptotborn=ptotborn*wwwtot
+         if (.not.pwhg_isfinite(totborn)) then 
+            totborn = 0d0
+            ptotborn = 0d0
+            resborn = 0d0 
+         endif
          if(flg_nlotest) then
-c output Born
-            totborn=0d0
-            do j=1,flst_nborn
-               totborn=totborn+resborn(j)
-            enddo
-            totborn=totborn*wwwtot
-            if (.not.pwhg_isfinite(totborn)) then 
-               totborn = 0d0 
-               resborn = 0d0 
+c     output Born
+            if(.not.imode.eq.0) then
+               call analysis_driver(totborn,0)
             endif
-            call analysis_driver(totborn,0)
-            if(.not.flg_bornonly) then
-c output virtual
+            if(.not.flg_bornonly.and..not.imode.eq.0) then
+c     output virtual
                totvirt=0d0
                do j=1,flst_nborn
                   totvirt=totvirt+resvirt(j)
@@ -112,12 +138,16 @@ c output virtual
                endif
                call analysis_driver(totvirt,0)
             endif
-c closing call to end a sequence of correlated events in the
-c analysis routines.
             call pwhgaccumup
          endif
-c     closing call: accumulate values with correct signs
+c Make the born part of the result available;
+c (to test, if bornonly is set, should equal the output btilde when ifirst=2)
+         retval0=ptotborn*suppfact
          btilde=0
+c closing call to end a sequence of correlated events in the
+c analysis routines.
+c     closing call: accumulate values with correct signs
+         retval=0
          call adduptotals(results,flst_nborn)
          do j=1,flst_nborn
 c this is only useful if withnegweights on (i.e. =1 in powheg.input,
@@ -134,7 +164,7 @@ c interface will simply output this sign for the event.)
                   results(j)=0
                endif
             endif
-            btilde=btilde+results(j)
+            retval=retval+results(j)
 c     Transfer all flavour components of btilde to the array
 c     in common block; will be used to decide the underlying
 c     flavour of the event
@@ -142,7 +172,7 @@ c     flavour of the event
          enddo
       else
          write(*,*) 'wrong value of ifirst in btilde => ',ifirst
-         stop
+         call exit(-1)
       endif
       end
       

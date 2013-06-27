@@ -3,7 +3,7 @@ c...reads initialization information from a les houches events file on unit nlf.
       subroutine lhefreadhdr(nlf)
       implicit none
       integer nlf
-      character * 100 string
+      character * 200 string
       integer ipr
       include 'LesHouches.h'
  1    read(nlf,fmt='(a)',err=998,end=998) string
@@ -27,7 +27,7 @@ c...reads event information from a les houches events file on unit nlf.
       subroutine lhefreadev(nlf)
       implicit none
       integer nlf
-      character * 100 string
+      character * 200 string
       include 'LesHouches.h'
       integer i,j
  1    continue
@@ -54,11 +54,13 @@ c no event found:
  777  continue
       print *,"Error in reading"
       print *,string
-      stop
+      nup=0
+      return
  666  continue
       print *,"reached EOF"
       print *,string
-      stop
+      nup=0
+      return
  998  continue
       print *,"read </LesHouchesEvents>"
       nup=0      
@@ -74,23 +76,39 @@ c no event found:
       include 'pwhg_st.h'
       include 'pwhg_kn.h'
       include 'pwhg_flg.h'
-      character * 100 string
+      include 'pwhg_weights.h'
+      character * 200 string
       integer nlf
+      weights_num = 0
  1    continue
+      string=' '
       read(unit=nlf,fmt='(a)',end=998) string
+      string=adjustl(string)
       if(string.eq.'<event>') then
          backspace nlf
          return
+      endif
+      if(string(1:11).eq.'#new weight') then
+         if(weights_num.eq.weights_max) then
+            write(*,*) ' too many weights!'
+            write(*,*) ' increase weights_max'
+            call exit(-1)
+         endif
+         weights_num = weights_num + 1
+         read(string(38:),*) weights_val(weights_num),
+     1                       weights_renfac(weights_num),
+     2                       weights_facfac(weights_num),
+     3                       weights_npdf1(weights_num),
+     4                       weights_npdf2(weights_num),
+     5                       weights_whichpdf(weights_num)
       endif
       if(string.eq.'# Start extra-info-previous-event') then
          read(nlf,'(a)') string
          read(string(3:),*) rad_kinreg
          read(nlf,'(a)') string
          read(string(3:),*) rad_type
-         return
-      else
-         goto 1
       endif
+      goto 1
       return
  998  continue
       end

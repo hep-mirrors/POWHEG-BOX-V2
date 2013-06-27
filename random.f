@@ -41,21 +41,47 @@
       return
       end
 
+      subroutine readcurrentrandom(i1,n1,n2)
+      implicit none
+      integer i1,n1,n2
+      call rm48ut(i1,n1,n2)
+      end
 
       subroutine setrandom(i1,n1,n2)
       implicit none
       integer i1,n1,n2
-      
-      if (I1.gt.0) then
-         if (((N1.gt.0).and.(N2.ge.0)).or.(N1.ge.0).and.(N2.gt.0)) then
-c     restart a previous run or start a new run with this initialization
-            call rm48in(I1,N1,N2)
-         else
-c     just change the random seed
-            call rm48in(I1,0,0)
-         endif
-      else
+      integer i1cur,n1cur,n2cur,j
+      real * 8 tmp
+      if(i1.eq.0) then
+c This is used for complete initialization
          call resetrandom
+         return
+      endif
+c Reinitializing the random number may be expensive;
+c If we need a sequence number greater than the current status
+c just call the generator enough times to get there. 
+      call rm48ut(i1cur,n1cur,n2cur)
+      if(i1.eq.i1cur.and.n2.eq.n2cur.and.n1.ge.n1cur) then
+         do j=n1cur,n1-1
+            call rm48(tmp,1)
+         enddo
+         call rm48ut(i1cur,n1cur,n2cur)
+         if(i1.eq.i1cur.and.n2.eq.n2cur.and.n1.eq.n1cur) then
+c Succeded
+            return
+         else
+c Failed!
+            write(*,*) ' setrandom: debug ...'
+            call exit(-1)
+         endif
+      endif
+c reinitialize from scratch
+      if (I1.gt.0.and.n1.ge.0.and.n2.ge.0) then
+c     restart a previous run
+            call rm48in(I1,N1,N2)
+      else
+         write(*,*) 'ERROR: setrandom called with',i1,n1,n2
+         call exit(-1)
       endif
       end
 

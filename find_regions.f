@@ -312,7 +312,8 @@ c                   j>2 final state sing.
       if(j.eq.0) then
          if(rflav(n).ne.0) goto 998
       elseif(j.gt.2) then
-         if(rflav(j)+rflav(n).ne.0.and.rflav(n).ne.0.) goto 998
+         if(rflav(j)+rflav(n).ne.0.and.rflav(n).ne.0.and.rflav(j).ne.0)
+     1        goto 998
       else
          if(rflav(j)-rflav(n).ne.0.and.rflav(n)*rflav(j).ne.0.) goto 998
       endif
@@ -597,16 +598,38 @@ c final state singularity
                flst_alr(ipart,iflregl)=flst_real(iregions(1,l),k)
                ipart=ipart+1
                flst_alr(ipart,iflregl)=flst_real(iregions(2,l),k)
+               if(flg_doublefsr) then
+c     c emit regions with opposite ordering for q g and q q~
+                  if(flst_alr(nlegreal,iflregl)*
+     1                 flst_alr(nlegreal-1,iflregl).ne.0
+     2                 .or.flst_alr(nlegreal,iflregl).ne.0 .or.
+     3                 flst_alr(nlegreal-1,iflregl).ne.0) then
+                     if(iflregl.ge.maxalr) then
+                        write(*,*)' genflavreglist: increase maxalr'
+                        call exit(-1)
+                     endif
+                     flst_alr(1:nlegreal-2,iflregl+1)=
+     1                    flst_alr(1:nlegreal-2,iflregl)
+                     flst_alr(nlegreal,iflregl+1)=
+     1                    flst_alr(nlegreal-1,iflregl)
+                     flst_alr(nlegreal-1,iflregl+1)=
+     1                    flst_alr(nlegreal,iflregl)
+                     iflregl = iflregl+1
+                     flst_emitter(iflregl)=nlegreal-1
+                  endif
+               else
 c put always in the order q g and q q~, i.e. fl(i)>fl(j)
-               if(
-     #    (flst_alr(nlegreal,iflregl)*flst_alr(nlegreal-1,iflregl).eq.0
-     #    .and.flst_alr(nlegreal,iflregl).ne.0) .or.
-     #    (flst_alr(nlegreal,iflregl)*flst_alr(nlegreal-1,iflregl).ne.0
-     #    .and.flst_alr(nlegreal,iflregl).gt.0)) then
-                  itmp=flst_alr(nlegreal,iflregl)
-                  flst_alr(nlegreal,iflregl)=
-     #                flst_alr(nlegreal-1,iflregl)
-                  flst_alr(nlegreal-1,iflregl)=itmp
+                  if((flst_alr(nlegreal,iflregl)*
+     1                 flst_alr(nlegreal-1,iflregl).eq.0
+     2                 .and.flst_alr(nlegreal,iflregl).ne.0) .or.
+     3                 (flst_alr(nlegreal,iflregl)
+     4                 *flst_alr(nlegreal-1,iflregl).ne.0
+     5                 .and.flst_alr(nlegreal,iflregl).gt.0)) then
+                     itmp=flst_alr(nlegreal,iflregl)
+                     flst_alr(nlegreal,iflregl)=
+     1                    flst_alr(nlegreal-1,iflregl)
+                     flst_alr(nlegreal-1,iflregl)=itmp
+                  endif
                endif
             else
 c initial state singularity

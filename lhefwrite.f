@@ -60,6 +60,7 @@ c...writes event information to a les houches events file on unit nlf.
      & vtimup(i),spinup(i)
  200  continue
       if(flg_pdfreweight) call lhefwritepdfrw(nlf)
+      if(flg_reweight) call lhefwriteevrw(nlf)
       if(flg_debug) call lhefwritextra(nlf)
       write(nlf,'(a)')'</event>'      
  210  format(1p,2(1x,i6),4(1x,e12.5))
@@ -88,12 +89,12 @@ c     save last random number
       include 'pwhg_kn.h'
       include 'pwhg_flg.h'
       integer nlf
-      integer iran,n1ran,n2ran
+      integer lh_seed,lh_n1,lh_n2
+      common/lhseeds/lh_seed,lh_n1,lh_n2
       write(nlf,'(a)') '# Start extra-info-previous-event'
       write(nlf,*) '# ',rad_kinreg,'       rad_kinreg'
       write(nlf,*) '# ',rad_type,'         rad_type'
-      call getcurrentrandom(iran,n1ran,n2ran)
-      write(nlf,*) '# ', iran,' ',n1ran,' ',n2ran,
+      write(nlf,*) '# ', lh_seed,' ',lh_n1,' ',lh_n2,
      #     "    previous event's random seeds "
       write(nlf,'(a)') '# End extra-info-previous-event'
       end
@@ -106,4 +107,40 @@ c     save last random number
       call pdfreweightinfo(id1,id2,x1,x2,xmufact,xf1,xf2)
       write(nlf,111)'#pdf ',id1,id2,x1,x2,xmufact,xf1,xf2
  111  format(a,2(1x,i2),5(1x,e14.8))
+      end
+
+
+      subroutine lhefwriteevrw(nlf)
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_rad.h'
+      integer nlf
+      character * 132 string
+      integer gen_seed,gen_n1,gen_n2
+      common/cgenrand/gen_seed,gen_n1,gen_n2
+c     rad_type=1,2,3 for btilde,remnants,regulars, respectively
+      if(rad_type.eq.1) then
+c     btilde
+         write(string,*)'#rwgt ',rad_type,
+     $        rad_ubornidx,rad_btilde_arr(rad_ubornidx)
+     $        *rad_btilde_sign(rad_ubornidx),
+     $        gen_seed,gen_n1,gen_n2
+      elseif(rad_type.eq.2) then
+c     remnant
+         write(string,*)'#rwgt ',rad_type,
+     $        rad_realalr,rad_damp_rem_arr(rad_realalr),
+     $        gen_seed,gen_n1,gen_n2
+      elseif(rad_type.eq.3) then
+c     regular
+         write(string,*)'#rwgt ',rad_type,
+     $        rad_realreg,rad_reg_arr(rad_realreg),
+     $        gen_seed,gen_n1,gen_n2
+      else
+         write(*,*) 'Invalid rad_type in lhefwriteevrw: ',rad_type
+         call exit(-1)
+      endif
+c This gymnastics to avoid some fortran compiler going automatically to a new line
+c when writing too long records with fmt=*
+      write(nlf,'(a)') trim(adjustl(string))
       end
