@@ -50,14 +50,13 @@ DEPDIRS=./MCFM/QCDLoop/ql/ ./MCFM/QCDLoop/ff/ ./MCFM/src/TopdkBSY/  ./MCFM/src/N
 
 OBJ=obj-$(COMPILER)
 
-VPATH= BoxUpdates:./:../:$(OBJ)/:./MCFMinterface:./MCFM/QCDLoop/ql:./MCFM/QCDLoop/ff:../KN/MCFM/src/pwgplots/:./MCFM/src/TopdkBSY/:./MCFM/src/Newtpair/:./MCFM/src/Need/:./MCFM/src/Phase/:./MCFM/src/Topdecay/:./MCFM/src/Topdk/
+VPATH= ./:../:$(OBJ)/:./MCFMinterface:./MCFM/QCDLoop/ql:./MCFM/QCDLoop/ff:../KN/MCFM/src/pwgplots/:./MCFM/src/TopdkBSY/:./MCFM/src/Newtpair/:./MCFM/src/Need/:./MCFM/src/Phase/:./MCFM/src/Topdecay/:./MCFM/src/Topdk/
 
 INCLUDE0=$(PWD)
-INCLUDE1=$(PWD)/include
 INCLUDE2=$(shell dirname $(PWD))/include
 INCLUDE3=$(PWD)/MCFM/src/Inc/
 INCLUDE4=$(PWD)/interfaceinclude
-FF=$(F77) $(FFLAGS) $(FPE) $(OPT) $(DEBUG) -I$(INCLUDE0) -I$(INCLUDE1) -I$(INCLUDE2) -I$(INCLUDE3) -I$(INCLUDE4)
+FF=$(F77) $(FFLAGS) $(FPE) $(OPT) $(DEBUG) -I$(INCLUDE0) -I$(INCLUDE2) -I$(INCLUDE3) -I$(INCLUDE4)
 
 
 
@@ -159,8 +158,9 @@ PWHG=pwhg_main.o pwhg_init.o bbinit.o btilde.o lhefwrite.o		\
 	init_phys.o powheginput.o pdfcalls.o sigreal.o sigcollremn.o	\
 	pwhg_analysis_driver.o checkmomzero.o		\
 	setstrongcoupl.o integrator.o newunit.o mwarn.o sigsoftvirt.o	\
-	sigcollsoft.o sigvirtual.o \
-	dgauss.o $(PDFPACK) $(USER) $(FPEOBJ)
+	sigcollsoft.o sigvirtual.o setlocalscales.o validflav.o mint_upb.o  \
+	pwhgreweight.o opencount.o ubprojections.o \
+	$(PDFPACK) $(USER) $(FPEOBJ)
 
 
 

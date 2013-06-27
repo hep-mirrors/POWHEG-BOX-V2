@@ -148,9 +148,9 @@ c initialize number of singular regions
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       integer j,k,res
-      flst_nreson=1
-      flst_reslist(1)=0
+      flst_nreson=0
       do j=1,flst_nreal
          res=flst_real(nlegreal,j)
          do k=1,flst_nreson
@@ -162,4 +162,9 @@ c it didn't find the resonance on the list; add it up
             flst_reslist(flst_nreson)=res
          endif
       enddo
+      if(flst_nreson.eq.1.and.flst_reslist(flst_nreson).eq.0) then
+         flg_withresrad=.false.
+      else
+         flg_withresrad=.true.
+      endif
       end

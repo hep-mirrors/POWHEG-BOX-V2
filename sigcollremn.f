@@ -48,6 +48,16 @@ c log coeff., from 2.102, with partonic s=sb/z
 c same, with soft limit s
       plfr0(z)=1/(1-z)*log(sb/st_mufact2)+2*log(1-z)/(1-z)
 c End Statement Functions
+c If there is no radiation from production, no remnants!
+      do j=1,flst_nreson
+         if(flst_reslist(j).eq.0) exit
+      enddo
+      if(j.eq.flst_nreson+1) then
+c no radiation from production!
+         rescoll=0
+         return
+      endif
+
       if(flg_collremnsamp) then
          xjac=630*(1-xrad)**4*xrad**4
          x=xrad**5*(70*xrad**4-315*xrad**3+540*xrad**2-420*xrad+126)
@@ -103,16 +113,18 @@ c     Compute the singlet for gamma induced
                pdfsmb1sng_gamma=0
                pdfsmb2sng_gamma=0
                do j=1,st_nlight
-                  pdfs1sng_gamma=pdfs1sng_gamma+pdfs1(j)*chargeofparticle(j)**2
-     &                 +pdfs1(-j)*chargeofparticle(-j)**2
-                  pdfs2sng_gamma=pdfs2sng_gamma+pdfs2(j)*chargeofparticle(j)**2
-     &                 +pdfs2(-j)*chargeofparticle(-j)**2
+                  pdfs1sng_gamma=
+     1                 pdfs1sng_gamma+pdfs1(j)*chargeofparticle(j)**2
+     2                 +pdfs1(-j)*chargeofparticle(-j)**2
+                  pdfs2sng_gamma=pdfs2sng_gamma+pdfs2(j)
+     1                 *chargeofparticle(j)**2
+     2                 +pdfs2(-j)*chargeofparticle(-j)**2
                   pdfsmb1sng_gamma=pdfsmb1sng_gamma+
-     &                 (pdfs1(j)/z1-pdfb1(j))   * chargeofparticle(j)**2 +
-     &                 (pdfs1(-j)/z1-pdfb1(-j)) * chargeofparticle(-j)**2
+     1                 (pdfs1(j)/z1-pdfb1(j))*  chargeofparticle(j)**2 +
+     2                 (pdfs1(-j)/z1-pdfb1(-j))*chargeofparticle(-j)**2
                   pdfsmb2sng_gamma=pdfsmb2sng_gamma+
-     &                 (pdfs2(j)/z2-pdfb2(j))   * chargeofparticle(j)**2 +
-     &                 (pdfs2(-j)/z2-pdfb2(-j)) * chargeofparticle(-j)**2
+     1                 (pdfs2(j)/z2-pdfb2(j)) * chargeofparticle(j)**2 +
+     2                 (pdfs2(-j)/z2-pdfb2(-j))*chargeofparticle(-j)**2
                enddo
             endif
          endif

@@ -54,7 +54,8 @@ c            kinematic regions).
       include 'pwhg_kn.h'
       include 'pwhg_pdf.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton)
       real * 8 rescfac
       integer alr
       call collfsrnopdf(rc)
@@ -158,7 +159,8 @@ c     Then rotate it counterclockwise around the em direction
       include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csi
@@ -207,7 +209,8 @@ c     Then rotate it counterclockwise around the em direction
       include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csip
@@ -238,7 +241,8 @@ c     Then rotate it counterclockwise around the em direction
       include 'pwhg_kn.h'
       include 'pwhg_pdf.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton)
       integer alr
       real * 8 tmp,rescfac
       tmp=kn_csim
@@ -270,7 +274,8 @@ c     Then rotate it counterclockwise around the em direction
       include 'pwhg_pdf.h'
       include 'pwhg_kn.h'
       real * 8 rc(maxalr)
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton),
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton),
      1     x1,x2
       integer alr
       real * 8 rescfac
@@ -348,7 +353,8 @@ c softvec(0:3): real * 8, 4-vector of soft gluon normalized to softvec(0)=1
       real * 8 r0(maxalr)
       integer alr,em
       real * 8 y
-      real * 8 pdf1(-pdf_nparton:pdf_nparton),pdf2(-pdf_nparton:pdf_nparton)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1     pdf2(-pdf_nparton:pdf_nparton)
       real * 8 rescfac
 c Boost Born momenta to their rest frame
 c find boost velocity
