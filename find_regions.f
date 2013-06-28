@@ -56,7 +56,7 @@ c find if they can arise from the same splitting
      1           indexreal,i,j,ibornfl,itag,iret)
 c cannot come from the same splitting
             if(iret.lt.0) then
-               cycle
+               goto 10
             endif
 c build the underlying born flavour structure in bflav
             iborn=0
@@ -78,6 +78,7 @@ c build the underlying born flavour structure in bflav
                iregions(1,nregions)=i
                iregions(2,nregions)=j
             endif
+ 10         continue
          enddo
       enddo
 c initial state region
@@ -843,7 +844,7 @@ c if the flavour structures have been reordered, iret=1
      3        flst_borntags(j,iborn).ne.it(j) ) then
             if(j.le.2) then
                iret=-1
-               return
+               goto 999
             endif
             iret=1
             do k=j+1,nlegborn
@@ -854,12 +855,13 @@ c if the flavour structures have been reordered, iret=1
 
                   call exchange_ind(j,k,ib,ir,it)
 
-                  cycle
+                  goto 10
                endif
             enddo
 c they differ in flavour content
             iret=-1
-            return
+            goto 999
+ 10         continue
          endif
       enddo
 c they are identical; no reordering needed
@@ -887,13 +889,15 @@ c reorder
                   elseif(flst_emitter(alr).eq.k) then
                      flst_emitter(alr)=j
                   endif
-                  cycle
+                  goto 11
                endif
             enddo
             write(*,*) ' should never get here'
             call exit(-1)
+ 11         continue
          endif
       enddo
+ 999  continue
       end
 
       subroutine exchange_ind(j,k,a,ares,atags)
