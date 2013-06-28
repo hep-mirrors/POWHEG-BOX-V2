@@ -23,7 +23,6 @@ c--- virtuals are in DR scheme
       flg_drscheme=.true.
 c This flag is set if any resonances in the event can decay in coloured parton,
 c and POWHEG is suppose to handle emissions in the decay.
-      flg_withresrad = .true.
 
       par_isrtinycsi = 10d-6
       par_isrtinyy = 10d-6
@@ -179,21 +178,6 @@ c nlowhich = 0 does all corrections.
          endif
       endif
 
-c flst_isres:
-c true if the index denotes a resonance in the flavours list
-
-      flst_isres(ii1)=.false.
-      flst_isres(ii2)=.false.
-      flst_isres(ii3)=.true.
-      flst_isres(ii4)=.true.
-      flst_isres(ii5)=.true.
-      flst_isres(ii6)=.true.
-      flst_isres(ii7)=.false.
-      flst_isres(ii8)=.false.
-      flst_isres(ii9)=.false.
-      flst_isres(ii10)=.false.
-      flst_isres(ii11)=.false.
-      flst_isres(ii12)=.false.
 
       do i=-st_nlight,st_nlight
 c construct Born graph one by one, increasing the counter as

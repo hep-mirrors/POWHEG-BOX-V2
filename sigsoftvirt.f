@@ -67,16 +67,8 @@ c Strong Q contribution
 c EW Q contribution
       Qem = 0
 
-      if(.not.flg_withresrad) then
-         flst_nreson=1
-      endif
-
       do jres=1,flst_nreson
-         if(flg_withresrad) then
-            kres=flst_reslist(jres)
-         else
-            kres=0
-         endif
+         kres=flst_reslist(jres)
          if(kres.ne.0) then
             call boost2reson(kn_cmpborn(:,kres),nlegborn,
      1           kn_cmpborn,pborn)
@@ -133,9 +125,7 @@ c EW photonic contribution
             endif
 c     loop on final-state massless partons
             do leg=3,nlegborn
-               if(flg_withresrad) then
-                  if(leg.ne.kres.and.flst_bornres(leg,jb).ne.kres) cycle
-               endif
+               if(leg.ne.kres.and.flst_bornres(leg,jb).ne.kres) cycle
                fl=flst_born(leg,jb)
                if(is_coloured(fl)) then
                   if(kn_masses(leg).eq.0) then
@@ -169,15 +159,11 @@ c WEW
             Iem=0
             I=0
             do legi=1,nlegborn
-               if(flg_withresrad) then
-                  if(legi.ne.kres.and.flst_bornres(legi,jb).ne.kres)
-     1                 cycle
-               endif
+               if(legi.ne.kres.and.flst_bornres(legi,jb).ne.kres)
+     1              cycle
                do legj=legi+1,nlegborn
-                  if(flg_withresrad) then
-                     if(legj.ne.kres.and.flst_bornres(legj,jb).ne.kres)
-     1                    cycle
-                  endif
+                  if(legj.ne.kres.and.flst_bornres(legj,jb).ne.kres)
+     1                 cycle
 c     both particles are colored
                   if(is_coloured(flst_born(legi,jb)).and.
      1                 is_coloured(flst_born(legj,jb))     ) then

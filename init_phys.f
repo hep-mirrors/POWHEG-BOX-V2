@@ -152,7 +152,7 @@ c initialize number of singular regions
       integer j,k,res
       flst_nreson=0
       do j=1,flst_nreal
-         res=flst_real(nlegreal,j)
+         res=flst_realres(nlegreal,j)
          do k=1,flst_nreson
             if(flst_reslist(k).eq.res) exit
          enddo
