@@ -279,15 +279,6 @@ c are consistent with total Born
       save gtens
       logical colcorr
       external colcorr
-      if(.not.flg_withresrad) then
-         flst_nreson=1
-         flst_reslist(1)=0
-         do iborn=1,flst_nborn
-            do j=1,nlegborn
-               flst_bornres(j,iborn)=0
-            enddo
-         enddo
-      endif
       do ires=1,flst_nreson         
          do iborn=1,flst_nborn
             kres=flst_reslist(ires)
@@ -597,12 +588,10 @@ c     Added this 'if' to be sure that no division by zero occurs
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
-               if(flg_withresrad) then
-                  if(kn_emitter.eq.0) then
-                     kn_resemitter=0
-                  else
-                     kn_resemitter=flst_alrres(nlegreal,alr)
-                  endif
+               if(kn_emitter.eq.0) then
+                  kn_resemitter=0
+               else
+                  kn_resemitter=flst_alrres(nlegreal,alr)
                endif
                do j=1,nmomset
                   call realgr(
@@ -670,12 +659,10 @@ c            if(equivto(alr).lt.0.or..not.computed(equivto(alr))) then
                condition=.false.
             endif
             if(condition) then
-               if(flg_withresrad) then
-                  if(kn_emitter.eq.0) then
-                     kn_resemitter=0
-                  else
-                     kn_resemitter=flst_alrres(nlegreal,alr)
-                  endif
+               if(kn_emitter.eq.0) then
+                  kn_resemitter=0
+               else
+                  kn_resemitter=flst_alrres(nlegreal,alr)
                endif
                call realgr(flst_alr(1,alr),kn_cmpreal,r0(alr))
                sumdijinv=0
@@ -786,12 +773,10 @@ c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
                do j=1,nmomset
-                  if(flg_withresrad) then
-                     if(kn_emitter.eq.0) then
-                        kn_resemitter=0
-                     else
-                        kn_resemitter=flst_alrres(nlegreal,alr)
-                     endif
+                  if(kn_emitter.eq.0) then
+                     kn_resemitter=0
+                  else
+                     kn_resemitter=flst_alrres(nlegreal,alr)
                   endif
                   call realgr(
      1                 flst_alr(1,alr),preal(0,1,j),res(j,alr))
@@ -830,12 +815,10 @@ c Only R_alpha (namely alr) with the current emitter:
 c Not equal to any previous one, compute explicitly.
 c First mark as being computed
                markused(alr)=1
-               if(flg_withresrad) then
-                  if(kn_emitter.eq.0) then
-                     kn_resemitter=0
-                  else
-                     kn_resemitter=flst_alrres(nlegreal,alr)
-                  endif
+               if(kn_emitter.eq.0) then
+                  kn_resemitter=0
+               else
+                  kn_resemitter=flst_alrres(nlegreal,alr)
                endif
                call realgr(flst_alr(1,alr),kn_preal,r0(alr))
 c Supply FKS factor to separate singular region:

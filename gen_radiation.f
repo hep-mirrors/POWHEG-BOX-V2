@@ -233,7 +233,7 @@ c flavour
       else
          em=flst_lightpart+rad_kinreg-2
          if(kn_masses(em).eq.0) then
-            if(flg_withresrad.and.flst_bornres(em,1).ne.0) then
+            if(flst_bornres(em,1).ne.0) then
                ires=flst_bornres(em,1)
                pres=kn_cmpborn(:,ires)
                q2=pres(0)**2-pres(1)**2-pres(2)**2-pres(3)**2

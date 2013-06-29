@@ -54,3 +54,15 @@ c dir (|dir|=1) with angle phi, given sin phi and cos phi.
       vec(3)=pres(3)/(beta*pres(0))
       call mboost(nm,vec,-beta,pin,pout)
       end
+
+      subroutine boost2resoninv(pres,nm,pin,pout)
+      implicit none
+      integer nm
+      real * 8 pres(0:3),pin(0:3,nm),pout(0:3,nm)
+      real * 8 vec(3),beta
+      beta=sqrt(pres(1)**2+pres(2)**2+pres(3)**2)/pres(0)
+      vec(1)=pres(1)/(beta*pres(0))
+      vec(2)=pres(2)/(beta*pres(0))
+      vec(3)=pres(3)/(beta*pres(0))
+      call mboost(nm,vec,beta,pin,pout)
+      end

@@ -108,15 +108,7 @@ c            kinematic regions).
       real * 8 pem(0:3),pres(0:3),phi
       real * 8 dotp
       external dotp
-      if(flg_withresrad) then
-         if(em.eq.0) then
-            kres=0
-         else
-            kres=flst_bornres(em,1)
-         endif
-      else
-         kres=0
-      endif
+      kres=flst_bornres(em,1)
       if(kres.eq.0) then
          pres=kn_cmpborn(:,1)+kn_cmpborn(:,2)
          pem=kn_cmpborn(:,em)
@@ -406,15 +398,7 @@ c no collinear subtraction for massive particle
          res=0
          return
       endif
-      if(flg_withresrad) then
-         if(em.eq.0) then
-            kres=0
-         else
-            kres=flst_bornres(em,iub)
-         endif
-      else
-         kres=0
-      endif
+      kres=flst_bornres(em,iub)
       if(kres.eq.0) then
          q2=kn_cmpborn(0,em)**2
       else
@@ -572,11 +556,10 @@ c     The remaining csi=1-x factor has been applied earlier
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
-      colcorr= abs(flst_born(j,iub)).le.6
-      if(flg_withresrad) then
-            colcorr=colcorr .and.
-     1           (j.eq.res .or. flst_bornres(j,iub).eq.res)
-      endif
+      logical is_coloured
+      colcorr= is_coloured(flst_born(j,iub))
+      colcorr=colcorr .and.
+     1     (j.eq.res .or. flst_bornres(j,iub).eq.res)
       end
 
 
@@ -636,14 +619,10 @@ c - 1 for incoming antifermion or outgoing fermion
       if(flst_emitter(alr).eq.em) then
          if(flst_alr(nlegreal,alr).eq.0) then
             iub=flst_alr2born(alr)
-            if(flg_withresrad) then
-               if(em.eq.0) then
-                  kres=0
-               else
-                  kres=flst_bornres(em,iub)
-               endif
-            else
+            if(em.eq.0) then
                kres=0
+            else
+               kres=flst_bornres(em,iub)
             endif
             if(kres.eq.0) then
                q2=4*kn_cmpborn(0,1)*kn_cmpborn(0,2)

@@ -26,11 +26,7 @@ c csimax depends upon y in this case.
       do j=0,nlegborn
          if(valid_emitter(j)) then
             if(j.gt.2) then
-               if(flg_withresrad) then
-                  kres=flst_bornres(j,1)
-               else
-                  kres=-1
-               endif
+               kres=flst_bornres(j,1)
                if(kres.gt.0) then
                   call boost2reson(kn_cmpborn(:,kres),1,
      1                 kn_cmpborn(:,j),pj)

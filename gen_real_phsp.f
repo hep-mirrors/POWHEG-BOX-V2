@@ -116,7 +116,7 @@ c     local common block
       data vec/0d0,0d0,1d0/
       save vec
       kn_emitter=flst_lightpart+rad_kinreg-2
-      if(flg_withresrad.and.flst_bornres(kn_emitter,1).ne.0) then
+      if(flst_bornres(kn_emitter,1).ne.0) then
 c Find four momentum of resonance
          ires=flst_bornres(kn_emitter,1)
          pres=kn_cmpborn(:,ires)
@@ -502,11 +502,7 @@ c      call checkmomzero(nlegreal,kn_preal)
       real * 8 dotp
       external dotp
       j=kn_emitter
-      if(flg_withresrad) then
-         kres=flst_bornres(j,1)
-      else
-         kres=-1
-      endif
+      kres=flst_bornres(j,1)
       if(kres.gt.0) then
          call boost2reson(kn_cmpborn(:,kres),1,
      1        kn_cmpborn(:,j),pj)
@@ -701,7 +697,7 @@ c configuration for the massive emitter
       real * 8 pres(0:3),pem(0:3)
       em=flst_lightpart+rad_kinreg-2
       kn_emitter = em
-      if(flg_withresrad.and.flst_bornres(em,1).ne.0) then
+      if(flst_bornres(em,1).ne.0) then
 c Find four momentum of resonance
          ires=flst_bornres(em,1)
          pres=kn_cmpborn(:,ires)
@@ -880,7 +876,7 @@ c      call printtot(nlegreal,kn_preal(0,1))
      # *2*(1+y))**par_diexp
       enddo
       do j=flst_lightpart,nlegreal
-         if(flg_withresrad.and.kn_emitter.gt.2) then
+         if(kn_emitter.gt.2) then
             ires = flst_bornres(kn_emitter,1)
             if(ires.gt.0) then
                pres=kn_cmpreal(:,ires)
@@ -929,7 +925,7 @@ c     4        (kn_cmpreal(3,k)+kn_cmpreal(3,j))**2))**par_dijexp
       kn_dijterm_soft(2)=(kn_softvec(0)**2
      #*2*(1+y))**par_diexp
       do k=flst_lightpart,nlegreal-1
-         if(flg_withresrad.and.kn_emitter.gt.2) then
+         if(kn_emitter.gt.2) then
             ires = flst_bornres(kn_emitter,1)
             if(ires.gt.0) then
                pres=kn_cmpborn(:,flst_bornres(kn_emitter,1))
@@ -968,7 +964,7 @@ c     4        (kn_cmpreal(3,k)+kn_cmpreal(3,j))**2))**par_dijexp
       real * 8 pres(0:3),pem(0:3),vec(3),beta
       integer kres
       em=kn_emitter
-      if(flg_withresrad.and.em.gt.2) then
+      if(em.gt.2) then
          kres=flst_bornres(em,1)
          if(kres.ne.0) then
             pres=kn_cmpborn(:,kres)
@@ -982,6 +978,7 @@ c     4        (kn_cmpreal(3,k)+kn_cmpreal(3,j))**2))**par_dijexp
          endif
 c Now pem is the emitter in the resonance CM frame
       else
+         kres=0
          pem=kn_cmpborn(:,em)
       endif
       y=kn_y
@@ -1000,7 +997,7 @@ c Set up a unit vector orthogonal to p_em and to the z axis
       enddo
 c Rotate kn_softvec around dir of an amount azi
       call mrotate(dir,sin(kn_azi),cos(kn_azi),kn_softvec(1))
-      if(flg_withresrad.and.em.gt.2.and.kres.ne.0) then
+      if(em.gt.2.and.kres.ne.0) then
          call mboost(1,vec,beta,kn_softvec,kn_softvec)
       endif      
       end
@@ -1018,7 +1015,7 @@ c Rotate kn_softvec around dir of an amount azi
       real * 8 pres(0:3),pem(0:3),vec(3),beta
       integer kres
       em=kn_emitter
-      if(flg_withresrad.and.em.gt.2) then
+      if(em.gt.2) then
          kres=flst_bornres(em,1)
          if(kres.ne.0) then
             pres=kn_cmpborn(:,kres)
@@ -1032,6 +1029,7 @@ c Rotate kn_softvec around dir of an amount azi
          endif
 c Now pres is the emitter in the resonance CM frame
       else
+         kres=0
          pem=kn_cmpborn(:,em)
       endif
       y=cosjnp1soft
@@ -1052,7 +1050,7 @@ c Set up a unit vector orthogonal to p_em and to the z axis
       enddo
 c Rotate kn_softvec around dir of an amount azi
       call mrotate(dir,sin(kn_azi),cos(kn_azi),kn_softvec(1))
-      if(flg_withresrad.and.em.gt.2.and.kres.ne.0) then
+      if(em.gt.2.and.kres.ne.0) then
          call mboost(1,vec,beta,kn_softvec,kn_softvec)
       endif      
       end
@@ -1083,10 +1081,10 @@ c Rotate kn_softvec around dir of an amount azi
       real * 8 dotp
       external dotp
       j=kn_emitter
-      if(flg_withresrad) then
+      if(j.gt.2) then
          kres=flst_bornres(j,1)
       else
-         kres=-1
+         kres=0
       endif
       if(kres.gt.0) then
          call boost2reson(kn_cmpborn(:,kres),1,

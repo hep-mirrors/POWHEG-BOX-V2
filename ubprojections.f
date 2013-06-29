@@ -1,43 +1,63 @@
 c Find the underlying Born momenta from the real momenta and the
 c emitter-readiated pair
-      subroutine compuborn(em,rad,cmppborn)
+      subroutine compuborn(em,rad,reslist,cmppborn)
       implicit none
-      integer em,rad
       include 'nlegborn.h'
+      integer em,rad,reslist(nlegreal)
       include 'pwhg_flst.h'
       real * 8 cmppborn(0:3,nlegreal)
       if(em.lt.3) then
          call findubisr(rad,cmppborn)
       else
-         call findubfsr(em,rad,cmppborn)
+         call findubfsr(em,rad,reslist,cmppborn)
       endif
       end
       
-      subroutine findubfsr(i,j,cmppborn)
+      subroutine findubfsr(em,rad,reslist,cmppborn)
       implicit none
-      integer i,j
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      integer em,rad,reslist(nlegreal)
       real * 8 cmppborn(0:3,nlegreal)
       include 'pwhg_kn.h'
-      real * 8 krecv(3),q0,q2,krec,beta,
-     1 k0rec,k,vec(3)
-      cmppborn(0:3,1)=kn_cmpreal(0:3,1)
-      cmppborn(0:3,2)=kn_cmpreal(0:3,2)
-      q0=2*cmppborn(0,1)
+      real * 8 krecv(3),q0,q2,krec,beta,      
+     1     k0rec,k,vec(3)
+      integer res,j
+      res=reslist(em)
+      if(res.ne.reslist(rad)) then
+         write(*,*) ' findubfsr: error'
+         call pwhg_exit(-1)
+      endif
+      cmppborn=kn_cmpreal
+      if(res.ne.0) then
+         call boost2reson(kn_cmpreal(:,res),nlegreal,
+     1        kn_cmpreal,cmppborn)
+         q0=cmppborn(0,res)
+      else
+         q0=2*cmppborn(0,1)
+      endif
       q2=q0**2
 c recoil system momentum 
-      k0rec=q0-kn_cmpreal(0,i)-kn_cmpreal(0,j)
-      krecv=-kn_cmpreal(1:3,i)-kn_cmpreal(1:3,j)
+      k0rec=q0-cmppborn(0,em)-cmppborn(0,rad)
+      krecv=-cmppborn(1:3,em)-cmppborn(1:3,rad)
       krec=sqrt(krecv(1)**2+krecv(2)**2+krecv(3)**2)
       beta=(q2-(k0rec+krec)**2)/(q2+(k0rec+krec)**2)
       vec=krecv/krec
-      call mboost(nlegreal-2,vec,beta,
-     1     kn_cmpreal(:,3:nlegreal),cmppborn(:,3:nlegreal))
+      if(res.eq.0) then
+         call mboost(nlegreal-2,vec,beta,
+     1        cmppborn(:,3:nlegreal),cmppborn(:,3:nlegreal))
+      else
+         do j=3,nlegreal
+            if(reslist(j).eq.res) then
+               call mboost(1,vec,beta,
+     1              cmppborn(:,j:j),cmppborn(:,j:j))
+            endif
+         enddo
+      endif
       k=(q2-(k0rec**2-krec**2))/(2*q0)
-      cmppborn(0,i)=k
-      cmppborn(1:3,i)=-vec*k
-      cmppborn(:,j)=0
+      cmppborn(0,em)=k
+      cmppborn(1:3,em)=-vec*k
+      cmppborn(:,rad)=0
       end
 
       subroutine findubisr(j,cmppborn)
@@ -82,7 +102,7 @@ c Now the transverse boost
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
       include 'pwhg_par.h'
-      integer rflav(nlegreal)
+      integer rflav(nlegreal),reslist(nlegreal),res
       real * 8 cmppborn(0:3,nlegreal)
       real * 8 avub,getdistance1,getdistance2,getdistance,dalr
       integer nub,mergeisr,mergefsr,i,j,k,ifl1,ifl2,onem
@@ -105,6 +125,10 @@ c Now the transverse boost
          return
       endif
       rflav(:)=flst_alr(:,alr)
+c we only consider singularities within the same
+c resonance decay (or in production)
+      reslist(:)=flst_alrres(:,alr)
+      res=reslist(nlegreal)
 c find UB flavour
       if(em.eq.0) then
          continue
@@ -117,7 +141,7 @@ c find UB flavour
       endif
 c invalidater rad parton with impossible pdg code
       rflav(rad)=onem
-      call compuborn(em,rad,cmppborn)
+      call compuborn(em,rad,reslist,cmppborn)
 c looop over all possible singularities
       dalr=getdistance(em,rad,kn_cmpreal)
       if(abs(dalr/kn_dijterm(em,rad)-1).gt.1d-6) then
@@ -127,22 +151,26 @@ c get average singularity from underlying Born
       avub=1
       nub=0
       do j=3,nlegreal
-         ifl1=mergeisr(rflav(1),rflav(j))
-         ifl2=mergeisr(rflav(2),rflav(j))
-         if(ifl1.eq.rflav(1).and.ifl2.eq.rflav(2)) then
-            avub=avub*(1+dalr/getdistance(0,j,cmppborn))
-            nub=nub+1
-         else
-            if(ifl1.ne.onem) then
-               avub=avub*(1+dalr/getdistance(1,j,cmppborn))
+         if(reslist(j).ne.res) cycle
+         if(res.eq.0) then
+            ifl1=mergeisr(rflav(1),rflav(j))
+            ifl2=mergeisr(rflav(2),rflav(j))
+            if(ifl1.eq.rflav(1).and.ifl2.eq.rflav(2)) then
+               avub=avub*(1+dalr/getdistance(0,j,cmppborn))
                nub=nub+1
-            endif
-            if(ifl2.ne.onem) then
-               avub=avub*(1+dalr/getdistance(2,j,cmppborn))
-               nub=nub+1
+            else
+               if(ifl1.ne.onem) then
+                  avub=avub*(1+dalr/getdistance(1,j,cmppborn))
+                  nub=nub+1
+               endif
+               if(ifl2.ne.onem) then
+                  avub=avub*(1+dalr/getdistance(2,j,cmppborn))
+                  nub=nub+1
+               endif
             endif
          endif
          do k=j+1,nlegreal
+            if(reslist(k).ne.res) cycle
             if(mergefsr(rflav(j),rflav(k)).ne.onem) then
                avub=avub*(1+dalr/getdistance(j,k,cmppborn))
                nub=nub+1
