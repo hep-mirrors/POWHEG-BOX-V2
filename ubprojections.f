@@ -104,7 +104,7 @@ c Now the transverse boost
       include 'pwhg_par.h'
       integer rflav(nlegreal),reslist(nlegreal),res
       real * 8 cmppborn(0:3,nlegreal)
-      real * 8 avub,getdistance1,getdistance2,getdistance,dalr
+      real * 8 avub,getdistance,dalr
       integer nub,mergeisr,mergefsr,i,j,k,ifl1,ifl2,onem
       parameter (onem=1000000)
       logical ini,olddij
@@ -143,7 +143,7 @@ c invalidater rad parton with impossible pdg code
       rflav(rad)=onem
       call compuborn(em,rad,reslist,cmppborn)
 c looop over all possible singularities
-      dalr=getdistance(em,rad,kn_cmpreal)
+      dalr=getdistance(em,rad,res,kn_cmpreal)
       if(abs(dalr/kn_dijterm(em,rad)-1).gt.1d-6) then
          write(*,*) 'dalr', dalr/kn_dijterm(em,rad)
       endif
@@ -156,15 +156,15 @@ c get average singularity from underlying Born
             ifl1=mergeisr(rflav(1),rflav(j))
             ifl2=mergeisr(rflav(2),rflav(j))
             if(ifl1.eq.rflav(1).and.ifl2.eq.rflav(2)) then
-               avub=avub*(1+dalr/getdistance(0,j,cmppborn))
+               avub=avub*(1+dalr/getdistance(0,j,res,cmppborn))
                nub=nub+1
             else
                if(ifl1.ne.onem) then
-                  avub=avub*(1+dalr/getdistance(1,j,cmppborn))
+                  avub=avub*(1+dalr/getdistance(1,j,res,cmppborn))
                   nub=nub+1
                endif
                if(ifl2.ne.onem) then
-                  avub=avub*(1+dalr/getdistance(2,j,cmppborn))
+                  avub=avub*(1+dalr/getdistance(2,j,res,cmppborn))
                   nub=nub+1
                endif
             endif
@@ -172,7 +172,7 @@ c get average singularity from underlying Born
          do k=j+1,nlegreal
             if(reslist(k).ne.res) cycle
             if(mergefsr(rflav(j),rflav(k)).ne.onem) then
-               avub=avub*(1+dalr/getdistance(j,k,cmppborn))
+               avub=avub*(1+dalr/getdistance(j,k,res,cmppborn))
                nub=nub+1
             endif
          enddo
@@ -180,17 +180,17 @@ c get average singularity from underlying Born
       dijterm=dalr*avub
       end
 
-      function getdistance(em,rad,cmp)
+      function getdistance(em,rad,res,cmp)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_par.h'
       real * 8 getdistance
-      integer em,rad
-      real * 8 cmp(0:3,nlegreal),y
+      integer em,rad,res
+      real * 8 cmp(0:3,nlegreal),y,e_em,e_rad
       real * 8 dotp
       external dotp
       if(em.lt.3) then
-         y=1-dotp(cmp(0,1),cmp(0,rad))/(cmp(0,1)*cmp(0,rad))
+         y=1-dotp(cmp(:,1),cmp(:,rad))/(cmp(0,1)*cmp(0,rad))
          if(em.eq.0) then
             getdistance=(cmp(0,rad)**2*(1-y**2))**par_diexp
          elseif(em.eq.1) then
@@ -199,8 +199,15 @@ c get average singularity from underlying Born
             getdistance=(cmp(0,rad)**2*2*(1+y))**par_diexp
          endif
       else
-         getdistance=(2*dotp(cmp(0,em),cmp(0,rad))*
-     1        cmp(0,em)*cmp(0,rad)/(cmp(0,em)+cmp(0,rad))**2
+         if(res.eq.0) then
+            e_em=cmp(0,em)
+            e_rad=cmp(0,rad)
+         else
+            e_em=dotp(cmp(:,res),cmp(:,em))
+            e_rad=dotp(cmp(:,res),cmp(:,rad))
+         endif
+         getdistance=(2*dotp(cmp(:,em),cmp(:,rad))*
+     1        e_em*e_rad/(e_em+e_rad)**2
      2        )**par_dijexp
       endif
       end
