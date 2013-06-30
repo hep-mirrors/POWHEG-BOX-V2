@@ -62,10 +62,9 @@ c conjugate their colours in the output, to make them outgoing.
          idup(em)=flem
          idup(rad)=flrad
       endif
+c if there are resonances, setup up appropriate LH pointers
+      call lh_resonances
 c add resonances, perform decays, put particles on shell, etc.(or nothing!)
-      if(flg_withresrad) then
-         call lh_resonances
-      endif
       call finalize_lh
       end
 
@@ -211,9 +210,7 @@ c gluons are numbered 21 in pdg
          if(moth.ne.0) then
             mothup(1,j)=moth
             mothup(2,j)=moth
-         endif
-         if(flst_isres(j)) then
-            istup(j)=+2
+            istup(moth)=2
          endif
       enddo
       if(nup.eq.nlegreal) then
