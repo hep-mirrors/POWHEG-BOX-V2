@@ -889,11 +889,15 @@ c      call printtot(nlegreal,kn_preal(0,1))
          ej=dotp(kn_cmpreal(0,j),pres)
          do k=j+1,nlegreal
             ek=dotp(kn_cmpreal(0,k),pres)
-            kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
-     1       ek*ej /  (ek+ej)**2 )**par_dijexp
-c     2    /  ((kn_cmpreal(1,k)+kn_cmpreal(1,j))**2+
-c     3        (kn_cmpreal(2,k)+kn_cmpreal(2,j))**2+
-c     4        (kn_cmpreal(3,k)+kn_cmpreal(3,j))**2))**par_dijexp
+            if(kn_masses(k).eq.0.and.kn_masses(j).gt.0) then
+c this in case a massive fermion j, treated as light, radiates
+c a massless boson k 
+               kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
+     1              ek/ej )**par_dijexp
+            else
+               kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
+     1              ek*ej /  (ek+ej)**2 )**par_dijexp
+            endif
          enddo
       enddo
       end

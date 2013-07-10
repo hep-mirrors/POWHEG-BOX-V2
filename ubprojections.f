@@ -184,6 +184,7 @@ c get average singularity from underlying Born
       implicit none
       include 'nlegborn.h'
       include 'pwhg_par.h'
+      include 'pwhg_kn.h'
       real * 8 getdistance
       integer em,rad,res
       real * 8 cmp(0:3,nlegreal),y,e_em,e_rad
@@ -206,9 +207,15 @@ c get average singularity from underlying Born
             e_em=dotp(cmp(:,res),cmp(:,em))
             e_rad=dotp(cmp(:,res),cmp(:,rad))
          endif
-         getdistance=(2*dotp(cmp(:,em),cmp(:,rad))*
-     1        e_em*e_rad/(e_em+e_rad)**2
+         if(kn_masses(em).gt.0.and.kn_masses(rad).eq.0) then
+            getdistance=(2*dotp(cmp(:,em),cmp(:,rad))*
+     1        e_rad/e_em
      2        )**par_dijexp
+         else
+            getdistance=(2*dotp(cmp(:,em),cmp(:,rad))*
+     1           e_em*e_rad/(e_em+e_rad)**2
+     2           )**par_dijexp
+         endif
       endif
       end
 

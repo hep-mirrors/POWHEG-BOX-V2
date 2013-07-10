@@ -38,6 +38,8 @@ OPT=-O3
 #DEBUG= -ggdb -pg
 endif
 
+OBJ = obj-$(COMPILER)
+
 
 ifeq ("$(COMPILER)","ifort")
 F77 = ifort -save  -extend_source
@@ -55,7 +57,7 @@ endif
 
 PWD=$(shell pwd)
 WDNAME=$(shell basename $(PWD))
-VPATH= ./:../:obj/
+VPATH= ./:../:$(OBJ)/
 
 INCLUDE0=$(PWD)
 INCLUDE1=$(PWD)/include
@@ -98,13 +100,13 @@ PWHGANAL=pwhg_analysis-dummy.o
 endif
 
 %.o: %.f $(INCLUDE)
-	$(FF) -c -o obj/$@ $<
+	$(FF) -c -o $(OBJ)/$@ $<
 
 %.o: %.c
-	$(CC) $(DEBUG) -c -o obj/$@ $^ 
+	$(CC) $(DEBUG) -c -o $(OBJ)/$@ $^ 
 
 %.o: %.cc
-	$(CXX) $(DEBUG) -c -o obj/$@ $^ $(FJCXXFLAGS)
+	$(CXX) $(DEBUG) -c -o $(OBJ)/$@ $^ $(FJCXXFLAGS)
 
 USER=init_couplings.o init_processes.o Born_phsp.o Born.o virtual.o	\
      real.o $(PWHGANAL)
@@ -117,11 +119,13 @@ PWHG=pwhg_main.o pwhg_init.o bbinit.o btilde.o lhefwrite.o		\
 	init_phys.o powheginput.o pdfcalls.o sigreal.o sigcollremn.o	\
 	pwhg_bookhist.o pwhg_analysis_driver.o checkmomzero.o		\
 	setstrongcoupl.o integrator.o newunit.o mwarn.o sigsoftvirt.o	\
-	sigcollsoft.o sigvirtual.o reshufflemoms.o $(PDFPACK) $(USER) $(FPEOBJ)
+	sigcollsoft.o sigvirtual.o reshufflemoms.o \
+        setlocalscales.o validflav.o mint_upb.o  \
+	pwhgreweight.o opencount.o ubprojections.o $(PDFPACK) $(USER) $(FPEOBJ)
 
 # target to generate LHEF output
 pwhg_main:$(PWHG)
-	$(FF) $(patsubst %,obj/%,$(PWHG)) $(LIBS) $(LIBSFASTJET) $(STATIC) -o $@
+	$(FF) $(patsubst %,$(OBJ)/%,$(PWHG)) $(LIBS) $(LIBSFASTJET) $(STATIC) -o $@
 
 LHEF=lhef_analysis.o boostrot.o random.o cernroutines.o		\
      opencount.o powheginput.o pwhg_bookhist.o $(PWHGANAL)	\
@@ -129,7 +133,7 @@ LHEF=lhef_analysis.o boostrot.o random.o cernroutines.o		\
 
 # target to analyze LHEF output
 lhef_analysis:$(LHEF)
-	$(FF) $(patsubst %,obj/%,$(LHEF)) $(LIBS) $(LIBSFASTJET) $(STATIC)  -o $@ 
+	$(FF) $(patsubst %,$(OBJ)/%,$(LHEF)) $(LIBS) $(LIBSFASTJET) $(STATIC)  -o $@ 
 
 
 
@@ -139,7 +143,7 @@ HERWIG=main-HERWIG.o setup-HERWIG-lhef.o herwig.o boostrot.o	\
 	pdfdummies.o opencount.o $(FPEOBJ) 
 
 main-HERWIG-lhef: $(HERWIG)
-	$(FF) $(patsubst %,obj/%,$(HERWIG))  $(LIBSFASTJET)  $(STATIC) -o $@
+	$(FF) $(patsubst %,$(OBJ)/%,$(HERWIG))  $(LIBSFASTJET)  $(STATIC) -o $@
 
 # target to read event file, shower events with PYTHIA + analysis
 PYTHIA=main-PYTHIA.o setup-PYTHIA-lhef.o pythia.o boostrot.o powheginput.o		\
@@ -148,19 +152,19 @@ PYTHIA=main-PYTHIA.o setup-PYTHIA-lhef.o pythia.o boostrot.o powheginput.o		\
 	$(FPEOBJ)
 
 main-PYTHIA-lhef: $(PYTHIA)
-	$(FF) $(patsubst %,obj/%,$(PYTHIA)) $(LIBSFASTJET)  $(STATIC) -o $@
+	$(FF) $(patsubst %,$(OBJ)/%,$(PYTHIA)) $(LIBSFASTJET)  $(STATIC) -o $@
 
 PHOTOS=main-PHOTOS.o photos.o boostrot.o lhefwrite_photos.o newunit.o \
 	powheginput.o pwhg_bookhist.o $(PWHGANAL) lhefread.o cernroutines.o \
 	pdfdummies.o opencount.o random.o readhorace.o $(FPEOBJ) 
 
 main-PHOTOS-lhef: $(PHOTOS)
-	$(FF) $(patsubst %,obj/%,$(PHOTOS)) $(STATIC) -o $@
+	$(FF) $(patsubst %,$(OBJ)/%,$(PHOTOS)) $(STATIC) -o $@
 
 # target to cleanup
 .PHONY: clean
 clean:
-	rm -f obj/*.o pwhg_main lhef_analysis main-HERWIG-lhef	\
+	rm -f $(OBJ)/*.o pwhg_main lhef_analysis main-HERWIG-lhef	\
 	main-PYTHIA-lhef main-PHOTOS-lhef
 
 ###################################################################
@@ -172,4 +176,4 @@ MERGE_wp_wm=merge_wp_wm.o newunit.o random.o cernroutines.o
 
 #  target to merge wp and wm samples
 merge_wp_wm: $(MERGE_wp_wm)
-	$(FF) $(patsubst %.o,obj/%.o,$(MERGE_wp_wm)) -o $@
+	$(FF) $(patsubst %.o,$(OBJ)/%.o,$(MERGE_wp_wm)) -o $@

@@ -2,6 +2,7 @@
       implicit none
       include 'PhysPars.h'
       include 'pwhg_st.h'
+      include 'pwhg_em.h'
       include 'mathx.h'
       include 'pwhg_math.h'
       include 'nlegborn.h'
@@ -35,6 +36,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (ph_alphaem.le.0d0) ph_alphaem = 1d0/137.03599911d0
 
       physpar_aem = ph_alphaem
+
+      em_alpha = physpar_aem
 
       ph_Zmass = powheginput("#Zmass")
       if (ph_Zmass.le.0d0) ph_Zmass  = 91.1876d0     

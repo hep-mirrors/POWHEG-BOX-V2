@@ -261,3 +261,53 @@ c     exchance particle 1 and 2
      +        /4d0/nc
 
       end
+
+
+
+      subroutine borncolour_lh
+c Sets up the colour for the given flavour configuration
+c already filled in the Les Houches interface.
+c In case there are several colour structure, one
+c should pick one with a probability proportional to
+c the value of the corresponding cross section, for the
+c kinematics defined in the Les Houches interface
+      include 'LesHouches.h'
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+c     neutral particles
+      icolup(1,3)=0
+      icolup(2,3)=0
+      icolup(1,4)=0
+      icolup(2,4)=0
+c     colored particles
+      if((idup(1).gt.0).and.(idup(2).lt.0)) then
+         icolup(1,1)=501
+         icolup(2,1)=0
+         icolup(1,2)=0
+         icolup(2,2)=501
+      elseif((idup(1).lt.0).and.(idup(2).gt.0)) then
+         icolup(1,1)=0
+         icolup(2,1)=501
+         icolup(1,2)=501
+         icolup(2,2)=0
+      else
+         write(*,*) ' invalid flavour'
+         stop
+      endif
+      end
+
+
+      subroutine finalize_lh
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_rad.h'
+c     Set up the resonances whose mass must be preserved
+c     on the Les Houches interface.
+c     
+c     vector boson id and decay
+      integer idvecbos,vdecaymode
+      common/cvecbos/idvecbos,vdecaymode
+
+      call add_resonance(idvecbos,3,4)
+
+      end

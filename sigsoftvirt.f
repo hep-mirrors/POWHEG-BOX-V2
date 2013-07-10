@@ -84,6 +84,11 @@ c EW Q contribution
             rescfac = 1
          endif
          do jb=1,flst_nborn
+c Strong Q contribution
+            Q = 0
+c EW Q contribution
+            Qem = 0
+
             if(flg_minlo) then
                call setlocalscales(jb,2,rescfac)
                ll = log(par_csicut**2*s/st_muren2)
@@ -116,11 +121,11 @@ c EW photonic contribution
                ch2=chargeofparticle(fl2)
                if (flg_with_em.and.ch1.ne.0) then
                   Qem=Qem-log(st_mufact2/em_muren2)*( 
-     1               (1+3*log(par_csicut))*ch1**2)
+     1               (1.5d0+2*log(par_csicut))*ch1**2)
                endif
                if (flg_with_em.and.ch2.ne.0) then
                   Qem=Qem-log(st_mufact2/em_muren2)*( 
-     3             + (1+3*log(par_csicut))*ch2**2)
+     3             + (1.5d0+2*log(par_csicut))*ch2**2)
                endif
             endif
 c     loop on final-state massless partons
@@ -156,6 +161,7 @@ c WEW
                endif
             enddo
             Q=Q*br_born(jb)
+            Qem=Qem*br_born(jb)
             Iem=0
             I=0
             do legi=1,nlegborn

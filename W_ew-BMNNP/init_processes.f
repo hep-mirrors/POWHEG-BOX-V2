@@ -5,6 +5,7 @@
       include 'pwhg_kn.h'
       include 'pwhg_pdf.h'
       include 'pwhg_par.h'
+      include 'pwhg_em.h'
       include 'LesHouches.h'
       include 'pwhg_flg.h'
       integer i1,i2,i3,i4,i5,k,ii(nlegreal)
@@ -27,6 +28,11 @@ c     lepton masses
       real *8 kt2minqed
       common/showerqed/kt2minqed
 
+c Must include photon!
+      pdf_nparton = 22
+      flg_with_em = .true.
+c EW renormalization scale
+      em_muren2 = 1d0
 c******************************************************
 c     Choose the process to be implemented
 c******************************************************

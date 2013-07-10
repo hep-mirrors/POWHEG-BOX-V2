@@ -562,6 +562,7 @@ c     Added this 'if' to be sure that no division by zero occurs
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
+      include 'pwhg_pdf.h'
       real * 8 r0(maxalr),rc(maxalr),rs(maxalr)
       integer alr,alrpr,iret,em
       integer nmomset,emitter
@@ -571,7 +572,8 @@ c     Added this 'if' to be sure that no division by zero occurs
       real * 8 equivcoef(maxalr)
       integer j,k
       real * 8 sumdijinv,dampfac,r
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton)
       real * 8 ptsq,pwhg_pt2,dijterm
       logical computed(maxalr)
       logical condition
@@ -745,6 +747,7 @@ c    csi^2 (1-y)   for FSR regions
       include 'pwhg_kn.h'
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
+      include 'pwhg_pdf.h'
       integer imode
       real * 8 r0(maxalr)
       real * 8 rc(maxalr),rs(maxalr),r
@@ -756,7 +759,8 @@ c    csi^2 (1-y)   for FSR regions
       real * 8 equivcoef(maxalr)
       integer j,k
       real * 8 sumdijinv,dampfac
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton)
       real * 8 rescfac
       logical ini
       data ini/.true./
