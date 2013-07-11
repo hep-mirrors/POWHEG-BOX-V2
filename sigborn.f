@@ -5,7 +5,9 @@
       include 'pwhg_kn.h'
       include 'pwhg_br.h'
       include 'pwhg_flg.h'
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      include 'pwhg_pdf.h'
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton)
       real * 8 res(flst_nborn),tot,rescfac
       integer j
       if(.not.flg_minlo) then
@@ -38,8 +40,10 @@ c         res(j)=kn_jacborn/(2*kn_sborn)/flst_nborn
       include 'pwhg_kn.h'
       include 'pwhg_br.h'
       include 'pwhg_rad.h'
-      real * 8 pdf1(-6:6),pdf2(-6:6),bornjk(nlegborn,nlegborn),
-     #         bmunu(0:3,0:3,nlegborn)
+      include 'pwhg_pdf.h'
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton),
+     2         bornjk(nlegborn,nlegborn),bmunu(0:3,0:3,nlegborn)
       call pdfcall(1,kn_xb1,pdf1)
       call pdfcall(2,kn_xb2,pdf2)
       call setborn0(kn_cmpborn,flst_born(1,rad_ubornidx),born,

@@ -7,6 +7,7 @@ c imode = 1: force load
       include 'pwhg_math.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       include 'pwhg_rnd.h'
@@ -16,12 +17,12 @@ c imode = 1: force load
       common/cpwgprefix/pwgprefix,lprefix
       character * 4 chseed
       integer nubound,ios,iun,nynormsold,ncsinormsold,
-     #  icsi,iy,j,k,jfile,nfiles
+     1  icsi,iy,j,k,jfile,nfiles,fl1,fl2,flemitter
       real * 8 csiynorms(rad_ncsiynormsmx,
      1     rad_ncsiynormsmx,nlegborn-1,maxprocborn)
-      logical lpresent,loaded,manyfiles
+      logical lpresent,loaded,manyfiles,is_coloured,is_charged
       real * 8 powheginput,random
-      external powheginput,random      
+      external powheginput,random,is_coloured,is_charged  
       call zerohistnorms
       loaded=.false.
       nubound=powheginput('nubound')
@@ -177,10 +178,26 @@ c Compute and store normalization grid
          do rad_kinreg=1,rad_nkinreg
             if(rad_kinreg.eq.1.and.rad_kinreg_on(1)) then
 c     initial state radiation
+               fl1=flst_born(1,rad_ubornidx)
+               fl2=flst_born(2,rad_ubornidx)
+               if((.not.is_coloured(fl1).and..not.is_coloured(fl2))
+     1          .and.(is_charged(fl1).or.is_charged(fl2))) then
+                  flg_em_rad = .true.
+               else
+                  flg_em_rad = .false.
+               endif
                call gen_real_phsp_isr_rad0
                call inc_norms
             elseif(rad_kinreg_on(rad_kinreg)) then
 c     final state radiation
+               kn_emitter=flst_lightpart+rad_kinreg-2
+               flemitter=flst_born(kn_emitter,rad_ubornidx)
+               if(.not.is_coloured(flemitter).and.is_charged(flemitter))
+     1              then
+                  flg_em_rad = .true.
+               else
+                  flg_em_rad = .false.
+               endif
                call gen_real_phsp_fsr_rad0
                call inc_norms
             endif
@@ -252,7 +269,8 @@ ccccccccccccccccccccccccccccccccc
       include 'pwhg_st.h'
       include 'pwhg_pdf.h'
       include 'pwhg_br.h'
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton)
 cccccccccccccccccccccccccccccccc
       ptsq=pwhg_pt2()
       if(ptsq.gt.rad_ptsqmin) then
@@ -470,7 +488,7 @@ c maxrat
       include 'pwhg_rad.h'
       include 'pwhg_st.h'
       include 'pwhg_pdf.h'
-      real * 8 pdf(-6:6),sn,suppfc,x
+      real * 8 pdf(-pdf_nparton:pdf_nparton),sn,suppfc,x
       integer k,j,fl
       suppfc(x)=(1-x)*x
 c in FKS, for final state radiation, pdf always cancel in real/born

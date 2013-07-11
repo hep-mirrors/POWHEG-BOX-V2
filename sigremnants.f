@@ -111,6 +111,7 @@ c contributions from real graphs that do not have a singular region
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
+      include 'pwhg_pdf.h'
       real * 8 xjac,sig,r0(maxprocreal)
       integer lreg,lregpr,iret
       integer nmomset
@@ -120,7 +121,8 @@ c contributions from real graphs that do not have a singular region
       integer equivto(maxprocreal)
       real * 8 equivcoef(maxprocreal)
       integer j
-      real * 8 pdf1(-6:6),pdf2(-6:6)
+      real * 8 pdf1(-pdf_nparton:pdf_nparton),
+     1         pdf2(-pdf_nparton:pdf_nparton)
       logical ini
       data ini/.true./
       save ini,equivto,equivcoef

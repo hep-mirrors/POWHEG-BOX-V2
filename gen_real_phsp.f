@@ -710,6 +710,8 @@ c Find four momentum of resonance
          mrec2=(q-kn_cmpborn(0,em))**2
      1     -kn_cmpborn(1,em)**2-kn_cmpborn(2,em)**2-kn_cmpborn(3,em)**2
       endif
+      mrec2=abs(mrec2)
+      if(mrec2.lt.1d-10) mrec2=0
       m2=kn_masses(em)**2
       if(m2.gt.0) then
          csimax=1-(sqrt(m2)+sqrt(mrec2))**2/q**2

@@ -253,64 +253,96 @@ c over the two possible colour connections.
       integer colin(2),fl2,fl3,colout2(2),colout3(2)
       integer newcolor
       real * 8 random
-      external random
+      logical is_coloured
+      external random,is_coloured
       call getnewcolor(newcolor)
-      if(colin(1).ne.0.and.colin(2).ne.0) then
-         if(fl2.eq.0.and.fl3.eq.0) then
-            if(random().gt.0.5d0) then
+c First handle photon case
+      if(fl2.eq.22) then
+         colout2=0
+         colout3(1)=colin(2)
+         colout3(2)=colin(1)
+      elseif(fl3.eq.22) then
+         colout3=0
+         colout2(1)=colin(2)
+         colout2(2)=colin(1)
+      elseif(colin(1).eq.0.and.colin(2).eq.0) then
+         if(is_coloured(fl2)) then
+            if(fl2.gt.0) then
+               colout2(1)=newcolor
+               colout2(2)=0
+               colout3(2)=newcolor
+               colout3(1)=0
+            elseif(fl3.gt.0) then
+               colout2(1)=0
+               colout2(2)=newcolor
+               colout3(2)=0
+               colout3(1)=newcolor
+            else
+               goto 998
+            endif
+         else
+            colout2=0
+            colout3=0
+         endif
+      else
+c now handle all coloured particles
+         if(colin(1).ne.0.and.colin(2).ne.0) then
+            if(fl2.eq.0.and.fl3.eq.0) then
+               if(random().gt.0.5d0) then
+                  colout2(1)=colin(2)
+                  colout2(2)=newcolor
+                  colout3(1)=newcolor
+                  colout3(2)=colin(1)
+               else
+                  colout3(1)=colin(2)
+                  colout3(2)=newcolor
+                  colout2(1)=newcolor
+                  colout2(2)=colin(1)
+               endif
+            elseif(fl2.gt.0.and.fl3.lt.0) then
+               colout2(2)=0
                colout2(1)=colin(2)
+               colout3(1)=0
+               colout3(2)=colin(1)
+            elseif(fl2.lt.0.and.fl3.gt.0) then
+               colout2(1)=0
+               colout2(2)=colin(1)
+               colout3(2)=0
+               colout3(1)=colin(2)
+            else
+               goto 998
+            endif
+         elseif(colin(2).eq.0) then
+            if(fl2.eq.0) then
+               colout3(1)=0
+               colout3(2)=newcolor
+               colout2(1)=newcolor
+               colout2(2)=colin(1)
+            elseif(fl3.eq.0) then
+               colout2(1)=0
                colout2(2)=newcolor
                colout3(1)=newcolor
                colout3(2)=colin(1)
             else
+               goto 998
+            endif
+         elseif(colin(1).eq.0) then
+            if(fl2.eq.0) then
+               colout3(1)=newcolor
+               colout3(2)=0
+               colout2(2)=newcolor
+               colout2(1)=colin(2)
+            elseif(fl3.eq.0) then
+               colout2(1)=newcolor
+               colout2(2)=0
                colout3(1)=colin(2)
                colout3(2)=newcolor
-               colout2(1)=newcolor
-               colout2(2)=colin(1)
+            else
+               goto 998
             endif
-         elseif(fl2.gt.0.and.fl3.lt.0) then
-            colout2(2)=0
-            colout2(1)=colin(2)
-            colout3(1)=0
-            colout3(2)=colin(1)
-         elseif(fl2.lt.0.and.fl3.gt.0) then
-            colout2(1)=0
-            colout2(2)=colin(1)
-            colout3(2)=0
-            colout3(1)=colin(2)
          else
             goto 998
          endif
-      elseif(colin(2).eq.0) then
-         if(fl2.eq.0) then
-            colout3(1)=0
-            colout3(2)=newcolor
-            colout2(1)=newcolor
-            colout2(2)=colin(1)
-         elseif(fl3.eq.0) then
-            colout2(1)=0
-            colout2(2)=newcolor
-            colout3(1)=newcolor
-            colout3(2)=colin(1)
-         else
-            goto 998
-         endif
-      elseif(colin(1).eq.0) then
-         if(fl2.eq.0) then
-            colout3(1)=newcolor
-            colout3(2)=0
-            colout2(2)=newcolor
-            colout2(1)=colin(2)
-         elseif(fl3.eq.0) then
-            colout2(1)=newcolor
-            colout2(2)=0
-            colout3(1)=colin(2)
-            colout3(2)=newcolor
-         else
-            goto 998
-         endif
-      else
-         goto 998
       endif
       return
  998  continue
@@ -319,7 +351,7 @@ c over the two possible colour connections.
       write(*,*) 'colin[1:2] ',colin(1),' ',colin(2)
       write(*,*) 'fl2, fl3 ',fl2,' ',fl3
       write(*,*) 'newcolor ',newcolor
-      call exit(1)
+      call pwhg_exit(1)
       end
 
 
@@ -406,13 +438,14 @@ c first conjugate incoming colors
       implicit none
       integer id1,id2
       real * 8 x1,x2,xf1,xf2,xmufact
-      real * 8 pdf(-6:6)
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
+      include 'pwhg_pdf.h'
       include 'pwhg_st.h'
       include 'LesHouches.h'
+      real * 8 pdf(-pdf_nparton:pdf_nparton)
       if(rad_type.eq.1) then
 c Btilde event: pass x1 and x2, id1, id2 etc. of the current underlying Born
          id1=flst_born(1,rad_ubornidx)
