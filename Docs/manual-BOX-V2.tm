@@ -58,6 +58,28 @@
   <with|font-family|tt|setvirtual> routine should provide the sum of the
   virtual contributions for the production and decay processes.
 
+  <section|Electroweak processes>
+
+  The <with|font-family|tt|POWHEG BOX> is now capable to handle certain
+  electroweak processes, where soft-photon radiation is generated with the
+  shower method. The following variables are relevant for this extension:
+
+  <with|font-family|tt|flg_with_em> must be set to true in the initialization
+  of the user process
+
+  <with|font-family|tt|pdf_nparton> must be set to 22, if incoming photons
+  from parton densities are considered
+
+  <with|font-family|tt|em_muren2> \ \ \ must be set to the (squared)
+  renormalization scale for the EW corrections
+
+  <with|font-family|tt|em_alpha> \ \ \ \ must be set to
+  <math|\<alpha\><rsub|em>>.
+
+  The <with|font-family|tt|BOX> is capable of handling photon initial and
+  final state radiation from charged particles. It has been presently tested
+  only with <math|W> and <math|Z> production with leptonic decays.
+
   <\bibliography|bib|JHEP|paper.bib>
     <\bib-list|1>
       <bibitem*|1><label|bib-Melia:2011gk>T.<nbsp>Melia, P.<nbsp>Nason,
@@ -93,8 +115,8 @@
 <\references>
   <\collection>
     <associate|auto-1|<tuple|1|1>>
-    <associate|auto-2|<tuple|1|2>>
-    <associate|auto-3|<tuple|1.2|2>>
+    <associate|auto-2|<tuple|2|2>>
+    <associate|auto-3|<tuple|2|2>>
     <associate|auto-4|<tuple|1.3|3>>
     <associate|auto-5|<tuple|1.4|3>>
     <associate|auto-6|<tuple|2|3>>
@@ -108,41 +130,14 @@
 
 <\auxiliary>
   <\collection>
-    <\associate|bib>
-      Melia:2011gk
-
-      Melia:2010bm
-
-      Alioli:2010xd
-    </associate>
     <\associate|toc>
-      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|Running
-      the program> <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
+      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|Radiation
+      from resonances> <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
       <no-break><pageref|auto-1><vspace|0.5fn>
-
-      <with|par-left|<quote|1.5fn>|Step 1
-      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-2>>
-
-      <with|par-left|<quote|1.5fn>|Step 2
-      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-3>>
-
-      <with|par-left|<quote|1.5fn>|Step 3
-      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-4>>
-
-      <with|par-left|<quote|1.5fn>|Step 4
-      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-5>>
-
-      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|Analyzing
-      the events> <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-6><vspace|0.5fn>
 
       <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|Bibliography>
       <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
-      <no-break><pageref|auto-7><vspace|0.5fn>
+      <no-break><pageref|auto-2><vspace|0.5fn>
     </associate>
   </collection>
 </auxiliary>
