@@ -159,6 +159,7 @@ c minimal final state mass
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_kn.h'
+      include 'pwhg_em.h'
       include 'mathx.h'
       real * 8 muf,mur
       logical ini
@@ -212,6 +213,6 @@ c minimal final state mass
       endif
       muf=muref
       mur=muref
-      mudim2=1d0
+      mudim2=em_muren2
       end
 
