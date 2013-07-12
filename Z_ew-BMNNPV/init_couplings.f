@@ -8,6 +8,7 @@
       include 'pwhg_kn.h'
       include 'pwhg_physpar.h'
       include 'LesHouches.h'
+      include 'pwhg_em.h'
       real * 8 masswindow_low,masswindow_high
       real * 8 mass_low,mass_high
 
@@ -30,9 +31,11 @@ cccccc   INDEPENDENT QUANTITIES
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       ph_alphaem = powheginput("#alphaem")
       if (ph_alphaem.le.0d0) ph_alphaem = 1d0/137.03599911d0
-
+      em_alpha = ph_alphaem
       physpar_aem = ph_alphaem
 
+c EW renormalization scale
+      em_muren2 = 1d0
 c Boson masses and witdhs
       ph_Zmass = powheginput("#Zmass")
       if (ph_Zmass.le.0d0) ph_Zmass  = 91.1876d0     

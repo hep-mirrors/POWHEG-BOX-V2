@@ -25,6 +25,9 @@ c     lepton masses
       logical ifphotoninduced
       integer phind
 
+c Must include photon!
+      pdf_nparton = 22
+      flg_with_em = .true.
 c******************************************************
 c     Choose the process to be implemented
 c******************************************************
