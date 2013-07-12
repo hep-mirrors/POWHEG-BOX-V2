@@ -443,7 +443,7 @@ c            /
 c the range in phi is 0<phi<pi.
       implicit none
       real * 8 p1(0:3),p2(0:3), Intmm_0
-      real * 8 kh(3),gh(3),k2,g2,kg,beta
+      real * 8 kh(3),gh(3),k2,g2,kg,beta,ombeta2
       integer j
       do j=1,3
          kh(j)=p1(j)/p1(0)
@@ -457,6 +457,9 @@ c the range in phi is 0<phi<pi.
          g2=g2+gh(j)**2
          kg=kg+kh(j)*gh(j)
       enddo
-      beta=sqrt(1-(1-k2)*(1-g2)/(1-kg)**2)
-      Intmm_0=log((1+beta)/(1-beta))/beta
+      ombeta2=(1-k2)*(1-g2)/(1-kg)**2
+      beta=sqrt(1-ombeta2)
+c      Intmm_0=log((1+beta)/(1-beta))/beta
+c Equivalent:
+      Intmm_0=log((1+beta)**2/ombeta2)/beta
       end
