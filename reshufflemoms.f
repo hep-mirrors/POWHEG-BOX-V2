@@ -269,6 +269,11 @@ c are performed again in reverse.
       integer n,arr(maxnup)
       common/clhfm_push/arr,n
       iret=0
+c     22 July 2013
+c     if n=1 then no reshuffling should be done. 
+c     Otherwise, may happen that the mass of the particle is greater than the mass
+c     of the mother by a tiny amount, leading to the event being discarded
+      if (n.eq.1) return
 c check that reshuffling is possible
       mass=0
       do j=1,n
@@ -487,9 +492,9 @@ c     beta.  Lorents convention: (t,x,y,z).
       subroutine lhfm_checkmom
       implicit none
       include 'LesHouches.h'
-      real * 8 msum,tmp,total(4)
+      real * 8 sum,tmp,total(4)
       integer mu,i,moth,iret
-      msum()=abs(total(1))+abs(total(2))+abs(total(3))+abs(total(3))
+      sum()=abs(total(1))+abs(total(2))+abs(total(3))+abs(total(3))
       do mu=1,4
          total(mu)=pup(mu,1)+pup(mu,2)
       enddo
@@ -506,8 +511,8 @@ c     beta.  Lorents convention: (t,x,y,z).
             enddo
          endif
       enddo
-      if(msum().gt.1d-6) then
-         write(*,*) ' total mom. cons.:',msum()
+      if(sum().gt.1d-6) then
+         write(*,*) ' total mom. cons.:',sum()
       endif
       do moth=3,nup
          if(istup(moth).eq.2) then
@@ -522,8 +527,8 @@ c     beta.  Lorents convention: (t,x,y,z).
                   enddo
                endif
             enddo
-            if(msum().gt.1d-6) then
-               write(*,*) 'res.',moth,' mom. cons.:',msum()
+            if(sum().gt.1d-6) then
+               write(*,*) 'res.',moth,' mom. cons.:',sum()
             endif
          endif
       enddo
