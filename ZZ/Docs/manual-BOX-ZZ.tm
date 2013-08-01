@@ -1,4 +1,4 @@
-<TeXmacs|1.0.7.3>
+<TeXmacs|1.0.7.14>
 
 <style|article>
 
@@ -37,21 +37,37 @@
   <section|Input parameters>
 
   Parameters in <with|font-family|tt|powheg.input> that are specific to
-  <math|Z Z> pair production:<next-line><with|font-family|tt|vdecaymodeZ1 11
-  \ \ \ \ \ ! decay mode of 1st Z (11=electron, 12=nue,
-  etc)><next-line><with|font-family|tt|vdecaymodeZ2 13 \ \ \ \ \ ! decay mode
-  of 2nd Z (13=muons, etc.)><next-line>Only leptonic decay modes are
-  implemented at this stage. In the case of decay into neutrino, a neutrino
-  flavour must be indicated explicitly. It is up to the user to multiply the
-  whole cross section by three to include all neutrino flavour
-  decays.<next-line><with|font-family|tt|mllmin 50 \ \ \ \ \ \ \ \ \ \ !
-  minimum mass of lepton pair in decay is 50
-  GeV><next-line><with|font-family|tt|zerowidth 0 \ \ \ \ \ \ \ \ ! If 1
-  (true) use zerowidth approximation (default
-  0)><next-line><with|font-family|tt|<with|font-family|tt|withinterference 1
-  \ ! If 1 (true) include interference for identical leptons
+  <math|Z Z> pair production:<next-line><with|font-family|tt|semileptonic 1
+  \ \ \ \ \ \ ! one Z goes to hadrons, one goes to
+  leptons><next-line><with|font-family|tt|only-e 1 \ \ \ \ \ \ ! leptons can
+  only be electrons><next-line><with|font-family|tt|only-mu 1 \ \ \ \ \ !
+  leptons can only be muons><next-line><with|font-family|tt|only-tau 1
+  \ \ \ \ ! leptons can only be taus><next-line><with|font-family|tt|e-mu 1
+  \ \ \ \ \ \ \ \ ! one goes into e+e-, one in
+  mu+mu-><next-line><with|font-family|tt|e-tau 1 \ \ \ \ \ \ \ ! one goes
+  into e+e-, one in tau+tau--><next-line><with|font-family|tt|mu-tau 1
+  \ \ \ \ \ \ ! one goes into mu+mu-, one in
+  tau+tau-><next-line><with|font-family|tt|leptonic 1 \ \ \ \ ! both Z go
+  into charged leptons><next-line><with|font-family|tt|leptons-nu 1 \ \ ! one
+  Z goes into neutrinos, the other to leptons><next-line><with|font-family|tt|hadrons-nu
+  1 \ \ ! one Z goes into neutrinos, the other to hadrons><next-line>More
+  conditions can be easily added, by editing the
+  <with|font-family|tt|alloweddec> function in the
+  <with|font-family|tt|init_processes.f> file. Notice that conditions must
+  all be fulfilled. Thus, for example, <with|font-family|tt|only-e> and
+  <with|font-family|tt|leptonic> both set to 1 (and no other keyword) means
+  decays into four electrons. As another example, if both
+  <with|font-family|tt|semileptonic> and <with|font-family|tt|leptonic>
+  appear, you get no events. If no conditions are specified, you get all
+  possible decays.<no-indent*>
+
+  <with|font-family|tt|mllmin 50 \ \ \ \ \ \ \ \ \ \ ! minimum mass of lepton
+  pair in decay is 50 GeV><next-line><with|font-family|tt|zerowidth 0
+  \ \ \ \ \ \ \ \ ! If 1 (true) use zerowidth approximation (default
+  0)><next-line><with|font-family|tt|withinterference 1 \ ! If 1 (true)
+  include interference for identical leptons
   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ! (default
-  1)><next-line>dronly \ \ 0 \ \ \ \ \ \ \ \ \ ! If 1 (true) include only
+  1)<next-line>dronly \ \ 0 \ \ \ \ \ \ \ \ \ ! If 1 (true) include only
   double resonant contributions \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ !
   (default 0)><next-line>If <with|font-family|tt|zerowidth> is absent or
   equal to zero, the <math|Z>'s are given finite width,

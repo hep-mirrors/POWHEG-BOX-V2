@@ -309,7 +309,7 @@ c---loop diagrams just tree*Vpole since they're all triangle-type
 
       if(interference) then
          if(iloop.eq.2) then
-            msqv(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))*
+            msqv(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))/2 *
      1           (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
          endif
       else

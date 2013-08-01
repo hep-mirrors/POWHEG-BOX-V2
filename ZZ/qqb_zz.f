@@ -262,7 +262,7 @@ c---for supplementary diagrams.
 
       if(interference) then
          if(iloop.eq.2) then
-            msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))*
+            msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))/2 *
      1           (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
          endif
       else

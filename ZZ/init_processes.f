@@ -247,7 +247,7 @@ c if they are both of the same type, order by increasing id
          if((islepton(id1).and.islepton(id2).or.
      1        isutype(id1).and.isutype(id2).or.
      2        isdtype(id1).and.isdtype(id2).or.
-     3        isnu(id1).and.isnu(id2)).and.id1.lt.id2) return
+     3        isnu(id1).and.isnu(id2)).and.id1.gt.id2) return
       endif
 
 c Now decay types are ordered: leptons before hadrons, ups before downs,
@@ -255,12 +255,6 @@ c leptons before nus, and everything being equal, by increasing id.
 c Check which decay configurations we want to keep
       if(powheginput("#semileptonic").eq.1.and.
      1     .not.(islepton(id1).and.isquark(id2))) return
-      if(powheginput("#only-e").eq.1.and. (id1.ne.11.or.id2.ne.11))
-     1 return
-      if(powheginput("#only-mu").eq.1.and.(id1.ne.13.or.id2.ne.13))
-     2     return
-      if(powheginput("#only-tau").eq.1.and.(id1.ne.15.or.id2.ne.15))
-     2     return
       if(powheginput("#e-mu").eq.1.and..not.(id1.eq.11.and.id2.eq.13))
      1     return
       if(powheginput("#e-tau").eq.1.and..not.(id1.eq.11.and.id2.eq.15))
@@ -269,8 +263,16 @@ c Check which decay configurations we want to keep
      1     return
       if(powheginput("#leptonic").eq.1.and.
      1     .not.(islepton(id1).and.islepton(id2))) return
-      if(powheginput("#missinget").eq.1.and.
-     1     .not.isnu(id2)) return
+      if(powheginput("#leptons-nu").eq.1.and.
+     1     .not.(islepton(id1).and.isnu(id2))) return
+      if(powheginput("#hadrons-nu").eq.1.and.
+     1     .not.(isquark(id1).and.isnu(id2))) return
+      if(powheginput("#only-e").eq.1.and. (id1.ne.11.or.id2.ne.11))
+     1 return
+      if(powheginput("#only-mu").eq.1.and.(id1.ne.13.or.id2.ne.13))
+     2     return
+      if(powheginput("#only-tau").eq.1.and.(id1.ne.15.or.id2.ne.15))
+     2     return
 
 c Add here other options at will, if you like;
 

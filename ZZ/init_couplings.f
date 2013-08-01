@@ -68,6 +68,8 @@ c     number of light flavors
       subroutine setzcoupl(id1,id2)
       implicit none
       integer id1,id2
+      include 'nlegborn.h'
+      include 'pwhg_kn.h'
       include 'PhysPars.h'
       include 'zcouple.f'  !TM now set the z-coupling parameters here
       include 'ewcharge.f'
@@ -78,31 +80,35 @@ c     number of light flavors
       include 'cvecbos.h'
       include 'vvsettings.f'
       logical withinterference,ini
+      real * 8 mllmin,m1,m2
       data ini/.true./
-      save withinterference,ini
+      save withinterference,ini,mllmin
       real * 8 powheginput
-      external powheginput
+      logical isquark,islepton,isnu
+      external powheginput,isquark,islepton,isnu
       if(ini) then
-         if(powheginput("#withinterference").eq.1) then
-            withinterference = .true.
-         else
+         if(powheginput("#withinterference").eq.0) then
             withinterference = .false.
+         else
+            withinterference = .true.
          endif
          ini=.false.
+         mllmin=powheginput("#mllmin")
+         if(mllmin.le.0) mllmin=0.1d0
       endif
 
       normbr = 1
 
-      if(id1.ge.1.and.id1.le.5) then
+      if(isquark(id1)) then
          q1=q(id1)
          l1=l(id1)
          r1=r(id1)
          normbr=normbr*(1d0+ph_deltas)*3
-      elseif(id1.eq.11.or.id1.eq.13.or.id1.eq.15) then
+      elseif(islepton(id1)) then
          q1=-1
          l1=le
          r1=re
-      elseif(id1.eq.12.or.id1.eq.14.or.id1.eq.16) then
+      elseif(isnu(id1)) then
          q1=0
          l1=ln
          r1=rn
@@ -111,16 +117,16 @@ c     number of light flavors
          call pwhg_exit(-1)
       endif
 
-      if(id2.ge.1.and.id2.le.5) then
+      if(isquark(id2)) then
          q2=q(id2)
          l2=l(id2)
          r2=r(id2)
          normbr=normbr*(1d0+ph_deltas)*3
-      elseif(id2.eq.11.or.id1.eq.13.or.id1.eq.15) then
+      elseif(islepton(id2)) then
          q2=-1
          l2=le
          r2=re
-      elseif(id2.eq.12.or.id1.eq.14.or.id1.eq.16) then
+      elseif(isnu(id2)) then
          q2=0
          l2=ln
          r2=rn
@@ -135,6 +141,22 @@ c     number of light flavors
             interference=.true.
          else
             interference=.false.
+         endif
+         if(.not.isnu(id1)) then
+c impose mllmin cut also upon the crossed pairs
+            m1=sqrt(
+     1           (kn_cmpborn(0,5)+kn_cmpborn(0,8))**2-
+     2           (kn_cmpborn(1,5)+kn_cmpborn(1,8))**2-
+     3           (kn_cmpborn(2,5)+kn_cmpborn(2,8))**2-
+     4           (kn_cmpborn(3,5)+kn_cmpborn(3,8))**2  )
+            m2=sqrt(
+     1           (kn_cmpborn(0,6)+kn_cmpborn(0,7))**2-
+     2           (kn_cmpborn(1,6)+kn_cmpborn(1,7))**2-
+     3           (kn_cmpborn(2,6)+kn_cmpborn(2,7))**2-
+     4           (kn_cmpborn(3,6)+kn_cmpborn(3,7))**2  )
+            if(min(m1,m2).lt.mllmin) then
+               kn_jacborn = 0
+            endif
          endif
       else
          vsymfact=1
