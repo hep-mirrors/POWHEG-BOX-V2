@@ -37,21 +37,21 @@
          kn_masses(nlegreal)=0
          mllmin=powheginput("#mllmin")
          if(mllmin.le.0) mllmin=0.1d0
-         if(vdecaymodeZ1.eq.12.or.vdecaymodeZ1.eq.14.
-     1  .or.vdecaymodeZ1.eq.16) then
-c neutrino
-            mllmin34=1d-3
-         else
+
+         if(z1_to_ch) then
 c charged particles
             mllmin34=mllmin
-         endif
-         if(vdecaymodeZ2.eq.12.or.vdecaymodeZ2.eq.14.
-     1  .or.vdecaymodeZ2.eq.16) then
-c neutrino
-            mllmin56=1d-3
          else
+c neutrino
+            mllmin34=1d-3
+         endif
+
+         if(z2_to_ch) then
 c charged particles
             mllmin56=mllmin
+         else
+c neutrino
+            mllmin56=1d-3
          endif
          ini=.false.
       endif
@@ -135,14 +135,21 @@ C     total incoming momentum
       p(:,5) = p5 
       p(:,6) = p6 
 
-      kn_jacborn = xjac 
+      kn_jacborn = xjac
 
       do i=1,6
-      kn_pborn(0,i) = p(4,i)
-      kn_pborn(1,i) = p(1,i)
-      kn_pborn(2,i) = p(2,i)
-      kn_pborn(3,i) = p(3,i)
+         if(i.le.2) then
+            k=i
+         else
+            k=i+2
+         endif
+         kn_pborn(0,k) = p(4,i)
+         kn_pborn(1,k) = p(1,i)
+         kn_pborn(2,k) = p(2,i)
+         kn_pborn(3,k) = p(3,i)
       enddo 
+      kn_pborn(:,3)=kn_pborn(:,5)+kn_pborn(:,6)
+      kn_pborn(:,4)=kn_pborn(:,7)+kn_pborn(:,8)
 
 c     now boost everything BACK along z-axis 
       kn_xb1 = xx(1)
@@ -162,84 +169,6 @@ c     minimal final state mass
          kn_minmass= 2 * ph_zmass
       else
          kn_minmass=mllmin34+mllmin56 
-      endif
-
-c      if (m34.lt.mllmin34.or. m56 .lt. mllmin56) then
-c         write(*,*) 'error in Born phase space!, m34 or m56 below limit'
-c         write(*,*) m34/mllmin34,m56/ mllmin56
-c         call exit(-1)
-c      endif
-
-c     print out for checks 
-      if (debug) then 
-c     -- checks invariants, mom. conservation etc in Lab frame  
-      write(*,*) '----> Lab FRAME' 
-      do i=1,6
-         write(*,*) 'pborn', i, kn_pborn(:,i)
-      enddo
-      write(*,*) 'psum', sum(kn_pborn(:,1:2),dim=2) 
-     .     -sum(kn_pborn(:,3:6),dim=2) 
-      p34(1:3) = kn_pborn(1:3,3)+kn_pborn(1:3,4)
-      p56(1:3) = kn_pborn(1:3,5)+kn_pborn(1:3,6)
-      p34(4)   = kn_pborn(0,3)+kn_pborn(0,4)
-      p56(4)   = kn_pborn(0,5)+kn_pborn(0,6)
-      write(*,*) 'm2(34)',i,p34(4)*p34(4)-
-     .        p34(1)*p34(1)-p34(2)*p34(2)-p34(3)*p34(3)
-      write(*,*) 'm2(56)',i,p56(4)*p56(4)-
-     .        p56(1)*p56(1)-p56(2)*p56(2)-p56(3)*p56(3)
-
-      do i=1,8 
-         write(*,*) 'm2',i,kn_pborn(0,i)*kn_pborn(0,i)-
-     .        kn_pborn(1,i)*kn_pborn(1,i)-
-     .        kn_pborn(2,i)*kn_pborn(2,i)-
-     .        kn_pborn(3,i)*kn_pborn(3,i)
-      enddo
-
-c     -- checks invariants, mom. conservation etc in CM frame  
-      write(*,*) '----> CM FRAME' 
-      do i=1,6 
-         write(*,*) 'CM pborn', i, kn_cmpborn(:,i)
-      enddo
-      write(*,*) 'psum', sum(kn_cmpborn(:,1:2),dim=2) 
-     .     -sum(kn_cmpborn(:,3:6),dim=2) 
-
-      p34(1:3) = kn_cmpborn(1:3,3)+kn_cmpborn(1:3,4)
-      p56(1:3) = kn_cmpborn(1:3,5)+kn_cmpborn(1:3,6)
-      p34(4)   = kn_cmpborn(0,3)+kn_cmpborn(0,4)
-      p56(4)   = kn_cmpborn(0,5)+kn_cmpborn(0,6)
-      write(*,*) 'm2(34)',i,p34(4)*p34(4)-
-     .        p34(1)*p34(1)-p34(2)*p34(2)-p34(3)*p34(3)
-      write(*,*) 'm2(56)',i,p56(4)*p56(4)-
-     .        p56(1)*p56(1)-p56(2)*p56(2)-p56(3)*p56(3)
-
-      do i=1,6 
-         write(*,*) 'm2',i,kn_cmpborn(0,i)*kn_cmpborn(0,i)-
-     .        kn_cmpborn(1,i)*kn_cmpborn(1,i)-
-     .        kn_cmpborn(2,i)*kn_cmpborn(2,i)-
-     .        kn_cmpborn(3,i)*kn_cmpborn(3,i)
-      enddo
-
-      endif
-
-c if Z1 and Z2 decay in the same charge lepton, cut
-c also on the remaining combinations of oppositely
-c charged leptons. This could also be done at the
-c analysis level, but in this way we avoid confusing the user
-      if(vdecaymodeZ1.eq.vdecaymodeZ2 .and.
-     1  (vdecaymodeZ1.ne.12.and.vdecaymodeZ1.ne.14.and.
-     1   vdecaymodeZ1.ne.16) .and. cutallpairs .and.
-     1     (
-     1    ( (kn_cmpborn(0,3)+kn_cmpborn(0,6))**2
-     1     -(kn_cmpborn(1,3)+kn_cmpborn(1,6))**2
-     1     -(kn_cmpborn(2,3)+kn_cmpborn(2,6))**2
-     1     -(kn_cmpborn(3,3)+kn_cmpborn(3,6))**2.lt.mllmin**2
-     1     .or.
-     1      (kn_cmpborn(0,4)+kn_cmpborn(0,5))**2
-     1     -(kn_cmpborn(1,4)+kn_cmpborn(1,5))**2
-     1     -(kn_cmpborn(2,4)+kn_cmpborn(2,5))**2
-     1     -(kn_cmpborn(3,4)+kn_cmpborn(3,5))**2.lt.mllmin**2) )
-     1  ) then
-         kn_jacborn = 0
       endif
 
       if(.not.pwhg_isfinite(kn_jacborn)) kn_jacborn=0
@@ -316,7 +245,6 @@ c      endif
          mur = ph_Zmass
       else
          pzz=kn_cmpborn(:,3)+kn_cmpborn(:,4)
-     1      +kn_cmpborn(:,5)+kn_cmpborn(:,6)
          muf=sqrt(pzz(0)**2-pzz(1)**2-pzz(2)**2-pzz(3)**2)
          mur=muf
       endif

@@ -29,6 +29,10 @@ c----No statistical factor of 1/2 included.
 
       double precision msq(-nf:nf,-nf:nf),p(mxpart,4),qdks(mxpart,4),
      . ave,v1(2),v2(2)
+
+c in case interference is needed, it will hold the direct, crossed
+c and interference term (first index from 1 to 3 respectively)
+      double precision xmsq(3,-nf:nf,-nf:nf)
      
       double complex qqb(2,2,2),qbq(2,2,2),q_qb,qb_q
       double complex qqb1(2,2,2),qbq1(2,2,2),qqb2(2,2,2),qbq2(2,2,2)
@@ -51,7 +55,7 @@ c----No statistical factor of 1/2 included.
       v1(2)=r1
       v2(1)=l2
       v2(2)=r2
-
+!      write(*,*) 'l1,r1,l2,r2',l1,r1,l2,r2,q1,q2
 c--set msq=0 to initalize
       do j=-nf,nf
       do k=-nf,nf
@@ -60,6 +64,8 @@ c--set msq=0 to initalize
       qb_q_SAVE(j,k,:,:,:)=0d0
       enddo
       enddo
+
+      xmsq=0
 
       if (interference) then
          nloop=2
@@ -186,20 +192,19 @@ c---for supplementary diagrams.
         endif
       endif
       q_qb=FAC*q_qb
-      msq(j,k)=msq(j,k)+ave*abs(q_qb)**2
 
-
-      !interference terms
-      if ((iloop.eq.1).and.(interference)) then
-         q_qb_SAVE(j,k,polq,pol1,pol2)=q_qb
-      elseif (iloop.eq.2) then
-         if (pol1.eq.pol2) then
-      msq(j,k)=msq(j,k)-ave*(dconjg(q_qb_SAVE
-     &        (j,k,polq,pol1,pol2))*q_qb+q_qb_SAVE(j,k,polq,pol1,pol2)
-     &        *dconjg(q_qb))
+      xmsq(iloop,j,k)=xmsq(iloop,j,k)+ave*abs(q_qb)**2
+      if(interference) then
+         if(iloop.eq.1) then
+            q_qb_SAVE(j,k,polq,pol1,pol2)=q_qb
+         else
+            if(pol1.eq.pol2) then
+               xmsq(3,j,k)=xmsq(3,j,k)-ave*(dconjg(q_qb_SAVE
+     &         (j,k,polq,pol1,pol2))*q_qb+q_qb_SAVE(j,k,polq,pol1,pol2)
+     &              *dconjg(q_qb))
+            endif
          endif
       endif
-
 
       enddo
       enddo
@@ -234,21 +239,20 @@ c---for supplementary diagrams.
         endif
       endif
       qb_q=FAC*qb_q
-      msq(j,k)=msq(j,k)+ave*abs(qb_q)**2
 
-      !set-up interference terms
-      if ((interference).and.(iloop.eq.1)) then
-         qb_q_SAVE(j,k,polq,pol1,pol2)=qb_q
-      elseif (iloop.eq.2) then
-         if (pol1.eq.pol2) then
-         msq(j,k)=msq(j,k)-ave*(dconjg(qb_q_SAVE
-     &        (j,k,polq,pol1,pol2))*qb_q+qb_q_SAVE(j,k,polq,pol1,pol2)
-     &        *dconjg(qb_q))
+      xmsq(iloop,j,k)=xmsq(iloop,j,k)+ave*abs(qb_q)**2
+      if(interference) then
+         if(iloop.eq.1) then
+            qb_q_SAVE(j,k,polq,pol1,pol2)=qb_q
+         else
+            if(pol1.eq.pol2) then
+               xmsq(3,j,k)=xmsq(3,j,k)-ave*(dconjg(qb_q_SAVE
+     &         (j,k,polq,pol1,pol2))*qb_q+qb_q_SAVE(j,k,polq,pol1,pol2)
+     &              *dconjg(qb_q))
+            endif
          endif
       endif
 
-
-
       enddo
       enddo
       enddo
@@ -256,6 +260,14 @@ c---for supplementary diagrams.
       endif
 
 
+      if(interference) then
+         if(iloop.eq.2) then
+            msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))*
+     1           (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
+         endif
+      else
+         msq(j,k)=xmsq(1,j,k)
+      endif
 
  20   continue
       enddo

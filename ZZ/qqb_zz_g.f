@@ -22,6 +22,11 @@ c   for the moment --- radiation only from initial line
       double precision fac,fac1
       common/pchoice/j,k
       double precision P(mxpart,4),qdks(mxpart,4),msq(-nf:nf,-nf:nf)
+
+c in case interference is needed, it will hold the direct, crossed
+c and interference term (first index from 1 to 3 respectively)
+      double precision xmsq(3,-nf:nf,-nf:nf)
+     
       double precision ave,v1(2),v2(2)
       double complex qqb(2,2,2,2),qbq(2,2,2,2)
       double complex qg(2,2,2,2),gq(2,2,2,2)
@@ -48,6 +53,8 @@ c   for the moment --- radiation only from initial line
       enddo
       
       amp_SAVE=0d0
+
+      xmsq=0
 
       !TM set the qcd parameters here
       gsq = st_alpha*4d0*pi
@@ -347,24 +354,38 @@ c---  case g-q
                        endif
                        
                        amp=amp*FAC
-                       msq(j,k)=msq(j,k)+fac1*ave*abs(amp)**2
 
-                                !set-up interference terms
-                       if ((interference).and.(iloop.eq.1)) then
-                          amp_SAVE(j,k,polq,pol1,pol2,pol3)=amp
-                       elseif (iloop.eq.2) then
-                          if (pol1.eq.pol2) then
-                          msq(j,k)=msq(j,k)-fac1*ave*(dconjg(amp_SAVE
-     &  (j,k,polq,pol1,pol2,pol3))*amp+amp_SAVE(j,k,polq,pol1,pol2,pol3)
-     &                         *dconjg(amp))
+                       xmsq(iloop,j,k)=xmsq(iloop,j,k)
+     1                      +fac1*ave*abs(amp)**2
+
+                       if(interference) then
+                          if(iloop.eq.1) then
+                             amp_SAVE(j,k,polq,pol1,pol2,pol3)=amp
+                          else
+                             if (pol1.eq.pol2) then
+                                xmsq(3,j,k)=xmsq(3,j,k)-
+     1                               fac1*ave*(dconjg(amp_SAVE
+     2                               (j,k,polq,pol1,pol2,pol3))*amp+
+     3                               amp_SAVE(j,k,polq,pol1,pol2,pol3)
+     4                               *dconjg(amp))
+                             endif
                           endif
                        endif
 
-                       
                     enddo
                  enddo
               enddo
            enddo
+
+
+           if(interference) then
+              if(iloop.eq.2) then
+                 msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))*
+     1                (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
+              endif
+           else
+              msq(j,k)=xmsq(1,j,k)
+           endif
 
  19        continue
         enddo

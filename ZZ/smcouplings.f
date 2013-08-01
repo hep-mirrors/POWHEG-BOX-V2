@@ -37,6 +37,7 @@ c with contributions up to as**4 then ph_Wwidth = 2.099, ph_Zwidth = 2.511
 c      deltas=asmzopi+1.409*asmzopi**2-12.77*asmzopi**3-80*asmzopi**4
 c with contributions up to as**1 then ph_Wwidth = 2.098, ph_Zwidth = 2.509
       deltas=asmwopi
+      ph_deltas = deltas 
 
 c     ph_Wwidth =  2.085 +- 0.042, PDG 7-7-2011
 c 2.0995 with this formula, 0.7% difference, 0.34 standard deviations

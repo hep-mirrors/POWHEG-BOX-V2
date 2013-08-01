@@ -31,6 +31,10 @@ c----No statistical factor of 1/2 included.
       double precision msq(-nf:nf,-nf:nf),msqv(-nf:nf,-nf:nf),
      . p(mxpart,4),qdks(mxpart,4),v2(2),v1(2),virt,
      . fac,facnlo,ave
+
+c in case interference is needed, it will hold the direct, crossed
+c and interference term (first index from 1 to 3 respectively)
+      double precision xmsq(3,-nf:nf,-nf:nf)     
      
       double complex qqb(2,2,2),qbq(2,2,2),lqqb(2,2,2),lqbq(2,2,2)
       double complex qqb1(2,2,2),qbq1(2,2,2),qqb2(2,2,2),qbq2(2,2,2)
@@ -71,6 +75,8 @@ c--set msq=0 to initalize
 
       enddo
       enddo
+
+      xmsq=0
 
       if (interference) then
          nloop=2
@@ -221,15 +227,16 @@ c---loop diagrams just tree*Vpole since they're all triangle-type
 
       aqqb=FAC*aqqb
       bqqb=FAC*bqqb
-      virt=virt+facnlo*ave*two*dble(dconjg(aqqb)*bqqb)
-
+      xmsq(iloop,j,k)=xmsq(iloop,j,k)
+     1     +facnlo*ave*two*dble(dconjg(aqqb)*bqqb)
       !interference terms
       if ((iloop.eq.1).and.(interference)) then
          aqqb_SAVE(j,k,polq,pol1,pol2)=aqqb
          bqqb_SAVE(j,k,polq,pol1,pol2)=bqqb
       elseif (iloop.eq.2) then
          if (pol1.eq.pol2) then
-      virt=virt-facnlo*ave*(dconjg(aqqb)*bqqb_SAVE(j,k,polq,pol1,pol2)
+            xmsq(3,j,k)=xmsq(3,j,k)
+     .   -facnlo*ave*(dconjg(aqqb)*bqqb_SAVE(j,k,polq,pol1,pol2)
      .           +aqqb*dconjg(bqqb_SAVE(j,k,polq,pol1,pol2))
      .           +dconjg(aqqb_SAVE(j,k,polq,pol1,pol2))*bqqb
      .           +aqqb_SAVE(j,k,polq,pol1,pol2)*dconjg(bqqb))
@@ -278,33 +285,36 @@ c---loop diagrams just tree*Vpole since they're all triangle-type
 
       aqbq=FAC*aqbq
       bqbq=FAC*bqbq
-
-      virt=virt+facnlo*ave*two*dble(dconjg(aqbq)*bqbq)
-
-
+      xmsq(iloop,j,k)=xmsq(iloop,j,k)
+     1     +facnlo*ave*two*dble(dconjg(aqbq)*bqbq)
       !interference terms
       if ((iloop.eq.1).and.(interference)) then
          aqbq_SAVE(j,k,polq,pol1,pol2)=aqbq
          bqbq_SAVE(j,k,polq,pol1,pol2)=bqbq
       elseif (iloop.eq.2) then
          if (pol1.eq.pol2) then
-      virt=virt-facnlo*ave*(dconjg(aqbq)*bqbq_SAVE(j,k,polq,pol1,pol2)
+            xmsq(3,j,k)=xmsq(3,j,k)
+     .   -facnlo*ave*(dconjg(aqbq)*bqbq_SAVE(j,k,polq,pol1,pol2)
      .           +aqbq*dconjg(bqbq_SAVE(j,k,polq,pol1,pol2))
      .           +dconjg(aqbq_SAVE(j,k,polq,pol1,pol2))*bqbq
      .           +aqbq_SAVE(j,k,polq,pol1,pol2)*dconjg(bqbq))
          endif
       endif
 
-
       enddo
       enddo
       enddo
 
       endif
 
-      msqv(j,k)=msqv(j,k)+virt
-
-
+      if(interference) then
+         if(iloop.eq.2) then
+            msqv(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))*
+     1           (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
+         endif
+      else
+         msqv(j,k)=xmsq(1,j,k)
+      endif
 
  20   continue
       enddo

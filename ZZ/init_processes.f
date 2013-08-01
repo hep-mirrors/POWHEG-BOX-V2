@@ -5,35 +5,21 @@
       include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'LesHouches.h'
-      integer i1,i2,i3,i4,i5,i6,i7,k,ii(7)
-      equivalence (i1,ii(1)),(i2,ii(2)),(i3,ii(3)),
-     #  (i4,ii(4)),(i5,ii(5)),(i6,ii(6)),(i7,ii(7))
+      integer i1,i2,i9,id1,id2
       logical debug
       parameter (debug=.true.)
-      integer j
-      integer charge3(-6:6)
-      data charge3 /-2,1,-2,1,-2,1,0,-1,2,-1,2,-1,2/
+      integer j,k
       real * 8 powheginput
       external powheginput
 c     vector boson id and decay
 c     lepton masses
       include 'cvecbos.h'
-      real *8 lepmass(3),decmass,decmass1,decmass2
-      common/clepmass/lepmass,decmass,decmass1,decmass2
-      logical condition
+      logical condition,alloweddec
+      external alloweddec
       include 'vvsettings.f'
 
-c******************************************************
-c     Choose the process to be implemented
-c******************************************************
-
-c     ID of vector boson produced
-c     decay products of the vector boson
-
-c Take the absolute value, so that lepton and antilepton
-c always occupy the same position
-      vdecaymodeZ1=abs(powheginput('vdecaymodeZ1'))
-      vdecaymodeZ2=abs(powheginput('vdecaymodeZ2'))
+      z1_to_ch=.false.
+      z2_to_ch=.false.
 
       if(powheginput('#cutallpairs').eq.0) then
          cutallpairs = .false.
@@ -69,107 +55,17 @@ c  cant have srdiags if zerowidth is true
       endif
 
       interference = (powheginput('#withinterference').ne.0)
-C     ensure no interference for e mu
-      interference=interference.and.
-     .     (abs(vdecaymodeZ1).eq.abs(vdecaymodeZ2))
-      
-c no interference if zerowidth is true
       interference=(interference).and.(.not. zerowidth)
-
-      if(interference) then
-         vsymfact=0.25d0
-         write(*,*)'Interference effects taken into account'
-      elseif(abs(vdecaymodeZ1).eq.abs(vdecaymodeZ2)) then
-         vsymfact=0.5d0
-         write(*,*)'No interference effects taken into account'
-      else
-         vsymfact=1d0
-      endif
 
       idvecbos1 = 23
       idvecbos2 = 23
 
-      if (lepmass(1).ne.0.51099891d-3) then
-         write(*,*) 'block data lepmass not loaded. stop running' 
-         call exit(-1)
-      endif
-
-      if ((vdecaymodeZ1.lt.11).or.(vdecaymodeZ1.gt.16)
-     # .or.(vdecaymodeZ2.lt.11).or.(vdecaymodeZ2.gt.16)) then
-         write(*,*) 'ERROR: The decay mode you selected'
-     #  //' is not allowed (Up to now only leptonic decays)'
-         call exit(-1)
-      endif
-
-      write(*,*) 
-      write(*,*) ' POWHEG: ZZ production and decay'
-      if (vdecaymodeZ1.eq.11) write(*,*) '         to e- e+ '
-      if (vdecaymodeZ1.eq.12) write(*,*) '         to ve ve~ '
-      if (vdecaymodeZ1.eq.13) write(*,*) '         to mu- mu+ '
-      if (vdecaymodeZ1.eq.14) write(*,*) '         to vmu vmu~ '
-      if (vdecaymodeZ1.eq.15) write(*,*) '         to tau- tau+ '
-      if (vdecaymodeZ1.eq.16) write(*,*) '         to vtau vtau~ '
-      write(*,*)'            and'
-      if (vdecaymodeZ2.eq.11) write(*,*) '            e- e+ '
-      if (vdecaymodeZ2.eq.12) write(*,*) '            ve ve~ '
-      if (vdecaymodeZ2.eq.13) write(*,*) '            mu- mu+ '
-      if (vdecaymodeZ2.eq.14) write(*,*) '            vmu vmu~ '
-      if (vdecaymodeZ2.eq.15) write(*,*) '            tau- tau+ '
-      if (vdecaymodeZ2.eq.16) write(*,*) '            vtau vtau~ '
-      write(*,*) 
-
-c     change the LHUPI id of the process according to vector boson id
-c     and decay
-c     10000+idup of first decay product of Z1 + decay product of Z2
-      lprup(1)=10000+100*vdecaymodeZ1+vdecaymodeZ2 
-
-      if(vdecaymodeZ1.eq.11) then
-         decmass1=lepmass(1)
-      elseif(vdecaymodeZ1.eq.12) then
-         decmass1=0d0   
-      elseif(vdecaymodeZ1.eq.13) then
-         decmass1=lepmass(2)
-      elseif(vdecaymodeZ1.eq.14) then
-         decmass1=0d0   
-      elseif(vdecaymodeZ1.eq.15) then
-         decmass1=lepmass(3)     
-      elseif(vdecaymodeZ1.eq.16) then
-         decmass1=0d0   
-      else
-c     not yet implemented
-         write(*,*) 'non leptonic Z decays '//
-     #        'not yet implemented'
-         stop
-      endif
-      if(vdecaymodeZ2.eq.11) then
-         decmass2=lepmass(1)
-      elseif(vdecaymodeZ2.eq.12) then
-         decmass2=0d0   
-      elseif(vdecaymodeZ2.eq.13) then
-         decmass2=lepmass(2)
-      elseif(vdecaymodeZ2.eq.14) then
-         decmass2=0d0   
-      elseif(vdecaymodeZ2.eq.15) then
-         decmass2=lepmass(3)     
-      elseif(vdecaymodeZ2.eq.16) then
-         decmass2=0d0   
-      else
-c     not yet implemented
-         write(*,*) 'non leptonic Z decays '//
-     #        'not yet implemented'
-         stop
-      endif
+      lprup(1)=10000
 
 
 c     index of the first coloured particle in the final state
 c     (all subsequent particles are coloured)
-      flst_lightpart=7
-c     Z decay products; since the absolute value of vdecaymodeZ1/2
-c     was taken, 3 and 5 are always leptons, 4 and 6 are antileptons
-      i3=vdecaymodeZ1
-      i4=-i3
-      i5=vdecaymodeZ2
-      i6=-i5
+      flst_lightpart=9
 
 *********************************************************************
 ***********            BORN SUBPROCESSES              ***************
@@ -179,10 +75,24 @@ c     was taken, 3 and 5 are always leptons, 4 and 6 are antileptons
          do i2=-5,5
             if(i1.ne.0.and.i1+i2.eq.0) then
 c     q qbar
-               flst_nborn=flst_nborn+1
-               if(flst_nborn.gt.maxprocborn) goto 999
-               do k=1,nlegborn
-                  flst_born(k,flst_nborn)=ii(k)
+               do id1=1,16
+                  do id2=1,16
+                     if(.not.alloweddec(id1,id2)) cycle
+                     flst_nborn=flst_nborn+1
+                     if(flst_nborn.gt.maxprocborn) goto 999
+                     flst_born(1,flst_nborn)=i1
+                     flst_born(2,flst_nborn)=i2
+                     flst_born(3,flst_nborn)=23
+                     flst_born(4,flst_nborn)=23
+                     flst_born(5,flst_nborn)=id1
+                     flst_born(6,flst_nborn)=-id1
+                     flst_bornres(5,flst_nborn)=3
+                     flst_bornres(6,flst_nborn)=3
+                     flst_born(7,flst_nborn)=id2
+                     flst_born(8,flst_nborn)=-id2
+                     flst_bornres(7,flst_nborn)=4
+                     flst_bornres(8,flst_nborn)=4
+                  enddo
                enddo
             endif
          enddo
@@ -200,26 +110,41 @@ c     q qbar
       flst_nreal=0
       do i1=-5,5
          do i2=-5,5
-            do i7=-5,5
+            do i9=-5,5
                condition=.false.
                if(.not.(i1.eq.0.and.i2.eq.0)) then
 c     exclude gg
-                  if((i1.ne.0).and.(i1+i2.eq.0).and.(i7.eq.0)) then
+                  if((i1.ne.0).and.(i1+i2.eq.0).and.(i9.eq.0)) then
 c     q qbar -> g
                      condition=.true.
-                  elseif((i1.eq.0).and.(i2.eq.i7)) then
+                  elseif((i1.eq.0).and.(i2.eq.i9)) then
 c     g q
                      condition=.true.
-                  elseif((i2.eq.0).and.(i1.eq.i7)) then
+                  elseif((i2.eq.0).and.(i1.eq.i9)) then
 c     q g
                      condition=.true.
                   endif
                endif
                if(condition) then
-                  flst_nreal=flst_nreal+1
-                  if(flst_nreal.gt.maxprocreal) goto 998
-                  do k=1,nlegreal
-                     flst_real(k,flst_nreal)=ii(k)
+                  do id1=1,14
+                     do id2=1,14
+                        if(.not.alloweddec(id1,id2)) cycle
+                        flst_nreal=flst_nreal+1
+                        if(flst_nreal.gt.maxprocreal) goto 998
+                        flst_real(1,flst_nreal)=i1
+                        flst_real(2,flst_nreal)=i2
+                        flst_real(3,flst_nreal)=23
+                        flst_real(4,flst_nreal)=23
+                        flst_real(5,flst_nreal)=id1
+                        flst_real(6,flst_nreal)=-id1
+                        flst_realres(5,flst_nreal)=3
+                        flst_realres(6,flst_nreal)=3
+                        flst_real(7,flst_nreal)=id2
+                        flst_real(8,flst_nreal)=-id2
+                        flst_realres(7,flst_nreal)=4
+                        flst_realres(8,flst_nreal)=4
+                        flst_real(9,flst_nreal)=i9
+                     enddo
                   enddo
                endif
             enddo
@@ -237,10 +162,129 @@ c     q g
  999  write(*,*) 'init_processes: increase maxprocborn'
       call exit(-1)
       end
- 
 
-      block data lepmass_data
-      real *8 lepmass(3),decmass
-      common/clepmass/lepmass,decmass
-      data lepmass /0.51099891d-3,0.1056583668d0,1.77684d0/
+      function isquark(id)
+      implicit none
+      logical isquark
+      integer id,aid
+      aid=abs(id)
+      if(aid.ge.1.and.aid.le.6) then
+         isquark=.true.
+      else
+         isquark=.false.
+      endif
       end
+
+      function isutype(id)
+      implicit none
+      logical isutype
+      integer id,aid
+      aid=abs(id)
+      if(aid.eq.2.or.aid.eq.4.or.aid.eq.6) then
+         isutype=.true.
+      else
+         isutype=.false.
+      endif
+      end
+
+      function isdtype(id)
+      implicit none
+      logical isdtype
+      integer id,aid
+      aid=abs(id)
+      if(aid.eq.1.or.aid.eq.3.or.aid.eq.5) then
+         isdtype=.true.
+      else
+         isdtype=.false.
+      endif
+      end
+
+      function islepton(id)
+      implicit none
+      logical islepton
+      integer id,aid
+      aid=abs(id)
+      if(aid.eq.11.or.aid.eq.13.or.aid.eq.15) then
+         islepton=.true.
+      else
+         islepton=.false.
+      endif
+      end
+
+      function isnu(id)
+      implicit none
+      logical isnu
+      integer id,aid
+      aid=abs(id)
+      if(aid.eq.12.or.aid.eq.14.or.aid.eq.16) then
+         isnu=.true.
+      else
+         isnu=.false.
+      endif
+      end
+
+      function alloweddec(id1,id2)
+      implicit none
+      logical alloweddec
+      integer id1,id2
+      include 'cvecbos.h'
+      logical isquark,isutype,isdtype,islepton,isnu
+      real * 8 powheginput
+      external powheginput,isquark,isutype,isdtype,islepton,isnu
+      alloweddec = .false.
+      if(.not.(isquark(id1).or.islepton(id1).or.isnu(id1))) return
+      if(.not.(isquark(id2).or.islepton(id2).or.isnu(id2))) return
+c if the two id are different, then order them
+c as follows
+      if(id1.ne.id2) then
+c in semileptonic decays, id1 is always the lepton
+         if(islepton(id2).and.isquark(id1)) return
+c in lepton - neutrino, first is the lepton
+         if(islepton(id2).and.isnu(id1)) return
+c if up and down types, ups are first
+         if(isutype(id2).and.isdtype(id1)) return
+c if they are both of the same type, order by increasing id
+         if((islepton(id1).and.islepton(id2).or.
+     1        isutype(id1).and.isutype(id2).or.
+     2        isdtype(id1).and.isdtype(id2).or.
+     3        isnu(id1).and.isnu(id2)).and.id1.lt.id2) return
+      endif
+
+c Now decay types are ordered: leptons before hadrons, ups before downs,
+c leptons before nus, and everything being equal, by increasing id.
+c Check which decay configurations we want to keep
+      if(powheginput("#semileptonic").eq.1.and.
+     1     .not.(islepton(id1).and.isquark(id2))) return
+      if(powheginput("#only-e").eq.1.and. (id1.ne.11.or.id2.ne.11))
+     1 return
+      if(powheginput("#only-mu").eq.1.and.(id1.ne.13.or.id2.ne.13))
+     2     return
+      if(powheginput("#only-tau").eq.1.and.(id1.ne.15.or.id2.ne.15))
+     2     return
+      if(powheginput("#e-mu").eq.1.and..not.(id1.eq.11.and.id2.eq.13))
+     1     return
+      if(powheginput("#e-tau").eq.1.and..not.(id1.eq.11.and.id2.eq.15))
+     1     return
+      if(powheginput("#mu-tau").eq.1.and..not.(id1.eq.13.and.id2.eq.15))
+     1     return
+      if(powheginput("#leptonic").eq.1.and.
+     1     .not.(islepton(id1).and.islepton(id2))) return
+      if(powheginput("#missinget").eq.1.and.
+     1     .not.isnu(id2)) return
+
+c Add here other options at will, if you like;
+
+
+      alloweddec = .true.
+
+c Here we want to know if there can be charged particle decays in Z1
+      if(.not.isnu(id1)) then
+         Z1_to_ch=.true.
+      endif
+c Here we want to know if there can be charged particle decays in Z2
+      if(.not.isnu(id2)) then
+         Z2_to_ch=.true.
+      endif
+
+      end
+

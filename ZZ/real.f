@@ -5,6 +5,7 @@
       include 'pwhg_math.h'
       include 'pwhg_st.h'
       include 'qcdcouple.f'
+      include 'PhysPars.h'
 c     vector boson id and decay
       include 'cvecbos.h'
       real * 8 pin(0:3,nlegreal)
@@ -14,13 +15,18 @@ c     vector boson id and decay
       integer i,mxpart
       parameter (mxpart=12)
       double precision p(mxpart,4),msq(-5:5,-5:5)
-      real * 8 suppfact4e
-      external suppfact4e
+
       ason2pi = st_alpha/2d0/pi
 
-      do i=1,nlegreal
+
+      do i=1,2
          p(i,4) = pin(0,i)
          p(i,1:3) = pin(1:3,i)
+      enddo
+
+      do i=3,7
+         p(i,4) = pin(0,i+2)
+         p(i,1:3) = pin(1:3,i+2)
       enddo
 
       p(1,:)=-p(1,:)
@@ -33,7 +39,6 @@ c     vector boson id and decay
       amp2real = msq(rflav(1),rflav(2))
       amp2real = amp2real/ason2pi
 
-c phase space suppression of (36)(45) singularities
-      amp2real = suppfact4e(pin,rflav) * amp2real
+      amp2real = amp2real * normbr
 
       end
