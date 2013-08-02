@@ -85,7 +85,7 @@ FASTJET_CONFIG=$(shell which fastjet-config)
 #FASTJET_CONFIG=~/lib/fastjet242/bin/fastjet-config
 LIBSFASTJET += $(shell $(FASTJET_CONFIG) --libs --plugins ) -lstdc++
 FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
-PWHGANAL=pwhg_bookhist-new.o pwhg_analysis.o fastjetfortran.o
+PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
 else
@@ -96,7 +96,7 @@ FASTJET_CONFIG=$(shell which fastjet-config)
 #FASTJET_CONFIG=~/lib/fastjet242/bin/fastjet-config
 LIBSFASTJET += $(shell $(FASTJET_CONFIG) --libs --plugins ) -lstdc++
 FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
-PWHGANAL=pwhg_bookhist-new.o pwhg_analysis-ZZ.o fastjetfortran.o
+PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-ZZ.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
 else
@@ -107,7 +107,7 @@ FASTJET_CONFIG=$(shell which fastjet-config)
 #FASTJET_CONFIG=~/lib/fastjet242/bin/fastjet-config
 LIBSFASTJET += $(shell $(FASTJET_CONFIG) --libs --plugins ) -lstdc++
 FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
-PWHGANAL=pwhg_bookhist-new.o pwhg_analysis-sanity.o fastjetfortran.o
+PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-sanity.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
 else

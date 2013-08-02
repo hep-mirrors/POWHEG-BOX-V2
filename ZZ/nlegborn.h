@@ -20,4 +20,4 @@ C      parameter (ndiminteg=(nlegreal-2)*3-4+2-2) ! GZ Ok ?
 c take also away the two resonances 
 
       integer maxprocborn,maxprocreal
-      parameter (maxprocborn=20,maxprocreal=36)
+      parameter (maxprocborn=960,maxprocreal=2880)

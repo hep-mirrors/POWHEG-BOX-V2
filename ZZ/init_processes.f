@@ -126,8 +126,8 @@ c     q g
                   endif
                endif
                if(condition) then
-                  do id1=1,14
-                     do id2=1,14
+                  do id1=1,16
+                     do id2=1,16
                         if(.not.alloweddec(id1,id2)) cycle
                         flst_nreal=flst_nreal+1
                         if(flst_nreal.gt.maxprocreal) goto 998
