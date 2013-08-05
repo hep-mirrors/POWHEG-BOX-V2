@@ -61,30 +61,36 @@
   appear, you get no events. If no conditions are specified, you get all
   possible decays.<no-indent*>
 
-  <with|font-family|tt|mllmin 50 \ \ \ \ \ \ \ \ \ \ ! minimum mass of lepton
-  pair in decay is 50 GeV><next-line><with|font-family|tt|zerowidth 0
-  \ \ \ \ \ \ \ \ ! If 1 (true) use zerowidth approximation (default
+  <with|font-family|tt|mllmin 50 \ \ \ \ \ \ \ \ \ \ ! minimum mass of
+  charged lepton-antilepton or<next-line>
+  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ! quark-antiquark pairs in decays is
+  50 GeV><next-line><with|font-family|tt|zerowidth 0 \ \ \ \ \ \ \ \ ! If 1
+  (true) use zerowidth approximation (default
   0)><next-line><with|font-family|tt|withinterference 1 \ ! If 1 (true)
   include interference for identical leptons
   \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ! (default
   1)<next-line>dronly \ \ 0 \ \ \ \ \ \ \ \ \ ! If 1 (true) include only
   double resonant contributions \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ !
-  (default 0)><next-line>If <with|font-family|tt|zerowidth> is absent or
-  equal to zero, the <math|Z>'s are given finite width,
-  <math|Z>-<math|\<gamma\>> interference is accounted for. Singly resonant
-  graphs are also included by default, unless the
-  <with|font-family|tt|dronly> flag is set to 1.
+  (default 0)><next-line>Notice that in case of decays into equal charged
+  particles, the <with|font-family|tt|mllmin> cut is applied to the two
+  possible pairings. If <with|font-family|tt|zerowidth> is absent or equal to
+  zero, the <math|Z>'s are given finite width, <math|Z>-<math|\<gamma\>>
+  interference is accounted for. Singly resonant graphs are also included by
+  default, unless the <with|font-family|tt|dronly> flag is set to 1.
 
   <\bibliography|bib|JHEP|paper.bib>
     <\bib-list|1>
       <bibitem*|1><label|bib-noi>T.<nbsp>Melia, P.<nbsp>Nason,
-      R.<nbsp>Rontsch, and G.<nbsp>Zanderighi.
+      R.<nbsp>Rontsch, and G.<nbsp>Zanderighi, <with|font-shape|italic|W+W-,
+      WZ and ZZ production in the POWHEG BOX>, <with|font-shape|italic|JHEP>
+      <with|font-series|bold|1111> (2011) 078,
+      [<hlink|<with|font-family|tt|1107.5051>|http://xxx.lanl.gov/abs/1107.5051>].
 
       <bibitem*|2><label|bib-Dixon:1998py>L.<nbsp>J. Dixon, Z.<nbsp>Kunszt,
       and A.<nbsp>Signer, <with|font-shape|italic|Helicity amplitudes for
-      O(alpha-s) production of <math|W<rsup|+>W<rsup|->>,
-      <math|W<rsup|\<pm\>>Z>, <math|Z*Z>, <math|W<rsup|\<pm\>>\<gamma\>>, or
-      <math|Z\<gamma\>> pairs at hadron colliders>,
+      O(alpha-s) production of <math|W<rsup|+>*W<rsup|->>,
+      <math|W<rsup|\<pm\>>*Z>, <math|Z*Z>, <math|W<rsup|\<pm\>>*\<gamma\>>,
+      or <math|Z*\<gamma\>> pairs at hadron colliders>,
       <with|font-shape|italic|Nucl.Phys.> <with|font-series|bold|B531> (1998)
       3--23, [<hlink|<with|font-family|tt|hep-ph/9803250>|http://xxx.lanl.gov/abs/hep-ph/9803250>].
 
@@ -94,10 +100,11 @@
       <with|font-series|bold|D60> (1999) 113006,
       [<hlink|<with|font-family|tt|hep-ph/9905386>|http://xxx.lanl.gov/abs/hep-ph/9905386>].
 
-      <bibitem*|4><label|bib-Campbell:2011bn>J.<nbsp>M. Campbell,
-      R.<nbsp>Ellis, and C.<nbsp>Williams, <with|font-shape|italic|Vector
-      boson pair production at the LHC>, <hlink|<with|font-family|tt|arXiv:1105.0020>|http://xxx.lanl.gov/abs/arXiv:1105.0020>.
-      * Temporary entry *.
+      <bibitem*|4><label|bib-Campbell:2011bn>J.<nbsp>M. Campbell, R.<nbsp>K.
+      Ellis, and C.<nbsp>Williams, <with|font-shape|italic|Vector boson pair
+      production at the LHC>, <with|font-shape|italic|JHEP>
+      <with|font-series|bold|1107> (2011) 018,
+      [<hlink|<with|font-family|tt|1105.0020>|http://xxx.lanl.gov/abs/1105.0020>].
     </bib-list>
   </bibliography>
 </body>

@@ -84,6 +84,7 @@ C     -- here the bornjk is very simple B_i j = B C_i
 
 
       subroutine borncolour_lh
+      implicit none
 c Sets up the colour for the given flavour configuration
 c already filled in the Les Houches interface.
 c In case there are several colour structure, one
@@ -93,6 +94,7 @@ c kinematics defined in the Les Houches interface
       include 'LesHouches.h'
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      logical isquark
 c     neutral particles
       icolup(1,3)=0
       icolup(2,3)=0
@@ -113,7 +115,7 @@ c     colored particles
          write(*,*) ' invalid flavour'
          stop
       endif
-      if(idup(5).ge.1.and.idup(5).le.5) then
+      if(isquark(5)) then
          icolup(1,5)=502
          icolup(2,5)=0
          icolup(1,6)=0
@@ -122,7 +124,7 @@ c     colored particles
          icolup(:,5)=0
          icolup(:,6)=0
       endif
-      if(idup(5).ge.1.and.idup(5).le.5) then
+      if(isquark(7)) then
          icolup(1,7)=503
          icolup(2,7)=0
          icolup(1,8)=0

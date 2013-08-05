@@ -135,6 +135,22 @@ c     number of light flavors
          call pwhg_exit(-1)
       endif
 
+      if(.not.isnu(id1)) then
+         m1=sqrt(kn_cmpborn(0,3)**2-kn_cmpborn(1,3)**2
+     1        -kn_cmpborn(2,3)**2-kn_cmpborn(3,3)**2)
+         if(m1.lt.mllmin) then
+            kn_jacborn = 0
+         endif
+      endif
+
+      if(.not.isnu(id2)) then
+         m2=sqrt(kn_cmpborn(0,4)**2-kn_cmpborn(1,4)**2
+     1        -kn_cmpborn(2,4)**2-kn_cmpborn(3,4)**2)
+         if(m2.lt.mllmin) then
+            kn_jacborn = 0
+         endif
+      endif
+
       if(id1.eq.id2) then
          vsymfact=0.5d0
          if(withinterference) then

@@ -25,34 +25,31 @@
       logical debug,ini,pwhg_isfinite
       data ini/.true./
       data debug/.false./
-      save ini,mllmin34,mllmin56,mllmin
+      save ini,mllmin34,mllmin56
 
       double precision lntaum,ymax,ycm
 
+c we label the particles 1 2 3 4 5 6 as:
+c 1 2 : incoming partons
+c 3 4 : first Z decay products
+c 5 6 : second Z decay products.
+c
+c At the end, we will add the resonances, and this will become:
+c 1 2 : incoming partons
+c 3 4 : the two Z
+c 5 6 : first Z decay products
+c 7 8 : second Z decay products.
+c
       if (debug)  write(*,*) 'Entering Born_phsp: ndiminteg', ndiminteg
       if(ini) then
          do k=1,nlegborn
             kn_masses(k)=0
          enddo
          kn_masses(nlegreal)=0
-         mllmin=powheginput("#mllmin")
-         if(mllmin.le.0) mllmin=0.1d0
-
-         if(z1_to_ch) then
-c charged particles
-            mllmin34=mllmin
-         else
-c neutrino
-            mllmin34=1d-3
-         endif
-
-         if(z2_to_ch) then
-c charged particles
-            mllmin56=mllmin
-         else
-c neutrino
-            mllmin56=1d-3
-         endif
+c very minimal mllmin; their real value will be achieved by setting 
+c kn_jacborn = 0 depending upon the charge of the decay products
+         mllmin34=1d-3
+         mllmin56=1d-3
          ini=.false.
       endif
 C     
@@ -95,15 +92,6 @@ c
       if (xborn(10) .eq. 0d0) then 
          write(*,*) 'xborn(10).eq 0: xborn',xborn
       endif
-
-c---if x's out of normal range abort
-c      if   ((xx(1) .gt. 1d0)
-c     & .or. (xx(2) .gt. 1d0)
-c     & .or. (xx(1) .lt. xmin)
-c     & .or. (xx(2) .lt. xmin)) then
-c         write(*,*) ' error in Born phase space!, x1,x2 our of range'
-c         call exit(-1)
-c      endif
 
 C     NB positive energy even if incoming, i.e. p1+p2 = \sum_3^8 p_i   
 c     pos rapidity

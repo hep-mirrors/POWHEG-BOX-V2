@@ -18,6 +18,7 @@ c     vector boson id and decay
 
       ason2pi = st_alpha/2d0/pi
 
+      call setzcoupl(rflav(5),rflav(7))
 
       do i=1,2
          p(i,4) = pin(0,i)
