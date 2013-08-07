@@ -8,6 +8,7 @@
       include 'constants.f'
       include 'ckm.f'
       include 'cabibbo.f'
+      include 'PhysPars.h'
       real * 8 pin(0:3,nlegreal)
       integer rflav(nlegreal)
       real * 8 amp2real
@@ -18,11 +19,19 @@
 
       ason2pi = st_alpha/2d0/pi
 
+c                    id1      iad1     id2      idw
+      call setzcoupl(rflav(5),rflav(6),rflav(7),rflav(3))
 
-      do i=1,nlegreal
+      do i=1,2
          p(i,4) = pin(0,i)
          p(i,1:3) = pin(1:3,i)
       enddo
+
+      do i=3,7
+         p(i,4) = pin(0,i+2)
+         p(i,1:3) = pin(1:3,i+2)
+      enddo
+
 
       p(1,:)=-p(1,:)
       p(2,:)=-p(2,:)
@@ -75,7 +84,7 @@
 
       amp2real = amp2real/ason2pi
 
-      amp2real = amp2real*suppfact2e(pin,rflav)
+      amp2real = amp2real * normbr
 
 
       end

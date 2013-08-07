@@ -35,16 +35,7 @@
             kn_masses(k)=0
          enddo
          kn_masses(nlegreal)=0
-         mllminz=powheginput("#mllmin")
-         if(vdecaymodeZ.eq.12.or.vdecaymodeZ.eq.14.or.vdecaymodeZ.eq.16)
-     1        then
-            if(mllminz.gt.1d-8) then
-               write(*,*)' Doing Z-> nu nubar; mllmin ignored!!!'
-            endif
-            mllminz=0
-         else
-            if(mllminz.le.0d0) mllminz=0.1d0
-         endif
+         mllminz=0.1d0
          ini=.false.
       endif
 
@@ -133,11 +124,18 @@ C     total incoming momentum
       kn_jacborn = xjac
 
       do i=1,6
-      kn_pborn(0,i) = p(4,i)
-      kn_pborn(1,i) = p(1,i)
-      kn_pborn(2,i) = p(2,i)
-      kn_pborn(3,i) = p(3,i)
+         if(i.le.2) then
+            k=i
+         else
+            k=i+2
+         endif
+         kn_pborn(0,k) = p(4,i)
+         kn_pborn(1,k) = p(1,i)
+         kn_pborn(2,k) = p(2,i)
+         kn_pborn(3,k) = p(3,i)
       enddo 
+      kn_pborn(:,3)=kn_pborn(:,5)+kn_pborn(:,6)
+      kn_pborn(:,4)=kn_pborn(:,7)+kn_pborn(:,8)
 
 c     now boost everything BACK along z-axis 
       kn_xb1 = xx(1)
@@ -157,81 +155,6 @@ c     minimal final state mass
          kn_minmass= ph_zmass + ph_wmass
       else
          kn_minmass=mllminz
-      endif
-
-      
-c      if (m56 .lt. mllminz) then
-c         write(*,*) 'error in Born phase space!, m34 or m56 below limit'
-c         write(*,*) m34/mllminz,m56/ mllminz
-c         call exit(-1)
-c      endif
-
-c     print out for checks 
-      if (debug) then 
-c     -- checks invariants, mom. conservation etc in Lab frame  
-      write(*,*) '----> Lab FRAME' 
-      do i=1,6
-         write(*,*) 'pborn', i, kn_pborn(:,i)
-      enddo
-      write(*,*) 'psum', sum(kn_pborn(:,1:2),dim=2) 
-     .     -sum(kn_pborn(:,3:6),dim=2) 
-      p34(1:3) = kn_pborn(1:3,3)+kn_pborn(1:3,4)
-      p56(1:3) = kn_pborn(1:3,5)+kn_pborn(1:3,6)
-      p34(4)   = kn_pborn(0,3)+kn_pborn(0,4)
-      p56(4)   = kn_pborn(0,5)+kn_pborn(0,6)
-      write(*,*) 'm2(34)',i,p34(4)*p34(4)-
-     .        p34(1)*p34(1)-p34(2)*p34(2)-p34(3)*p34(3)
-      write(*,*) 'm2(56)',i,p56(4)*p56(4)-
-     .        p56(1)*p56(1)-p56(2)*p56(2)-p56(3)*p56(3)
-
-      do i=1,8 
-         write(*,*) 'm2',i,kn_pborn(0,i)*kn_pborn(0,i)-
-     .        kn_pborn(1,i)*kn_pborn(1,i)-
-     .        kn_pborn(2,i)*kn_pborn(2,i)-
-     .        kn_pborn(3,i)*kn_pborn(3,i)
-      enddo
-
-c     -- checks invariants, mom. conservation etc in CM frame  
-      write(*,*) '----> CM FRAME' 
-      do i=1,6 
-         write(*,*) 'CM pborn', i, kn_cmpborn(:,i)
-      enddo
-      write(*,*) 'psum', sum(kn_cmpborn(:,1:2),dim=2) 
-     .     -sum(kn_cmpborn(:,3:6),dim=2) 
-
-      p34(1:3) = kn_cmpborn(1:3,3)+kn_cmpborn(1:3,4)
-      p56(1:3) = kn_cmpborn(1:3,5)+kn_cmpborn(1:3,6)
-      p34(4)   = kn_cmpborn(0,3)+kn_cmpborn(0,4)
-      p56(4)   = kn_cmpborn(0,5)+kn_cmpborn(0,6)
-      write(*,*) 'm2(34)',i,p34(4)*p34(4)-
-     .        p34(1)*p34(1)-p34(2)*p34(2)-p34(3)*p34(3)
-      write(*,*) 'm2(56)',i,p56(4)*p56(4)-
-     .        p56(1)*p56(1)-p56(2)*p56(2)-p56(3)*p56(3)
-
-      do i=1,6 
-         write(*,*) 'm2',i,kn_cmpborn(0,i)*kn_cmpborn(0,i)-
-     .        kn_cmpborn(1,i)*kn_cmpborn(1,i)-
-     .        kn_cmpborn(2,i)*kn_cmpborn(2,i)-
-     .        kn_cmpborn(3,i)*kn_cmpborn(3,i)
-      enddo
-
-      endif
-
-      if(vdecaymodeW+vdecaymodeZ.eq.0.and.
-c     It is a W+, same lepton as Z, 4 and 5 have opposite charge
-     1      (kn_cmpborn(0,4)+kn_cmpborn(0,5))**2
-     1     -(kn_cmpborn(1,4)+kn_cmpborn(1,5))**2
-     1     -(kn_cmpborn(2,4)+kn_cmpborn(2,5))**2
-     1     -(kn_cmpborn(3,4)+kn_cmpborn(3,5))**2.lt.mllminz**2) then
-         kn_jacborn = 0
-      endif
-      if(vdecaymodeW-vdecaymodeZ.eq.0.and.
-c     It is a W-, same lepton as Z, 3 and 6 have opposite charge
-     1      (kn_cmpborn(0,3)+kn_cmpborn(0,6))**2
-     1     -(kn_cmpborn(1,3)+kn_cmpborn(1,6))**2
-     1     -(kn_cmpborn(2,3)+kn_cmpborn(2,6))**2
-     1     -(kn_cmpborn(3,3)+kn_cmpborn(3,6))**2.lt.mllminz**2) then
-         kn_jacborn = 0
       endif
 
       end

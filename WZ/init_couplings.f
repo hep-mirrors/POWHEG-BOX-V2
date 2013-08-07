@@ -70,23 +70,23 @@ c     number of light flavors
       gw = dsqrt(gwsq)
       write(*,*)'GW',gw,xw
 
-      ! TM for the different processes the
-      ! ew couplings need to be set, as in
-      ! chooser.f. For now, ee,mumu,tautau
-      ! ---really should depend on idvecdecay
-      ! and ideally would be in init_process,
-      ! but the above constatns need to be set
-      if (((vdecaymodeZ).eq.11).or.((vdecaymodeZ).eq.13).or
-     $     .((vdecaymodeZ).eq.15)) then
-      q1=-1d0
-      l1=le
-      r1=re
-      elseif(((vdecaymodeZ).eq.12).or.
-     . ((vdecaymodeZ).eq.14).or.((vdecaymodeZ).eq.16)) then
-      q1=0d0
-      l1=ln
-      r1=rn
-      endif
+c      ! TM for the different processes the
+c      ! ew couplings need to be set, as in
+c      ! chooser.f. For now, ee,mumu,tautau
+c      ! ---really should depend on idvecdecay
+c      ! and ideally would be in init_process,
+c      ! but the above constatns need to be set
+c      if (((vdecaymodeZ).eq.11).or.((vdecaymodeZ).eq.13).or
+c     $     .((vdecaymodeZ).eq.15)) then
+c      q1=-1d0
+c      l1=le
+c      r1=re
+c      elseif(((vdecaymodeZ).eq.12).or.
+c     . ((vdecaymodeZ).eq.14).or.((vdecaymodeZ).eq.16)) then
+c      q1=0d0
+c      l1=ln
+c      r1=rn
+c      endif
 
       ! TM set CKM values
       Vud = 0.974d0
@@ -122,3 +122,118 @@ c     number of light flavors
 
 
 
+
+
+      subroutine setzcoupl(id1,iad1,id2,idw)
+      implicit none
+      integer id1,iad1,id2,idw
+      include 'nlegborn.h'
+      include 'pwhg_kn.h'
+      include 'PhysPars.h'
+      include 'zwcouple.f'  !TM now set the z-coupling parameters here
+      include 'ewcharge.f'
+      include 'qcdcouple.f'
+      include 'pwhg_st.h'
+      include 'pwhg_math.h'
+      include 'pwhg_physpar.h'
+      include 'cvecbos.h'
+      include 'vvsettings.f'
+      include 'nwz.f'
+      logical withinterference,ini
+      real * 8 mllmin,m1,m2
+      data ini/.true./
+      save withinterference,ini,mllmin
+      real * 8 powheginput
+      logical isquark,islepton,isnu
+      external powheginput,isquark,islepton,isnu
+c signal if it is W+ or W- to cross section routines
+      if(idw.eq.24) then
+         nwz=1
+      else
+         nwz=-1
+      endif
+      if(ini) then
+         if(powheginput("#withinterference").eq.0) then
+            withinterference = .false.
+         else
+            withinterference = .true.
+         endif
+         ini=.false.
+         mllmin=powheginput("#mllmin")
+         if(mllmin.le.0) mllmin=0.1d0
+      endif
+
+      normbr = 1
+
+      if(isquark(id2)) then
+         q2=q(id2)
+         l2=l(id2)
+         r2=r(id2)
+         normbr=normbr*(1d0+ph_deltas)*3
+      elseif(islepton(id2)) then
+         q2=-1
+         l2=le
+         r2=re
+      elseif(isnu(id2)) then
+         q2=0
+         l2=ln
+         r2=rn
+      else
+         write(*,*) 'setzcoupl: invalid Z decay product' ,id2
+         call pwhg_exit(-1)
+      endif
+
+      if(isquark(id1)) then
+         normbr=normbr*(1d0+ph_deltas)*3
+      endif
+
+      if(.not.isnu(id2)) then
+         m2=sqrt(kn_cmpborn(0,4)**2-kn_cmpborn(1,4)**2
+     1        -kn_cmpborn(2,4)**2-kn_cmpborn(3,4)**2)
+         if(m2.lt.mllmin) then
+            kn_jacborn = 0
+         endif
+      endif
+
+      if(id1.eq.id2) then
+         vsymfact=0.5d0
+         if(withinterference) then
+            interference=.true.
+         else
+            interference=.false.
+         endif
+         if(.not.isnu(id1)) then
+c impose mllmin cut also upon the crossed pairs
+            m1=sqrt(
+     1           (kn_cmpborn(0,5)+kn_cmpborn(0,8))**2-
+     2           (kn_cmpborn(1,5)+kn_cmpborn(1,8))**2-
+     3           (kn_cmpborn(2,5)+kn_cmpborn(2,8))**2-
+     4           (kn_cmpborn(3,5)+kn_cmpborn(3,8))**2  )
+            if(m1.lt.mllmin) then
+               kn_jacborn = 0
+            endif
+         endif
+      elseif(iad1.eq.-id2) then
+         vsymfact=0.5d0
+         if(withinterference) then
+            interference=.true.
+         else
+            interference=.false.
+         endif
+         if(.not.isnu(iad1)) then
+c impose mllmin cut also upon the crossed pairs
+            m2=sqrt(
+     1           (kn_cmpborn(0,6)+kn_cmpborn(0,7))**2-
+     2           (kn_cmpborn(1,6)+kn_cmpborn(1,7))**2-
+     3           (kn_cmpborn(2,6)+kn_cmpborn(2,7))**2-
+     4           (kn_cmpborn(3,6)+kn_cmpborn(3,7))**2  )
+            if(m2.lt.mllmin) then
+               kn_jacborn = 0
+            endif
+         endif
+      else
+         vsymfact=1
+         interference=.false.
+      endif
+
+      end

@@ -22,6 +22,9 @@ c     Notation to allow room for p3 --- gluon emission.
       include 'cvecbos.h'
       include 'vvsettings.f'
       double precision msq(-nf:nf,-nf:nf),p(mxpart,4),qdks(mxpart,4)     
+c in case interference is needed, it will hold the direct, crossed
+c and interference term (first index from 1 to 3 respectively)
+      double precision xmsq(3,-nf:nf,-nf:nf)
       double complex AWZM,AWZP,a6treea
       double complex prop34,prop56,prop12
       double complex Fa123456,Fa126543,Fb123456_z,Fb123456_g
@@ -95,6 +98,8 @@ c--set msq=0 to initalize
       AWZM_SAVE(j,k)=0d0
       enddo
       enddo
+
+      xmsq = 0
 
       if (interference) then
          nloop=2
@@ -241,69 +246,82 @@ c---note that L/R labels the LEPTON coupling v2, NOT the quarks (all L)
       do j=-nf,nf
       do k=-nf,nf
 c--no point in wasting time if it gives zero anyway
-      if (Vsq(j,k) .ne. 0d0) then
-          if ((j .gt. 0) .and. (k .lt. 0)) then
-            AWZM=(FAC*(ZgL(+j)*Fa213456+ZgL(-k)*Fa216543)
-     .           +FACM*(v2(1)*cotw*prop56*Fb213456_z
-     .                                +q1*Fb213456_g)*prop12)*prop34
-            AWZP=(FAC*(ZgR(+j)*Fa213465+ZgR(-k)*Fa215643)
-     .           +FACM*(v2(2)*cotw*prop56*Fb213465_z
-     .                                +q1*Fb213465_g)*prop12)*prop34
-          elseif ((j .lt. 0) .and. (k .gt. 0)) then
-            AWZM=(FAC*(ZgL(+k)*Fa123456+ZgL(-j)*Fa126543)
-     .           +FACM*(v2(1)*cotw*prop56*Fb123456_z
-     .                                +q1*Fb123456_g)*prop12)*prop34
-            AWZP=(FAC*(ZgR(+k)*Fa123465+ZgR(-j)*Fa125643)
-     .           +FACM*(v2(2)*cotw*prop56*Fb123465_z
-     .                                +q1*Fb123465_g)*prop12)*prop34
-          endif
-          if (.not.dronly) then
-c---we need supplementary diagrams for gauge invariance.
-c---now also assume that we have lepton decay products for W
-c---so that v2(1)=le, v2(2)=re
-c---1st term is diagram where Z couples to electron
-c---2nd term is diagram where Z couples to neutrino
-c---3rd term is diagram where gamma* couples to electron
-c---4th term (l-h only) contains two W propagators
-          if ((j .gt. 0) .and. (k .lt. 0)) then
-             AWZM=AWZM+FAC*prop12*(
-     .          (en1*Fa346512+en2*Fa342156)*v2(1)*prop56
-     .          +q1*(-1d0)*(cl1*Fa346512+cl2*Fa342156)
-     .          +wwflag*0.5d0/xw*prop34*(cl1*Fa652143+cl2*Fa653412))
-            AWZP=AWZP+FAC*prop12*(
-     .          (en1*Fa345612+en2*Fa342165)*v2(2)*prop56
-     .          +q1*(-1d0)*(cl1*Fa345612+cl2*Fa342165))
-          elseif ((j .lt. 0) .and. (k .gt. 0)) then
-            AWZM=AWZM+FAC*prop12*(
-     .          (en1*Fa346521+en2*Fa341256)*v2(1)*prop56
-     .          +q1*(-1d0)*(cl1*Fa346521+cl2*Fa341256)
-     .          +wwflag*0.5d0/xw*prop34*(cl1*Fa651243+cl2*Fa653421))
-            AWZP=AWZP+FAC*prop12*(
-     .          (en1*Fa345621+en2*Fa341265)*v2(2)*prop56
-     .          +q1*(-1d0)*(cl1*Fa345621+cl2*Fa341265))
-          endif
-          endif
+         if (Vsq(j,k) .ne. 0d0) then
+            if ((j .gt. 0) .and. (k .lt. 0)) then
+               AWZM=(FAC*(ZgL(+j)*Fa213456+ZgL(-k)*Fa216543)
+     .              +FACM*(v2(1)*cotw*prop56*Fb213456_z
+     .              +q1*Fb213456_g)*prop12)*prop34
+               AWZP=(FAC*(ZgR(+j)*Fa213465+ZgR(-k)*Fa215643)
+     .              +FACM*(v2(2)*cotw*prop56*Fb213465_z
+     .              +q1*Fb213465_g)*prop12)*prop34
+            elseif ((j .lt. 0) .and. (k .gt. 0)) then
+               AWZM=(FAC*(ZgL(+k)*Fa123456+ZgL(-j)*Fa126543)
+     .              +FACM*(v2(1)*cotw*prop56*Fb123456_z
+     .              +q1*Fb123456_g)*prop12)*prop34
+               AWZP=(FAC*(ZgR(+k)*Fa123465+ZgR(-j)*Fa125643)
+     .              +FACM*(v2(2)*cotw*prop56*Fb123465_z
+     .              +q1*Fb123465_g)*prop12)*prop34
+            endif
+            if (.not.dronly) then
+c---  we need supplementary diagrams for gauge invariance.
+c---  now also assume that we have lepton decay products for W
+c---  so that v2(1)=le, v2(2)=re
+c---  1st term is diagram where Z couples to electron
+c---  2nd term is diagram where Z couples to neutrino
+c---  3rd term is diagram where gamma* couples to electron
+c---  4th term (l-h only) contains two W propagators
+               if ((j .gt. 0) .and. (k .lt. 0)) then
+                  AWZM=AWZM+FAC*prop12*(
+     .                 (en1*Fa346512+en2*Fa342156)*v2(1)*prop56
+     .                 +q1*(-1d0)*(cl1*Fa346512+cl2*Fa342156)
+  .                 +wwflag*0.5d0/xw*prop34*(cl1*Fa652143+cl2*Fa653412))
+                  AWZP=AWZP+FAC*prop12*(
+     .                 (en1*Fa345612+en2*Fa342165)*v2(2)*prop56
+     .                 +q1*(-1d0)*(cl1*Fa345612+cl2*Fa342165))
+               elseif ((j .lt. 0) .and. (k .gt. 0)) then
+                  AWZM=AWZM+FAC*prop12*(
+     .                 (en1*Fa346521+en2*Fa341256)*v2(1)*prop56
+     .                 +q1*(-1d0)*(cl1*Fa346521+cl2*Fa341256)
+                    +wwflag*0.5d0/xw*prop34*(cl1*Fa651243+cl2*Fa653421))
+                  AWZP=AWZP+FAC*prop12*(
+     .                 (en1*Fa345621+en2*Fa341265)*v2(2)*prop56
+     .                 +q1*(-1d0)*(cl1*Fa345621+cl2*Fa341265))
+               endif
+            endif
+            
+            xmsq(iloop,j,k)= xmsq(iloop,j,k)
+     1           +Vsq(j,k)*ave*(abs(AWZM)**2+abs(AWZP)**2)
+            
 
-      msq(j,k)= msq(j,k)+Vsq(j,k)*ave*(abs(AWZM)**2+abs(AWZP)**2)
-
-
-      if ((iloop.eq.1)) then
-         if (interference) then
-            AWZM_SAVE(j,k)=AWZM
+            if ((iloop.eq.1)) then
+               if (interference) then
+                  AWZM_SAVE(j,k)=AWZM
+               endif
+            elseif (iloop.eq.2) then
+               xmsq(3,j,k)=xmsq(3,j,k)
+     &              -Vsq(j,k)*ave*(dconjg(AWZM)*AWZM_SAVE(j,k) +
+     &              AWZM*dconjg(AWZM_SAVE(j,k)))
+            endif
+            
+            
          endif
-      elseif (iloop.eq.2) then
-         msq(j,k)=msq(j,k)-Vsq(j,k)*ave*(dconjg(AWZM)*AWZM_SAVE(j,k) +
-     &           AWZM*dconjg(AWZM_SAVE(j,k)))
-      endif
 
-
-      endif
+         if(interference) then
+            if(iloop.eq.2) then
+c     this is for testing:
+c     msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))/2 *
+               msq(j,k)= xmsq(1,j,k) *
+     1              (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
+            endif
+         else
+            msq(j,k)=xmsq(1,j,k)
+         endif
 
       enddo
       enddo
 
 
-      enddo !-i loop 
+      enddo                     !-i loop 
 
       msq = msq*vsymfact
 
