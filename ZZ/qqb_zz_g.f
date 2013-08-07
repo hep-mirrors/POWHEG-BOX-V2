@@ -380,7 +380,9 @@ c---  case g-q
 
            if(interference) then
               if(iloop.eq.2) then
-                 msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))/2 *
+c this is for testing:
+c                 msq(j,k)=(xmsq(1,j,k)+xmsq(2,j,k))/2 *
+                 msq(j,k)= xmsq(1,j,k) *
      1                (1+xmsq(3,j,k)/(xmsq(1,j,k)+xmsq(2,j,k)))
               endif
            else
