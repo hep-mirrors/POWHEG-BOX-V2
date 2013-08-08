@@ -274,7 +274,7 @@ c---  4th term (l-h only) contains two W propagators
                   AWZM=AWZM+FAC*prop12*(
      .                 (en1*Fa346512+en2*Fa342156)*v2(1)*prop56
      .                 +q1*(-1d0)*(cl1*Fa346512+cl2*Fa342156)
-  .                 +wwflag*0.5d0/xw*prop34*(cl1*Fa652143+cl2*Fa653412))
+     .              +wwflag*0.5d0/xw*prop34*(cl1*Fa652143+cl2*Fa653412))
                   AWZP=AWZP+FAC*prop12*(
      .                 (en1*Fa345612+en2*Fa342165)*v2(2)*prop56
      .                 +q1*(-1d0)*(cl1*Fa345612+cl2*Fa342165))
@@ -282,7 +282,7 @@ c---  4th term (l-h only) contains two W propagators
                   AWZM=AWZM+FAC*prop12*(
      .                 (en1*Fa346521+en2*Fa341256)*v2(1)*prop56
      .                 +q1*(-1d0)*(cl1*Fa346521+cl2*Fa341256)
-                    +wwflag*0.5d0/xw*prop34*(cl1*Fa651243+cl2*Fa653421))
+     .              +wwflag*0.5d0/xw*prop34*(cl1*Fa651243+cl2*Fa653421))
                   AWZP=AWZP+FAC*prop12*(
      .                 (en1*Fa345621+en2*Fa341265)*v2(2)*prop56
      .                 +q1*(-1d0)*(cl1*Fa345621+cl2*Fa341265))

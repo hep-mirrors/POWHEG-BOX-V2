@@ -109,7 +109,7 @@ c initial state region
             endif
  11         continue
          enddo
-         flrad=a(nlegreal,indexreal)
+         flrad=a(j,indexreal)
          if(ireg(1).and.ireg(2).and.(flrad.eq.0.or.flrad.eq.22))
      1        then
 c if both regions are singular and the radiated parton is a gluon
