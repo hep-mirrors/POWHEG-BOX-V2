@@ -454,15 +454,15 @@ c There are remnants! set up the appropriate flag:
      #(nlegreal,flst_realtags(1,k),flst_regulartags(1,flst_nregular))
          endif
          do l=1,nregions
+            if(iflregl.ge.maxalr) then
+               write(*,*)' genflavreglist: increase maxalr'
+               stop
+            endif
             iflregl=iflregl+1
             if(iregions(1,l).le.2) then
                flst_emitter(iflregl)=iregions(1,l)
             else
                flst_emitter(iflregl)=nlegreal-1
-            endif
-            if(iflregl.ge.maxalr) then
-               write(*,*)' genflavreglist: increase maxalr'
-               stop
             endif
             ipart=0
 c final state singularity
@@ -539,6 +539,7 @@ c     #     '   em:',flst_emitter(iflregl)
       enddo
       nreg=iflregl
       flst_nalr=nreg
+      write(*,*) ' **** Minimum maxalr allowed: ',nreg,' *********'
       call pretty_print_flst
 c bunch together identical elements, increasing their multiplicities
       do j=1,nreg

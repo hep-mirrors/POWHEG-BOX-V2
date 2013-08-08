@@ -23,3 +23,7 @@ c      integer maxprocborn,maxprocreal
 c      parameter (maxprocborn=1584,maxprocreal=15312)
       integer maxprocborn,maxprocreal
       parameter (maxprocborn=1008,maxprocreal=3024)
+
+
+      integer maxalr
+      parameter (maxalr=maxprocreal*nlegreal*(nlegreal-1)/2)

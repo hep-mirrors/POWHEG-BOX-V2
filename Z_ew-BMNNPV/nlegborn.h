@@ -20,6 +20,8 @@ c     the last +1 is for double channel Z/gamma
       integer maxprocborn,maxprocreal
       parameter (maxprocborn=200,maxprocreal=500)
 
+      integer maxalr
+      parameter (maxalr=maxprocreal*nlegreal*(nlegreal-1)/2)
 
 	  integer nparton
 	  parameter (nparton=22)

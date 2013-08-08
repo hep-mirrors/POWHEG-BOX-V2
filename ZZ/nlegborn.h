@@ -21,3 +21,6 @@ c take also away the two resonances
 
       integer maxprocborn,maxprocreal
       parameter (maxprocborn=960,maxprocreal=2880)
+
+      integer maxalr
+      parameter (maxalr=maxprocreal*nlegreal*(nlegreal-1)/2)

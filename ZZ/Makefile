@@ -78,6 +78,8 @@ PDFPACK=mlmpdfif.o hvqpdfpho.o
 endif
 
 
+PWHGANAL=pwhg_analysis-dummy.o
+
 ifeq ("$(ANALYSIS)","default")
 ##To include Fastjet configuration uncomment the following lines. 
 #FASTJET_CONFIG=/users/melia/fastj/bin/fastjet-config
@@ -88,7 +90,8 @@ FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
 PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
-else
+endif
+
 ifeq ("$(ANALYSIS)","ZZ")
 ##To include Fastjet configuration uncomment the following lines. 
 #FASTJET_CONFIG=/users/melia/fastj/bin/fastjet-config
@@ -99,7 +102,8 @@ FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
 PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-ZZ.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
-else
+endif
+
 ifeq ("$(ANALYSIS)","sanity")
 ##To include Fastjet configuration uncomment the following lines. 
 #FASTJET_CONFIG=/users/melia/fastj/bin/fastjet-config
@@ -110,10 +114,6 @@ FJCXXFLAGS+= $(shell $(FASTJET_CONFIG) --cxxflags)
 PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-sanity.o fastjetfortran.o
 ## Also add required Fastjet drivers to PWHGANAL (examples are reported)
 #PWHGANAL+= fastjetsisconewrap.o fastjetktwrap.o fastjetCDFMidPointwrap.o fastjetD0RunIIConewrap.o fastjetfortran.o
-else
-PWHGANAL=pwhg_analysis-dummy.o
-endif
-endif
 endif
 
 
@@ -139,7 +139,7 @@ PWHG=pwhg_main.o pwhg_init.o bbinit.o btilde.o lhefwrite.o		\
 	test_Sudakov.o pt2maxreg.o sigborn.o gen_real_phsp.o maxrat.o	\
 	gen_index.o gen_radiation.o Bornzerodamp.o sigremnants.o	\
 	random.o boostrot.o bra_ket_subroutines.o cernroutines.o	\
-	init_phys.o powheginput.o pdfcalls.o sigreal.o sigcollremn.o	\
+	utils.o init_phys.o powheginput.o pdfcalls.o sigreal.o sigcollremn.o	\
 	pwhg_analysis_driver.o checkmomzero.o reshufflemoms.o \
 	setstrongcoupl.o integrator.o newunit.o mwarn.o sigsoftvirt.o	\
 	setlocalscales.o validflav.o mint_upb.o  \

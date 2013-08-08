@@ -31,8 +31,6 @@ c The flavour of colored neutral and massive colored particles should
 c be the same for all real and born subprocesses.
 c This is the case for most QCD NLO calculation.
 
-      integer maxalr
-      parameter (maxalr=maxprocreal*nlegreal*(nlegreal-1)/2)
       integer flst_nborn, flst_born(nlegborn,maxprocborn),
      1     flst_borntags(nlegborn,maxprocborn),
      2     flst_bornres(nlegborn,maxprocborn),

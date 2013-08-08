@@ -124,60 +124,21 @@ c     we need to tell to this analysis file which program is running it
       character * 6 WHCPRG
       common/cWHCPRG/WHCPRG
       data WHCPRG/'NLO   '/
-      integer vdecaytemp1,vdecaytemp2
-      save vdecaytemp1,vdecaytemp2
-
-      integer lep1, lep2, alp1,alp2
-      integer nlep1,nlep2,nalp1,nalp2
-      integer ilep1(100),ilep2(100),ialp1(100),ialp2(100)
+      integer ihepv1,ihepv2,idtmp
+      integer lep1,lep2,alp1,alp2
+      integer dec1p,dec1a,dec2p,dec2a
+      save dec1p,dec1a,dec2p,dec2a
       real * 8 plep1(4),plep2(4),palp1(4),palp2(4)
       real * 8 httot,y,eta,pt,m
       real * 8 dy,deta,delphi,dr
       integer ihep
       real * 8 powheginput
       external powheginput
-      real * 8 mllmin
-      save mllmin, lep1, lep2, alp1, alp2
+      logical comesfrom
+      external comesfrom
 
       if(dsig.eq.0) return
-
-      if (ini) then
-         if(powheginput("#vdecaymodeZ1").gt.0) then
-            vdecaytemp1=powheginput("#vdecaymodeZ1")
-            vdecaytemp2=powheginput("#vdecaymodeZ2")
-            lep1= vdecaytemp1
-            alp1=-vdecaytemp1
-            lep2= vdecaytemp2
-            alp2=-vdecaytemp2
-         elseif(powheginput("#vdecaymodeZ").gt.0) then
-            vdecaytemp1=powheginput("#vdecaymodeZ")
-            vdecaytemp2=powheginput("#vdecaymodeW")
-            lep1= vdecaytemp1
-            alp1=-vdecaytemp1
-            if(vdecaytemp2.gt.0) then
-               lep2= vdecaytemp2
-               alp2=-(vdecaytemp2+1)
-            else
-               lep2=-vdecaytemp2+1
-               alp2= vdecaytemp2
-            endif
-         elseif(powheginput("#vdecaymodeWm").gt.0) then
-            vdecaytemp1=powheginput("#vdecaymodeWm")
-            vdecaytemp2=powheginput("#vdecaymodeWp")
-            lep1= vdecaytemp1
-            alp1=-(vdecaytemp1+1)
-            lep2= -vdecaytemp2+1
-            alp2= vdecaytemp2
-         else
-            write(*,*) ' which analysis?'
-            call exit(-1)
-         endif
-
-         
-            
-         mllmin=powheginput('#mllmin')
-         write (*,*)
-         write (*,*) '********************************************'
+      if(ini) then
          if(whcprg.eq.'NLO') then
             write(*,*) '       NLO analysis'
          elseif(WHCPRG.eq.'LHE   ') then
@@ -187,73 +148,65 @@ c     we need to tell to this analysis file which program is running it
          elseif(WHCPRG.eq.'PYTHIA') then
             write (*,*) '           PYTHIA ANALYSIS            '
          endif
-
+         dec1p=powheginput('#dec1p')
+         dec1a=powheginput('#dec1a')
+         dec2p=powheginput('#dec2p')
+         dec2a=powheginput('#dec2a')
          ini=.false.
       endif
 
-
-c     find Z decay products
-      nlep1=0                   ! number of lepton 1
-      nalp1=0                   ! number of antilepton 1
-      nlep2=0                   ! number of l-
-      nalp2=0                   ! number of l+
+c     find vector iheps
+      ihepv1=0
+      ihepv2=0
       do ihep=1,nhep
-         if(isthep(ihep).eq.1) then
-            if(idhep(ihep).eq.lep1) then
-               nlep1=nlep1+1
-               ilep1(nlep1) = ihep
-            elseif(idhep(ihep).eq.alp1) then
-               nalp1=nalp1+1
-               ialp1(nalp1) = ihep
-            elseif(idhep(ihep).eq.lep2) then
-               nlep2=nlep2+1
-               ilep2(nlep2) = ihep
-            elseif(idhep(ihep).eq.alp2) then
-               nalp2=nalp2+1
-               ialp2(nalp2) = ihep
+         idtmp=abs(isthep(ihep))
+         if(idtmp.eq.24.or.idtmp.eq.23) then
+            if(ihepv1.eq.0) then
+               ihepv1=ihep
+            elseif(ihepv2.eq.0) then
+               ihepv2=ihep
+            else
+               ihepv1=ihepv2
+               ihepv2=ihep
             endif
          endif
       enddo
 
-      if (nlep1 .ge. 100 .or. nalp1 .ge. 100 .or. nlep2 .ge. 100 .or.
-     .     nalp2 .ge. 100) then
-         write(*,*) 'crazy event, too many leptons'
-         return
-      endif
-      
-      call sortbypt(nlep1,ilep1)
-      call sortbypt(nalp1,ialp1)
-      call sortbypt(nlep2,ilep2)
-      call sortbypt(nalp2,ialp2)
+c     find vector decay products
 
-      if(lep1.eq.lep2) then
-         if(nlep1.lt.2) then
-            write(*,*) 'crazy event, not enough leptons'
-            call exit(-1)
+      do ihep=1,nhep
+         if(isthep(ihep).eq.1) then
+            if(comesfrom(ihepv1,ihep)) then
+               if(idhep(ihep).gt.0) then
+                  lep1=ihep
+               else
+                  alp1=ihep
+               endif
+            elseif(comesfrom(ihepv2,ihep)) then
+               if(idhep(ihep).gt.0) then
+                  lep2=ihep
+               else
+                  alp2=ihep
+               endif
+            endif
          endif
-         nlep2=1
-         ilep2(1)=ilep1(2)
-         nlep1=1
-      endif
-      if(alp1.eq.alp2) then
-         if(nalp1.lt.2) then
-            write(*,*) 'crazy event, not enough leptons'
-            call exit(-1)
-         endif
-         nalp2=1
-         ialp2(1)=ialp1(2)
-         nalp1=1
-      endif
+      enddo
+
+      if(dec1p.gt.0.and.dec1p.ne.lep1) return
+      if(dec1a.gt.0.and.dec1a.ne.alp1) return
+      if(dec2p.gt.0.and.dec2p.ne.lep2) return
+      if(dec2a.gt.0.and.dec2a.ne.alp2) return
+
 
       call filld('total',0.5d0,dsig)
 
       rr=0.6d0 
       call buildjets(1,mjets,rr,ktj,etaj,rapj,phij,pj)
 
-      plep1=phep(1:4,ilep1(1))
-      palp1=phep(1:4,ialp1(1))
-      plep2=phep(1:4,ilep2(1))
-      palp2=phep(1:4,ialp2(1))
+      plep1=phep(1:4,lep1)
+      palp1=phep(1:4,alp1)
+      plep2=phep(1:4,lep2)
+      palp2=phep(1:4,alp2)
 
       call yetaptmassplot(plep1,dsig,'lep1')
       if(lep1.eq.lep2) then

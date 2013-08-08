@@ -163,66 +163,6 @@ c     q g
       call exit(-1)
       end
 
-      function isquark(id)
-      implicit none
-      logical isquark
-      integer id,aid
-      aid=abs(id)
-      if(aid.ge.1.and.aid.le.6) then
-         isquark=.true.
-      else
-         isquark=.false.
-      endif
-      end
-
-      function isutype(id)
-      implicit none
-      logical isutype
-      integer id,aid
-      aid=abs(id)
-      if(aid.eq.2.or.aid.eq.4.or.aid.eq.6) then
-         isutype=.true.
-      else
-         isutype=.false.
-      endif
-      end
-
-      function isdtype(id)
-      implicit none
-      logical isdtype
-      integer id,aid
-      aid=abs(id)
-      if(aid.eq.1.or.aid.eq.3.or.aid.eq.5) then
-         isdtype=.true.
-      else
-         isdtype=.false.
-      endif
-      end
-
-      function islepton(id)
-      implicit none
-      logical islepton
-      integer id,aid
-      aid=abs(id)
-      if(aid.eq.11.or.aid.eq.13.or.aid.eq.15) then
-         islepton=.true.
-      else
-         islepton=.false.
-      endif
-      end
-
-      function isnu(id)
-      implicit none
-      logical isnu
-      integer id,aid
-      aid=abs(id)
-      if(aid.eq.12.or.aid.eq.14.or.aid.eq.16) then
-         isnu=.true.
-      else
-         isnu=.false.
-      endif
-      end
-
       function alloweddec(id1,id2)
       implicit none
       logical alloweddec
