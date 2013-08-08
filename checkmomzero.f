@@ -43,21 +43,17 @@
                s=p(:,j)
                r=p(:,j)
             endif
-            do k=3,nlegreal-1
+            do k=3,n
                if(flst_bornres(k,1).eq.ires) then
                   s=s-p(:,k)
                   r=r+p(:,k)
                endif
             enddo
-            if(flst_bornres(kn_emitter,1).eq.ires) then
-               s=s-p(:,nlegreal)
-               r=r+p(:,nlegreal)
-            endif
             if(s(0)**2+s(1)**2+s(2)**2+s(3)**2.ne.0d0
      1           .and. (s(0)**2+s(1)**2+s(2)**2+s(3)**2)
      2           /(r(0)**2+r(1)**2+r(2)**2+r(3)**2).gt.ep) then
                write(*,*) ' momentum check not working',s
-               write(*,*) ' for ',j,' decay products'
+               write(*,*) ' for ',ires,' decay products'
             endif
          endif
       enddo
