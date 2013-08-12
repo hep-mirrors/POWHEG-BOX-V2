@@ -54,14 +54,15 @@ c and interference term (first index from 1 to 3 respectively)
 
 
       if (nwz.eq.1) then
-      FACM=FAC
+         FACM=FAC
       elseif (nwz.eq.-1) then
-      FACM=-FAC
+         FACM=-FAC
       else
-      write(6,*) 'nwz .ne. +1 or -1'
-      stop
+         write(6,*) 'nwz .ne. +1 or -1'
+         stop
       endif 
-      if     (nwz.eq.-1) then
+
+      if (nwz.eq.-1) then
         cl1=1d0
         cl2=0d0
         en1=le
@@ -124,24 +125,28 @@ c   DKS have--- u( q2)+dbar( q1)-->nu(q3)+e^+(q4)+mu^-(q6)+mu^+(q5)
             qdks(6,j)=p(5,j)
          enddo
       elseif (iloop.eq.2) then
-         if (nwz.eq.1) then
-         do j=1,4
-            qdks(1,j)=p(1,j)
-            qdks(2,j)=p(2,j)
-            qdks(3,j)=p(3,j)
-            qdks(4,j)=p(6,j)
-            qdks(5,j)=p(4,j)
-            qdks(6,j)=p(5,j)
-         enddo
-         elseif (nwz.eq.-1) then
-         do j=1,4
-            qdks(1,j)=p(1,j)
-            qdks(2,j)=p(2,j)
-            qdks(3,j)=p(5,j)
-            qdks(4,j)=p(4,j)
-            qdks(5,j)=p(6,j)
-            qdks(6,j)=p(3,j)
-         enddo
+         if(idpart4.eq.idpart6) then
+            do j=1,4
+               qdks(1,j)=p(1,j)
+               qdks(2,j)=p(2,j)
+               qdks(3,j)=p(3,j)
+               qdks(4,j)=p(6,j)
+               qdks(5,j)=p(4,j)
+               qdks(6,j)=p(5,j)
+            enddo
+         elseif (idpart5.eq.idpart3) then
+            do j=1,4
+               qdks(1,j)=p(1,j)
+               qdks(2,j)=p(2,j)
+               qdks(3,j)=p(5,j)
+               qdks(4,j)=p(4,j)
+               qdks(5,j)=p(6,j)
+               qdks(6,j)=p(3,j)
+            enddo
+         else
+            write(*,*) 'qqb_wz: it required interference,',
+     1                 'but did not find it ...'
+            call pwhg_exit(-1)            
          endif
       endif
 
@@ -242,12 +247,21 @@ c---note that L/R labels the LEPTON coupling v2, NOT the quarks (all L)
         ZgL(j)=L(j)*v2(1)*prop56+Q(j)*q1           
         ZgR(j)=L(j)*v2(2)*prop56+Q(j)*q1           
       enddo
+
+
+c DKS paper used helicity ordering: (1-,2+,3-,4+,5+,6-)
+c for all outgoing helicities.
+c In our initial state incoming scheme: (1+,2-,3-,4+,5+,6-)
+
       
       do j=-nf,nf
       do k=-nf,nf
 c--no point in wasting time if it gives zero anyway
          if (Vsq(j,k) .ne. 0d0) then
             if ((j .gt. 0) .and. (k .lt. 0)) then
+c a213456: 2 is left (incoming quark;
+c          must carry Z L coupling for k
+c          must carry Z L coupling for 
                AWZM=(FAC*(ZgL(+j)*Fa213456+ZgL(-k)*Fa216543)
      .              +FACM*(v2(1)*cotw*prop56*Fb213456_z
      .              +q1*Fb213456_g)*prop12)*prop34

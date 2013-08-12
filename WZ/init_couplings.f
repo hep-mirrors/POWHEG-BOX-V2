@@ -163,7 +163,32 @@ c signal if it is W+ or W- to cross section routines
          if(mllmin.le.0) mllmin=0.1d0
       endif
 
+c the DKS like amplitude want to know the incoming
+c flavours of the produced partons
+      idpart3=id1
+      idpart4=iad1
+      idpart5=id2
+      idpart6=-id2
+
       normbr = 1
+
+      if(isquark(id1)) then
+         q1=q(id2)
+         l1=l(id2)
+         r1=r(id2)
+         normbr=normbr*(1d0+ph_deltas)*3
+      elseif(islepton(id1)) then
+         q1=-1
+         l1=le
+         r1=re
+      elseif(isnu(id1)) then
+         q1=0
+         l1=ln
+         r1=rn
+      else
+         write(*,*) 'setzcoupl: invalid Z decay product' ,id2
+         call pwhg_exit(-1)
+      endif
 
       if(isquark(id2)) then
          q2=q(id2)
