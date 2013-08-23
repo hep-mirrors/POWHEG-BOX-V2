@@ -259,9 +259,9 @@ c recursive exit
                endif
                do k=j+1,nlegborn
                   if(
-     1                flst_born(k,kb).eq.ib(j)
-     2           .and.flst_borntags(k,kb).eq.it(j)
-     3           .and.flst_bornres(k,kb).eq.ir(j) ) then
+     1                flst_born(j,kb).eq.ib(k)
+     2           .and.flst_borntags(j,kb).eq.it(k)
+     3           .and.flst_bornres(j,kb).eq.ir(k) ) then
                      call exchange_ind(j,k,ib,ir,it)
                      goto 10
                   endif

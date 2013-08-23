@@ -80,7 +80,7 @@ c EW Q contribution
          s=etot**2
          if(.not.flg_minlo) then
             ll = log(par_csicut**2*s/st_muren2)
-            llew = log(par_csicut**2*s/em_muren2)
+            if(flg_with_em) llew = log(par_csicut**2*s/em_muren2)
             rescfac = 1
          endif
          do jb=1,flst_nborn
@@ -92,7 +92,7 @@ c EW Q contribution
             if(flg_minlo) then
                call setlocalscales(jb,2,rescfac)
                ll = log(par_csicut**2*s/st_muren2)
-               llew = log(par_csicut**2*s/em_muren2)
+               if(flg_with_em) llew = log(par_csicut**2*s/em_muren2)
 c get pdfs
                call pdfcall(1,kn_xb1,pdfb1)
                call pdfcall(2,kn_xb2,pdfb2)      

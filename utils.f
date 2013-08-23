@@ -110,3 +110,63 @@ c logical functions to identify quarks, charged leptons and neutrinos
          isnu=.false.
       endif
       end
+
+      function isewup(id)
+c id is in up position in ew doublet
+      implicit none
+      logical isewup
+      integer id
+      isewup=2*(id/2).eq.id
+      end
+
+
+      function isewdo(id)
+c id is in up position in ew doublet
+      implicit none
+      logical isewdo
+      integer id
+      isewdo=.not.2*(id/2).eq.id
+      end
+
+      function chargeofid(id)
+      implicit none
+      real * 8 chargeofid
+      integer id
+      logical isutype,isdtype,islepton
+      if(abs(id).gt.16) then
+         write(*,*) ' this only works for light fermions'
+         write(*,*) ' if you need to extend it, go ahead'
+         call pwhg_exit(-1)
+      endif
+      if(isutype(id)) then
+         chargeofid = 2d0/3*sign(1,id)
+      elseif(isdtype(id)) then
+         chargeofid = -1d0/3*sign(1,id)
+      elseif(islepton(id)) then
+         chargeofid = -sign(1,id)
+      else
+         chargeofid = 0
+      endif
+      end
+
+      function i3chargeofid(id)
+      implicit none
+      integer i3chargeofid
+      integer id
+      logical isutype,isdtype,islepton
+      if(abs(id).gt.16) then
+         write(*,*) ' this only works for light fermions'
+         write(*,*) ' if you need to extend it, go ahead'
+         call pwhg_exit(-1)
+      endif
+      if(isutype(id)) then
+         i3chargeofid = 2*sign(1,id)
+      elseif(isdtype(id)) then
+         i3chargeofid = -1*sign(1,id)
+      elseif(islepton(id)) then
+         i3chargeofid = -3*sign(1,id)
+      else
+         i3chargeofid = 0
+      endif
+      end
+
