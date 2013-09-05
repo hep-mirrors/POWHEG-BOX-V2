@@ -343,7 +343,7 @@ c are consistent with total Born
      #jac_over_csi_coll,jac_over_csi_soft,r0(maxalr,nexp),
      #r0s(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
       integer j,jexp,alr,alrp
-      character * 11 flag
+      character * 15 flag
       logical ident(maxalr)
       real * 8 random,dotp
       external random,dotp
@@ -381,6 +381,9 @@ c Check soft limits
             ident(alr)=.false.
          enddo
          do alr=1,flst_nalr
+c only radiated gluons
+            if(flst_alr(nlegreal,alr).ne.0) cycle
+            if(ident(alr)) cycle
 c     if one r0 is zero, all others must be zero
             iszero=.false.
             isnonzero=.false.
@@ -404,29 +407,16 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
      $                    .ne.r0s(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
-                     write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
-     $                    ' emitter ',kn_emitter, ', process ',
-     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
+c                     write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
+c     $                    ' emitter ',kn_emitter, ', process ',
+c     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
                      ident(alrp)=.true.
                   endif
                enddo
                do jexp=2,nexp
-                  flag=' '
-                  if(abs(r0s(alr,jexp)/r0(alr,jexp)-1).gt.0.01) then
-                     if(r0s(alr,jexp).ne.0) then
-                        if(jexp.eq.2) then
-                           flag='*-WARN-*'
-                        elseif(jexp.eq.3) then
-                           flag='*-WWARN-*'
-                        elseif(jexp.ge.4) then
-                           flag='*-WWWARN-*'
-                        endif
-                     endif
-                  endif
-                  write(iun,*) (r0(alr,jexp)-r0s(alr,jexp))/ 
-     $            (r0(alr,jexp-1)-r0s(alr,jexp-1)),
-     $             r0s(alr,jexp)/r0(alr,jexp),
-     $                 r0s(alr,jexp),r0(alr,jexp),flag
+                  call setwarnflag
+     1           (abs(r0s(alr,jexp)/r0(alr,jexp)-1),jexp,2,flag)
+                  write(iun,*) r0s(alr,jexp)/r0(alr,jexp),flag
                enddo
             endif
          enddo
@@ -453,7 +443,7 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
       real * 8 random
       external random
       logical ident(maxalr)
-      character * 11 flag
+      character * 15 flag
       logical valid_emitter,iszero,isnonzero,isequal
       external valid_emitter
       do j=1,ndiminteg-3
@@ -498,6 +488,7 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
             enddo
          enddo
          do alr=1,flst_nalr
+            if(ident(alr)) cycle
 c     if one r0 is zero, all others must be zero
             iszero=.false.
             isnonzero=.false.
@@ -525,32 +516,57 @@ c               if(r0(alr,jexp).ne.0) isnonzero=.true.
      #r0c(alr,jexp).ne.r0c(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
-                     write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
-     # kn_emitter,', process ',(flst_alr(j,alrp),j=1,nlegreal)
+c                     write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
+c     # kn_emitter,', process ',(flst_alr(j,alrp),j=1,nlegreal)
                      ident(alrp)=.true.
                   endif
                enddo
                do jexp=jexpfirst,nexp
-                  flag=' '
-                  if(abs(r0c(alr,jexp)/r0(alr,jexp)-1).gt.0.01) then
-                     if(jexp.eq.jexpfirst) then
-                        flag='*-WARN-*'
-                     elseif(jexp.eq.3) then
-                        flag='*-WWARN-*'
-                     elseif(jexp.ge.4) then
-                        flag='*-WWWARN-*'
-                     endif
-                   endif
+                  call setwarnflag(abs(r0c(alr,jexp)/r0(alr,jexp)-1),
+     1                 jexp,jexpfirst,flag)
 c     Added this 'if' to be sure that no division by zero occurs
-                  if((r0(alr,jexp-1)-r0c(alr,jexp-1)).ne.0d0) then
-                  write(iun,*) (r0(alr,jexp)-r0c(alr,jexp))/
-     #(r0(alr,jexp-1)-r0c(alr,jexp-1)),r0c(alr,jexp)/r0(alr,jexp),flag
-                  endif
-               enddo
+c     if((r0(alr,jexp-1)-r0c(alr,jexp-1)).ne.0d0) then
+c     write(iun,*) (r0(alr,jexp)-r0c(alr,jexp))/
+c     #(r0(alr,jexp-1)-r0c(alr,jexp-1)),r0c(alr,jexp)/r0(alr,jexp),flag
+c     endif
+                  write(iun,*) r0c(alr,jexp)/r0(alr,jexp),flag
+ 1             enddo
             endif
          enddo
       endif
       end
+
+      subroutine setwarnflag(dist,jexp,jexpfirst,flag)
+      implicit none
+      character * 15 flag
+      real * 8 dist
+      integer jexp,jexpfirst
+      flag=' '
+      if(dist.gt.0.01) then
+         if(jexp.eq.jexpfirst) then
+            if(dist.lt.0.1) then
+               flag='*-WARN-*'
+            else
+               flag='*-WWARN-*'
+            endif
+         elseif(jexp.eq.3) then
+            if(dist.lt.0.1) then
+               flag='*-WWARN-*'
+            else
+               flag='*-WWWARN-*'
+            endif
+         elseif(jexp.ge.4) then
+            if(dist.lt.0.1) then
+               flag='*-WWWARN-*'
+            elseif(dist.lt.0.3) then
+               flag='*-WWWWARN-*'
+            else
+               flag='*-WWWWWARN-*'
+            endif
+         endif
+      endif
+      end
+
 
 
       subroutine sigreal_rad(sig)
