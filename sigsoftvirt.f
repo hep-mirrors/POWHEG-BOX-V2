@@ -186,9 +186,10 @@ c     massless-massless case
                         endif                     
                         I=I+(1d0/2*ll**2
      1                       +ll*log(kij/(2*eij))
-     2                       -ddilog(kij/(2*eij))+1d0/2*log(kij/(2*eij))**2
-     3                       -loglog)*
-     4                       br_bornjk(legi,legj,jb)
+     2                       -ddilog(kij/(2*eij))
+     3                       +1d0/2*log(kij/(2*eij))**2
+     4                       -loglog)*
+     5                       br_bornjk(legi,legj,jb)
                      endif
 c     massless-massive case
                      if (kn_masses(legi).eq.0.and.kn_masses(legj).gt.0)
