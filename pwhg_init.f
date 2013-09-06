@@ -24,8 +24,8 @@ c default is 6; if em is included, it is 22 to include photons
       pdf_nparton=6
       if(powheginput("#flg_debug").eq.1) flg_debug=.true.
 c whether to output negative weights or not
-      flg_withnegweights=.false.
-      if(powheginput("#withnegweights").eq.1)flg_withnegweights=.true.
+      flg_withnegweights=.true.
+      if(powheginput("#withnegweights").eq.0)flg_withnegweights=.false.
 c See if we have weighted events
       flg_weightedev=.false.
       if(powheginput("#bornsuppfact").gt.0) flg_weightedev=.true.

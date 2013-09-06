@@ -1,5 +1,4 @@
       subroutine init_hist
-      call pwhginihist
       end
 
       subroutine analysis(dsig)
