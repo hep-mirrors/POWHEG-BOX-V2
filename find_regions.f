@@ -370,38 +370,38 @@ c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t
       logical flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
       external flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
 c check that there are no coloured light partons before flst_lightpart
-      do j=1,flst_nreal
-         do ipart=3,flst_lightpart -1
-            if(isalightparton(flst_real(ipart,j))) then
-               write(*,*) 
-     1      ' genflavreglist: light parton before flst_lightpart'
+c      do j=1,flst_nreal
+c         do ipart=3,flst_lightpart -1
+c            if(isalightparton(flst_real(ipart,j))) then
+c               write(*,*) 
+c     1      ' genflavreglist: light parton before flst_lightpart'
 c               stop
-            endif
-         enddo
-         do ipart=flst_lightpart,nlegreal
-            if(.not.isalightparton(flst_real(ipart,j))) then
-               write(*,*) 
-     1      ' genflavreglist: not a light parton after flst_lightpart'
+c            endif
+c         enddo
+c         do ipart=flst_lightpart,nlegreal
+c            if(.not.isalightparton(flst_real(ipart,j))) then
+c               write(*,*) 
+c     1      ' genflavreglist: not a light parton after flst_lightpart'
 c               stop
-            endif
-         enddo
-      enddo
-      do j=1,flst_nborn
-         do ipart=3,flst_lightpart-1
-            if(isalightparton(flst_born(ipart,j))) then
-               write(*,*) 
-     1      ' genflavreglist: light parton before flst_lightpart'
+c            endif
+c         enddo
+c      enddo
+c      do j=1,flst_nborn
+c         do ipart=3,flst_lightpart-1
+c            if(isalightparton(flst_born(ipart,j))) then
+c               write(*,*) 
+c     1      ' genflavreglist: light parton before flst_lightpart'
 c               stop
-            endif
-         enddo
-         do ipart=flst_lightpart,nlegborn
-            if(.not.isalightparton(flst_born(ipart,j))) then
-               write(*,*) 
-     1      ' genflavreglist: not a light parton after flst_lightpart'
+c            endif
+c         enddo
+c         do ipart=flst_lightpart,nlegborn
+c            if(.not.isalightparton(flst_born(ipart,j))) then
+c               write(*,*) 
+c     1      ' genflavreglist: not a light parton after flst_lightpart'
 c               stop
-            endif
-         enddo
-      enddo
+c            endif
+c         enddo
+c      enddo
 c sanity check on real flavour configurations;
 c they should all be inequivalent
       do j=1,flst_nreal
@@ -409,9 +409,11 @@ c they should all be inequivalent
             if(flavequivl(nlegreal,nlegreal,j,k,flst_real,
      1           flst_realres,flst_realtags)) then               
                write(*,*)'found two equivalent real flavour processes:'
-               write(*,*)'process',j
-               call print_lists(nlegreal,flst_real(l,j)
-     1              ,flst_realres(l,j),flst_realtags(l,j))
+               write(*,*)'processes',j,k
+               call print_lists(nlegreal,flst_real(1,j)
+     1              ,flst_realres(1,j),flst_realtags(1,j))
+               call print_lists(nlegreal,flst_real(1,k)
+     1              ,flst_realres(1,k),flst_realtags(1,k))
                call exit(-1)
             endif
          enddo
@@ -423,9 +425,11 @@ c they should all be inequivalent
             if(flavequivl(nlegborn,nlegborn,j,k,flst_born,flst_bornres,
      1           flst_borntags)) then
                write(*,*)'found two equivalent Born flavour processes:'
-                write(*,*)'process',j,', flavours '
-               call print_lists(nlegborn,flst_born(l,j),
-     1              flst_bornres(l,j),flst_borntags(l,j))
+                write(*,*)'processes',j,k
+               call print_lists(nlegborn,flst_born(1,j),
+     1              flst_bornres(1,j),flst_borntags(1,j))
+               call print_lists(nlegborn,flst_born(1,k),
+     1              flst_bornres(1,k),flst_borntags(1,k))
                call exit(-1)
             endif
          enddo

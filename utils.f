@@ -170,3 +170,59 @@ c id is in up position in ew doublet
       endif
       end
 
+
+      subroutine swaplh(i,j)
+c swap elements i and j in the LH record
+      implicit none
+      include 'LesHouches.h'
+      integer i,j,k,l
+      real * 8 v(5),v1
+      integer itmp,itmp2(2)      
+      if(.not. (i.ge.1.and.i.le.nup.and.
+     1     j.ge.1.and.j.le.nup)) then
+         write(*,*) ' swaplh: invalid entries ii,j=',i,j
+         write(*,*) '       : nup=',nup
+         call pwhg_exit(-1)
+      endif
+      if(i.eq.j) return
+
+c Swap:
+
+      itmp=idup(i)
+      idup(i)=idup(j)
+      idup(j)=itmp
+
+      v=pup(:,i)
+      pup(:,i)=pup(:,j)
+      pup(:,j)=v
+      
+      itmp2=mothup(:,i)
+      mothup(:,i)=mothup(:,j)
+      mothup(:,j)=itmp2
+      
+      itmp2=icolup(:,i)
+      icolup(:,i)=icolup(:,j)
+      icolup(:,j)=itmp2
+      
+      v1=vtimup(i)
+      vtimup(i)=vtimup(j)
+      vtimup(j)=v1
+      
+      v1=spinup(i)
+      spinup(i)=spinup(j)
+      spinup(j)=v1
+
+c update mothup links:
+      do k=1,nup
+         do l=1,2
+            if(k.ne.i.and.k.ne.j) then
+               if(mothup(l,k).eq.i) then
+                  mothup(l,k)=j
+               elseif(mothup(l,k).eq.j) then
+                  mothup(l,k)=i
+               endif
+            endif
+         enddo
+      enddo
+
+      end
