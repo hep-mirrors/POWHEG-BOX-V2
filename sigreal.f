@@ -899,6 +899,7 @@ c supply Born zero damping factor, if required
                   call exit(1)
                endif
                r0(alr)=r0(equivto(alr))*equivcoef(alr)
+               markused(alr)=1
             endif
          endif
       enddo

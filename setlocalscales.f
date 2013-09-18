@@ -71,6 +71,8 @@ c coupling rescaling, for born (imode=1) and NLO corrections (imode=2)
       real * 8 sudakov,expsudakov,pwhg_alphas,b0,powheginput
       external sudakov,expsudakov,pwhg_alphas,powheginput
       real * 8 q2mergeMAX
+      logical dijetflag
+      common/cdijetflag/dijetflag
       logical raisingscales,ini
       save raisingscales,ini
       data ini/.true./
@@ -145,20 +147,39 @@ c provide alpha_S reweighting
          endif
       enddo
  99   continue
-c     No more merging is possible. Define the initial scale as
+
+c     No more merging is possible.
+
+      if(.not.dijetflag) then
+c     Define the initial scale as
 c     the invariant mass of the remaining system
-      ptot=0
-      do j=3,nlegborn
-         if(lflav(j).ne.onem) then
-            ptot=ptot+p(:,j)
+         ptot=0
+         do j=3,nlegborn
+            if(lflav(j).ne.onem) then
+               ptot=ptot+p(:,j)
+            endif
+         enddo
+         if(raisingscales) then
+            q2merge=max(q2mergeMAX,
+     $           ptot(0)**2-ptot(1)**2-ptot(2)**2-ptot(3)**2)
+         else
+            q2merge=ptot(0)**2-ptot(1)**2-ptot(2)**2-ptot(3)**2
          endif
-      enddo
-      if(raisingscales) then
-        q2merge=max(q2mergeMAX,
-     $              ptot(0)**2-ptot(1)**2-ptot(2)**2-ptot(3)**2)
       else
-        q2merge=ptot(0)**2-ptot(1)**2-ptot(2)**2-ptot(3)**2
+c Dijet case: use the scalar sum of the pt of the two partons
+         q2merge = 0
+         do j=3,nlegborn
+            if(lflav(j).ne.onem) then
+               q2merge=sqrt(p(1,j)**2+p(2,j)**2)+q2merge
+            endif
+         enddo
+         q2merge=q2merge**2
+         if(raisingscales) then
+            q2merge=max(q2mergeMAX,q2merge)
+         endif
       endif
+
+
       if(scales(1).gt.0) then
          do j=1,nlegborn
             if(abs(lflav(j)).le.st_nlight) then
@@ -236,14 +257,36 @@ C - Local variables:
       parameter (onem=1000000)
       integer  j,k
       integer  fl1,fl2,fl
+      integer npartons,nparticles
       real * 8 yj,phij,q2j
       real * 8 yk,phik,q2k
       real * 8 dphi
       real * 8 q2
+      logical dijetflag
+      common/cdijetflag/dijetflag
 
       q2merge=1d10
       ycm=log(p(0,1)/p(0,2))/2
       mergedfl=onem
+
+c Count particles and partons in the final state.
+c If we have two particles and two partons, it
+c is the dijet case, return with no merging.
+
+      npartons = 0
+      nparticles = 0
+      do j=3,nlegborn
+         if(abs(lflav(j)).le.st_nlight) npartons = npartons+1
+         if(lflav(j).ne.mergedfl) nparticles = nparticles+1
+      enddo
+      if(npartons.eq.nparticles.and.npartons.eq.2) then
+         dijetflag = .true.
+         return
+      else
+         dijetflag = .false.
+      endif
+c
+
       do j=3,nlegborn
          if(abs(lflav(j)).gt.st_nlight) goto 11
          yj=0.5d0*log((p(0,j)+p(3,j))/(p(0,j)-p(3,j)))
