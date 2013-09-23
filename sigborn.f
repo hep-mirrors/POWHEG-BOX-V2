@@ -69,6 +69,7 @@ c of the remnant component.
       include 'pwhg_br.h'
       include 'pwhg_flg.h'
       integer equivto(maxprocborn)
+      common/cequivtoborn/equivto
       real * 8 equivcoef(maxprocborn)
       integer nmomset
       parameter (nmomset=10)
@@ -79,7 +80,7 @@ c of the remnant component.
       integer iborn,ibornpr,mu,nu,k,j,iret
       logical ini
       data ini/.true./
-      save ini,equivto,equivcoef
+      save ini,/cequivtoborn/,equivcoef
       if(ini) then
          do iborn=1,flst_nborn
             equivto(iborn)=-1

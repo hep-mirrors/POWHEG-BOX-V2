@@ -784,9 +784,11 @@ c     write(unit=iun,fmt=*) ' index= ',index
      #         (nlegborn,flst_uborn(1,j),-1,stringb)
          lstring=lastnb(string)
          lstringb=lastnb(stringb)
-         if(flst_alrres(flst_emitter(j),j).ne.0) then
-            write(string(lstring:),'(a,i2)')
-     1           'res. ',flst_alrres(flst_emitter(j),j)
+         if(flst_emitter(j).gt.0) then
+            if(flst_alrres(flst_emitter(j),j).ne.0) then
+               write(string(lstring:),'(a,i2)')
+     1              'res. ',flst_alrres(flst_emitter(j),j)
+            endif
          endif
          lstring=lastnb(string)
          write(iun,'(a,i3)') string(1:lstring)//' mult=', flst_mult(j)

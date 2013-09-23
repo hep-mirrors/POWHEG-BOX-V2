@@ -146,6 +146,11 @@ c looop over all possible singularities
       dalr=getdistance(em,rad,res,kn_cmpreal)
       if(abs(dalr/kn_dijterm(em,rad)-1).gt.1d-6) then
          write(*,*) 'dalr', dalr/kn_dijterm(em,rad)
+         write(*,*) 'This may imply that running the program ',
+     1              'with olddij is wrong; it may also imply ',
+     2              'that kn_dijterm_soft() are incorrect.',
+     3              'A dijterm_soft() function should be built instead'
+         call pwhg_exit(-1)
       endif
 c get average singularity from underlying Born
       avub=1

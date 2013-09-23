@@ -186,6 +186,8 @@ c     initial state radiation
                else
                   flg_em_rad = .false.
                endif
+c better set kn_emitter<=2 to avoid troubles ...
+               kn_emitter = 0
                call gen_real_phsp_isr_rad0
                call inc_norms
             elseif(rad_kinreg_on(rad_kinreg)) then

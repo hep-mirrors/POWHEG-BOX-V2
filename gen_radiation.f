@@ -156,6 +156,10 @@ c Use highest bid procedure (see appendix B of FNO2006)
          if(rad_kinreg_on(rad_kinreg)) then
             if(rad_kinreg.eq.1) then
 c     initial state radiation
+c kn_emitter may be 0,1,2 depending upon the flavour
+c of the process, which is undefined here.
+c Set it to a value less than 2, to avoid problems later.
+               kn_emitter = 0
                fl1=flst_born(1,rad_ubornidx)
                fl2=flst_born(2,rad_ubornidx)
                if((.not.is_coloured(fl1).and..not.is_coloured(fl2))
