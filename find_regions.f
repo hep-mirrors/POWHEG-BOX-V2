@@ -73,7 +73,7 @@ c build the underlying born flavour structure in bflav
                   tags(iborn)=atags(k,indexreal)
                endif
             enddo
-            if(validBorn(bflav,tags,res)) then
+            if(validBorn(bflav,res,tags)) then
                nregions=nregions+1
                iregions(1,nregions)=i
                iregions(2,nregions)=j
@@ -104,7 +104,7 @@ c initial state region
                   tags(iborn)=atags(k,indexreal)
                endif
             enddo
-            if(validBorn(bflav,tags,res)) then
+            if(validBorn(bflav,res,tags)) then
                ireg(i)=.true.
             endif
  11         continue
@@ -184,50 +184,119 @@ c come from the same splitting.
       end
 
 
-      function flavequivl(m,n,ja,jb,arr1,arr2,arr3)
-c arr1(m,*),arr2(m,*),arr3(m,*) are typically the flavour list,
-c                               the tag list, and the resonance list
+      recursive function rec_ident(n,ia,ib,a,ares,atags,b,bres,btags)
+     1     result(result)
+c This recursive function checks if entry ia is equivalent to entry ib in the arrays a and b.
+c It properly accounts the fact that identical resonances should also have identical
+c decay products recursively.
+      implicit none
+      logical result
+      integer, intent(in)::
+     1     n,ia,ib,a(n),ares(n),atags(n),b(n),bres(n),btags(n)
+c The following variables are local even if -save or -fno-automatic
+c is used in compilation, so that recursion works properly.
+c Only an explicit save statement could prevent that.
+c Notice also that arguments are passed by reference: we always
+c pass the same copy of the arrays a,ares,atags and b,bres,btags to the ident
+c function.
+      integer bmarked(n)
+      integer ka,kb
+      if(a(ia) /= b(ib) .or. atags(ia) /= btags(ib)) then
+         result = .false.
+         return
+      endif
+c now ka goes through all elements that come from the decay
+c of ia.
+      do ka=1,n
+         if(ares(ka).eq.ia) then
+c For each decay product of ia, see if there is an identical (recursively!)
+c decay product of ib. If found, mark it in the array bmarked, so as not to
+c usit more than once
+            bmarked = 0
+            do kb=1,n
+               if( bres(kb) == ib .and. bmarked(kb) == 0) then
+c see if they are equal
+                  if(rec_ident(n,ka,kb,a,ares,atags,b,bres,btags)) then
+                     bmarked(kb)=1
+                     exit
+                  endif
+               endif
+            enddo
+            if(kb == n+1) then
+               result = .false.
+               return
+            endif
+         endif
+      enddo
+      result = .true.
+      return
+      end
+
+
+      function flavequivl(m,n,ja,jb,arr,arrres,arrtags)
+c arr(m,*),arrres(m,*),arrtags(m,*) are the flavour list,
+c                               the resonance list, and the tag list
 c returns true if the ja and jb arr123(1:n,ja)  arr123(1:n,jb)
 c are equivalent up to a permutation, false otherwise
 c equivalent up to a permutation of the final state lines,
 c false otherwise.
       implicit none
       logical flavequivl
-      integer m,n,ja,jb,arr1(m,*),arr2(m,*),arr3(m,*)
-c we need the parameter nlegreal
-      include 'nlegborn.h'
-      include 'pwhg_flst.h'
-      integer j,k,itmp,i1(nlegreal),i2(nlegreal),i3(nlegreal)
-      call intassign(n,arr1(1,jb),i1)
-      call intassign(n,arr2(1,jb),i2)
-      call intassign(n,arr3(1,jb),i3)
-      do j=1,n
-         if(
-     1         arr1(j,ja).ne.i1(j)
-     2     .or.arr2(j,ja).ne.i2(j)
-     2     .or.arr3(j,ja).ne.i3(j) ) then
-            if(j.le.2) then
-               flavequivl=.false.
-               return
-            endif
-            do k=j+1,n
-               if(
-     1          arr1(j,ja).eq.i1(k)
-     2     .and.arr2(j,ja).eq.i2(k)
-     2     .and.arr3(j,ja).eq.i3(k) ) then
-                  call exchange_ind(j,k,i1,i2,i3)
-                  goto 10
-               endif
-            enddo
-            flavequivl=.false.
-            return
-         endif
- 10      continue
-      enddo
-      flavequivl=.true.
+      integer m,n,ja,jb,arr(m,*),arrres(m,*),arrtags(m,*)
+      logical flavequivr
+
+      flavequivl = flavequivr(n,arr(:,ja),arrres(:,ja),arrtags(:,ja),
+     1                    arr(:,jb),arrres(:,jb),arrtags(:,jb))
       end
 
-      function validBorn(bflav,tags,res)
+
+      function flavequivr(n,a,ares,atags,b,bres,btags)
+c a,ares,atags and b,bres,btags are the flavour list,
+c the resonance list, and the tag list, and 
+c returns true if the a and b arrays
+c equivalent up to a permutation of the final state lines,
+c false otherwise.
+      implicit none
+      logical flavequivr
+      integer n,a(n),ares(n),atags(n),b(n),bres(n),btags(n)
+      integer bmarked(n)
+      integer j,k
+      logical rec_ident
+      external rec_ident
+c first two entries must be identical
+      do j=1,2
+         if(a(j) /= b(j) .or. atags(j) /= btags(j)) then
+            flavequivr = .false.
+            return
+         endif
+      enddo
+      bmarked = 0
+c final state entries can be in different order. Compare only
+c primary particles (i.e., not sons of resonances); the recursive comparison
+c takes care of the rest.
+      do j=3,n
+         if(ares(j).eq.0) then
+            do k=3,n
+               if(bres(k).eq.0) then
+                  if(bmarked(k) == 0) then
+                     if(rec_ident(n,j,k,a,ares,atags,b,bres,btags)) then
+                        bmarked(k) = 1
+                        exit
+                     endif
+                  endif
+               endif
+            enddo
+            if(k.eq.n+1) then
+               flavequivr = .false.
+               return
+            endif
+         endif
+      enddo
+      flavequivr = .true.
+      end
+
+
+      function validBorn(bflav,res,tags)
 c Find if the flavour structure bflav is equivalent to an element
 c in the list of Born processes. Equivalence means that it can be
 c made identical with a permutation of final state particles.
@@ -236,45 +305,23 @@ c made identical with a permutation of final state particles.
       include 'pwhg_flst.h'
       integer bflav(nlegborn),tags(nlegborn),res(nlegborn)
       logical validBorn
-      integer j,k,kb,itmp,ib(nlegborn),it(nlegborn),ir(nlegborn)
-      call intassign(nlegborn,bflav,ib)
-      call intassign(nlegborn,tags,it)
-      call intassign(nlegborn,res,ir)
+      integer kb
+      logical flavequivr
+
       do kb=1,flst_nborn
-         do j=1,nlegborn
-c recursive exit
-            if(j.eq.nlegborn
-     1           .and.flst_born(j,kb).eq.ib(j)
-     2           .and.flst_borntags(j,kb).eq.it(j)
-     3           .and.flst_bornres(j,kb).eq.ir(j) ) then
-               validBorn=.true.
-               return
-            endif
-            if(
-     1                flst_born(j,kb).ne.ib(j)
-     2           .or.flst_borntags(j,kb).ne.it(j)
-     3           .or.flst_bornres(j,kb).ne.ir(j) ) then
-               if(j.le.2) then
-                  goto 999
-               endif
-               do k=j+1,nlegborn
-                  if(
-     1                flst_born(j,kb).eq.ib(k)
-     2           .and.flst_borntags(j,kb).eq.it(k)
-     3           .and.flst_bornres(j,kb).eq.ir(k) ) then
-                     call exchange_ind(j,k,ib,ir,it)
-                     goto 10
-                  endif
-               enddo
-               goto 999
-            endif
- 10         continue
-         enddo         
- 999     continue
+         if(flavequivr(nlegborn,bflav,res,tags,
+     1        flst_born(:,kb),flst_bornres(:,kb),flst_borntags(:,kb))
+     2        ) then
+            validBorn = .true.
+            return
+         endif
       enddo
-c      write(*,*) ' validBorn false,',bflav
-      validBorn=.false.
+      
+      validBorn = .false.
+
       end
+
+
 
 c      -6  -5  -4  -3  -2  -1  0  1  2  3  4  5  6                    
 c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t                    
@@ -355,6 +402,35 @@ c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t
       isalightparton=.false.
       end
 
+
+      function check_consistent_res(n,resl)
+      implicit none
+      logical check_consistent_res
+      integer n,resl(n)
+      integer j,k,itmp
+c See if the list of resonance pointers is consistent; it should describe
+c a tree, i.e. going up in the resonance chain it should always end with 0
+c (i.e., no cicles)
+      do j=1,n
+         if(resl(j) /= 0) then
+            itmp = resl(j)
+            do k=1,n
+               if(resl(itmp) /= 0) then
+                  itmp = resl(itmp)
+               else
+                  exit
+               endif
+            enddo
+            if(k == n+1) then
+               check_consistent_res = .false.
+               return
+            endif
+         endif
+      enddo
+      check_consistent_res = .true.
+      end
+
+
       subroutine genflavreglist
       implicit none
       include 'pwhg_flg.h'
@@ -367,8 +443,10 @@ c      t~  b~  c~  s~  u~  d~  g  d  u  s  c  b  t
       external equalintlists
       logical verbose
       parameter (verbose=.true.)
-      logical flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
-      external flavequivl,isalightparton,equiv_entry_alr_real,equal_lists
+      logical flavequivl,isalightparton,equiv_entry_alr_real,
+     1     equal_lists,check_consistent_res
+      external flavequivl,isalightparton,equiv_entry_alr_real,
+     2     equal_lists,check_consistent_res
 c check that there are no coloured light partons before flst_lightpart
 c      do j=1,flst_nreal
 c         do ipart=3,flst_lightpart -1
@@ -405,6 +483,13 @@ c      enddo
 c sanity check on real flavour configurations;
 c they should all be inequivalent
       do j=1,flst_nreal
+         if(.not.check_consistent_res(nlegreal,flst_realres(:,j))) then
+            write(*,*) 
+     1           'resonances assignments for reals are not consistent'
+            call pwhg_exit(-1)
+         endif
+      enddo
+      do j=1,flst_nreal
          do k=j+1,flst_nreal
             if(flavequivl(nlegreal,nlegreal,j,k,flst_real,
      1           flst_realres,flst_realtags)) then               
@@ -420,6 +505,13 @@ c they should all be inequivalent
       enddo
 c sanity check on Born flavour configurations;
 c they should all be inequivalent
+      do j=1,flst_nborn
+         if(.not.check_consistent_res(nlegborn,flst_bornres(:,j))) then
+            write(*,*) 
+     1           'resonances assignments for borns are not consistent'
+            call pwhg_exit(-1)
+         endif
+      enddo
       do j=1,flst_nborn
          do k=j+1,flst_nborn
             if(flavequivl(nlegborn,nlegborn,j,k,flst_born,flst_bornres,
@@ -504,7 +596,7 @@ c     c emit regions with opposite ordering for q g and q q~
                      flst_alrres(:,iflregl+1)=flst_alrres(:,iflregl)
                      flst_alrtags(:,iflregl+1)=flst_alrtags(:,iflregl)
                      iflregl = iflregl+1
-                     call exchange_ind(nlegreal,nlegreal-1,
+                     call exchange_ind(nlegreal,nlegreal,nlegreal-1,
      1                    flst_alr(1,iflregl),flst_alrres(1,iflregl),
      2                    flst_alrtags(1,iflregl))
                      flst_emitter(iflregl)=nlegreal-1
@@ -516,7 +608,7 @@ c put always in the order q g and q q~, i.e. fl(i)>fl(j)
                   if(  (fl2.ne.22 .and. fl2.ne.0)  .and.
      1                 (  (fl1.eq.0 .or. fl1.eq.22) .or.
      1                 (fl1.lt.fl2)    )  ) then
-                     call exchange_ind(nlegreal,nlegreal-1,
+                     call exchange_ind(nlegreal,nlegreal,nlegreal-1,
      1                    flst_alr(1,iflregl),flst_alrres(1,iflregl),
      2                    flst_alrtags(1,iflregl))
                   endif
@@ -827,10 +919,11 @@ c     write(unit=iun,fmt=*) ' index= ',index
       subroutine reorder_regions(alr,iborn,iret)
 c It reorders the particles in the alr region in such
 c a way that the corresponding underlying born is present with the
-c same ordering in the flst_born list. It also updates correspondingly
+c same ordering in the flst_born(:,iborn) element.
+c It also updates correspondingly
 c the underlying born array, and the res and tags arrays
 c On return:
-c if no reordering is possible (should never happen) iret=-1
+c if no reordering is possible iret=-1
 c if no reordering was needed, iret=0
 c if the flavour structures have been reordered, iret=1
       implicit none
@@ -839,78 +932,99 @@ c if the flavour structures have been reordered, iret=1
       include 'pwhg_flst.h'
       integer emit
       integer j,k,itmp,ib(nlegborn),ir(nlegborn),it(nlegborn)
+      logical flavequivr,rec_ident
+      external flavequivr,rec_ident
       iret=0
       emit=flst_emitter(alr)
-      call intassign(nlegborn,flst_uborn(1,alr),ib)
-      call intassign(nlegborn,flst_ubornres(1,alr),ir)
-      call intassign(nlegborn,flst_uborntags(1,alr),it)
-      do j=1,nlegborn
-         if(
-     1        flst_born(j,iborn).ne.ib(j)    .or.
-     2        flst_bornres(j,iborn).ne.ir(j) .or.
-     3        flst_borntags(j,iborn).ne.it(j) ) then
-            if(j.le.2) then
-               iret=-1
-               goto 999
-            endif
-            iret=1
-            do k=j+1,nlegborn
-               if(
-     1              flst_born(j,iborn).eq.ib(k)    .and.
-     2              flst_bornres(j,iborn).eq.ir(k) .and.
-     3              flst_borntags(j,iborn).eq.it(k) ) then
+      if(.not. flavequivr(nlegborn,flst_uborn(:,alr),
+     1     flst_ubornres(:,alr),flst_uborntags(:,alr),
+     2     flst_born(:,iborn),flst_bornres(:,iborn),
+     3     flst_borntags(:,iborn))) then
+         iret = -1
+         return
+      endif
 
-                  call exchange_ind(j,k,ib,ir,it)
-
-                  goto 10
-               endif
-            enddo
-c they differ in flavour content
-            iret=-1
-            goto 999
- 10         continue
-         endif
-      enddo
-c they are identical; no reordering needed
-      if(iret.eq.0) return
+      iret = 0
 c reorder
       do j=3,nlegborn
-         if(
-     1        flst_born(j,iborn).ne.flst_uborn(j,alr)   .or.
-     2        flst_bornres(j,iborn).ne.flst_ubornres(j,alr) .or.
-     3        flst_borntags(j,iborn).ne.flst_uborntags(j,alr) ) then
-            iret=1
-            do k=j+1,nlegborn
-               if(
-     1              flst_born(j,iborn).eq.flst_uborn(k,alr)   .and.
-     2              flst_bornres(j,iborn).eq.flst_ubornres(k,alr) .and.
-     3              flst_borntags(j,iborn).eq.flst_uborntags(k,alr))then
-
-                  call exchange_ind(j,k,flst_uborn(1,alr),
-     1                 flst_ubornres(1,alr),flst_uborntags(1,alr))
-                  call exchange_ind(j,k,flst_alr(1,alr),
-     1                 flst_alrres(1,alr),flst_alrtags(1,alr))
-
+         do k=j,nlegborn
+            if(rec_ident(nlegborn,k,j,flst_uborn(:,alr),
+     1           flst_ubornres(:,alr),flst_uborntags(1,alr),
+     2           flst_born(:,iborn),flst_bornres(:,iborn),
+     3           flst_borntags(1,iborn))) then
+               if(k.gt.j) then
+c signal that reordering was needed
+                  iret = 1
+                  call exchange_ind(nlegborn,j,k,flst_uborn(:,alr),
+     1                 flst_ubornres(:,alr),flst_uborntags(:,alr))
+                  call exchange_ind(nlegreal,j,k,flst_alr(:,alr),
+     1                 flst_alrres(:,alr),flst_alrtags(:,alr))
                   if(flst_emitter(alr).eq.j) then
                      flst_emitter(alr)=k
                   elseif(flst_emitter(alr).eq.k) then
                      flst_emitter(alr)=j
                   endif
-                  goto 11
                endif
-            enddo
+               exit
+            endif
+         enddo
+         if(k == nlegborn+1) then
             write(*,*) ' should never get here'
-            call exit(-1)
- 11         continue
+            write(*,*) ' UBorn:'
+            write(*,*) flst_uborn(:,alr)
+            write(*,*) flst_ubornres(:,alr)
+            write(*,*) flst_uborntags(:,alr)
+            write(*,*) ' Born:'
+            write(*,*) flst_born(:,iborn)
+            write(*,*) flst_bornres(:,iborn)
+            write(*,*) flst_borntags(:,iborn)
+            if(.not. flavequivr(nlegborn,flst_uborn(:,alr),
+     1           flst_ubornres(:,alr),flst_uborntags(:,alr),
+     2           flst_born(:,iborn),flst_bornres(:,iborn),
+     3           flst_borntags(:,iborn))) then
+               iret = -1
+            endif
+            
+            call pwhg_exit(-1)
          endif
       enddo
- 999  continue
+
+c check (for sanity!) that now they are identical
+      do j=1,nlegborn
+         if(  flst_uborn(j,alr) /= flst_born(j,iborn) .or.
+     1        flst_ubornres(j,alr) /= flst_bornres(j,iborn) .or.
+     1        flst_uborntags(j,alr) /= flst_borntags(j,iborn) ) then
+            write(*,*) ' reordering did not work,'
+            write(*,*) ' Should never get here,'
+            write(*,*) ' UBorn:'
+            write(*,*) flst_uborn(:,alr)
+            write(*,*) flst_ubornres(:,alr)
+            write(*,*) flst_uborntags(:,alr)
+            write(*,*) ' Born:'
+            write(*,*) flst_born(:,iborn)
+            write(*,*) flst_bornres(:,iborn)
+            write(*,*) flst_borntags(:,iborn)
+            
+            call pwhg_exit(-1)
+         endif
+      enddo
+
       end
 
-      subroutine exchange_ind(j,k,a,ares,atags)
+      subroutine exchange_ind(n,j,k,a,ares,atags)
       implicit none
-      integer j,k,a(*),ares(*),atags(*)
+      integer n,j,k,a(n),ares(n),atags(n)
       integer itmp
+      integer l
+c if a particle comes from the decay of j or k,
+c change the corresponding pointer
+      do l=1,n
+         if(ares(l).eq.j) then
+            ares(l)=k
+         elseif(ares(l).eq.k) then
+            ares(l)=j
+         endif
+      enddo
       itmp=a(j)
       a(j)=a(k)
       a(k)=itmp
