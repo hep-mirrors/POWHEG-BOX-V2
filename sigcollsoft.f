@@ -382,6 +382,7 @@ c find boost velocity
       include 'pwhg_st.h'
       include 'pwhg_br.h'
       include 'pwhg_par.h'
+      include 'pwhg_em.h'
       integer alr
       real * 8 csi,xocsi,x,q0,kperp(0:3),kperp2,res
       integer iub,em,emflav,raflav,mu,nu,kres
@@ -391,6 +392,10 @@ c find boost velocity
      #           0d0, 0d0,-1d0, 0d0,
      #           0d0, 0d0, 0d0,-1d0/
       save gtens
+      real * 8 chargeofparticle
+      external chargeofparticle
+      logical is_em
+      is_em = .false.
       iub=flst_alr2born(alr)
       em=flst_emitter(alr)
 c no collinear subtraction for massive particle
@@ -440,6 +445,10 @@ c Commented out: now this is done at the end of the if block
          ap=cf*(1+(1-x)**2)/xocsi*br_born(iub)
       elseif(raflav.ne.0.and.emflav.eq.0) then
          ap=cf*(1+x**2)/(1-x)*csi*br_born(iub)
+      elseif(raflav.eq.22.and.emflav.ne.0) then
+         is_em = .true.
+         ap=(1+(1-x)**2)/xocsi*br_born(iub)
+     1        *chargeofparticle(emflav)**2
       else
          write(*,*) 'coll (fsr): unammissible flavour structure'
          call pwhg_exit(-1)
@@ -451,7 +460,11 @@ c     1/(p_em . p_ra) = 1/(p_bar_em(0,em)**2* x * (1-x) * (1-y);
 c     we multiply everything by (1-y) csi^2; one csi is included
 c     above; the other here.
       res=ap/kn_cmpborn(0,em)**2/(xocsi*(1-x))
-     #*(4*pi*st_alpha)
+      if(is_em) then
+         res = res * (4*pi*em_alpha)
+      else
+         res = res * (4*pi*st_alpha)
+      endif
 c provide multiplicity of emitter in underlyng Born
       res=res*flst_ubmult(alr)
       end
