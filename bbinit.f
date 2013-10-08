@@ -257,6 +257,7 @@ c                          pos-|neg|            (flg_withnegweights=.true.)
 c Results in rad_tot???btl do not depend upon flg_withnegweights
       call resettotals
       if(flg_storemintupb) call startstoremintupb('btildeupb')
+      call setstage2init
       call mint(btilde,ndiminteg,ncall2,itmx2,ifold,imode,iun,
      1        xgrid,xint,xacc,nhits,ymax,ymaxrat,sigbtl,errbtl)
       if(flg_storemintupb) call stopstoremintupb
@@ -283,6 +284,9 @@ c Now compute the remnant contributions
          flg_nlotest=.true.
          imode=1
          if(flg_storemintupb) call startstoremintupb('remnupb')
+         call samegridasbtilde(ndiminteg,
+     1        ncall2,itmx2,ifold,xgrid,
+     1        ncall2rm,itmx2rm,ifoldrm,xgridrm)
          call mint(sigremnant,ndiminteg,ncall2rm,itmx2rm,ifoldrm,imode,
      1        iun,xgridrm,xintrm,xaccrm,nhitsrm,
      2        ymaxrm,ymaxratrm,sigrm,errrm)
@@ -358,6 +362,41 @@ c Output NLO histograms
       write(*,*) ' negative weight fraction:',
      1     rad_totnegbtl/(2*rad_totnegbtl+rad_tot)
       close(iunstat)
+      end
+
+      subroutine samegridasbtilde(ndiminteg,
+     1        ncall2,itmx2,ifold,xgrid,
+     1        ncall2rm,itmx2rm,ifoldrm,xgridrm)
+c if the flag stage2init is set to 1 in powheg.input, the remnant
+c cross section is computed with the same grid as the btilde cross
+c section. In this way, the total cross section (times the suppression
+c factor) computed with powheg (when using the same importance sampling
+c grids) is identical whether withdamp is set or
+c not, irrespective of the statistics. Useful for debugging.
+      implicit none
+      integer nintervals
+      parameter (nintervals=50)
+      integer ndiminteg,
+     1        ncall2,itmx2,ifold(ndiminteg),
+     1        ncall2rm,itmx2rm,ifoldrm(ndiminteg)
+      real * 8 xgrid(0:nintervals,ndiminteg),
+     1       xgridrm(0:nintervals,ndiminteg)
+      real * 8 powheginput
+      if(powheginput("#stage2init").eq.1d0) then
+         ncall2rm = ncall2
+         itmx2rm = itmx2
+         ifoldrm = ifold
+         xgridrm = xgrid
+         call resetrandom
+      endif
+      end
+
+      subroutine setstage2init
+      implicit none
+      real * 8 powheginput
+      if(powheginput("#stage2init").eq.1d0) then
+         call resetrandom
+      endif
       end
 
       subroutine bbinitxgrids(iparallel)
