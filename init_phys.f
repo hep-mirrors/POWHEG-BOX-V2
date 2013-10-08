@@ -122,6 +122,8 @@ c initialize number of singular regions
 
       dbg_softtest=.true.
       dbg_colltest=.true.
+      if(powheginput("#softtest").eq.0) dbg_softtest=.false.
+      if(powheginput("#colltest").eq.0) dbg_colltest=.false.
       if(flg_withdamp) then
          write(*,*) ' POWHEG: no soft tests if withdamp is set'
          dbg_softtest=.false.
