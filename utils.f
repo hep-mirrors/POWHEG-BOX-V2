@@ -128,6 +128,22 @@ c id is in up position in ew doublet
       isewdo=.not.2*(id/2).eq.id
       end
 
+      integer function ewgeneration(id)
+      integer id,aid
+      aid=abs(id)
+      if(aid.eq.1.or.aid.eq.2.or.aid.eq.11.or.aid.eq.12) then
+         ewgeneration = 1
+      elseif(aid.eq.3.or.aid.eq.4.or.aid.eq.13.or.aid.eq.14) then
+         ewgeneration = 2
+      elseif(aid.eq.5.or.aid.eq.6.or.aid.eq.15.or.aid.eq.16) then
+         ewgeneration = 3
+      else
+         write(*,*)"ewgeneration requested with unknown flavour",id
+         call pwhg_exit(-1)
+      endif
+      end
+
+
       function chargeofid(id)
       implicit none
       real * 8 chargeofid
@@ -226,3 +242,4 @@ c update mothup links:
       enddo
 
       end
+
