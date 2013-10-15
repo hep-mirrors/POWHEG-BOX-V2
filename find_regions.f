@@ -721,13 +721,31 @@ c they are inequivalent
 
 c Build pointers from alpha_r -> born
       do j=1,flst_nalr
+         flst_alr2born(j) = 0
          do k=1,flst_nborn
             if(equal_lists(nlegborn,j,k,
-     1           flst_uborn,flst_ubornres,flst_uborntags(1,j),
+     1           flst_uborn,flst_ubornres,flst_uborntags,
      2           flst_born,flst_bornres,flst_borntags)) then
+               if(flst_alr2born(j).ne.0) then
+                  write(*,*) ' genflavreglist:'
+                  write(*,*)
+     1              ' error: alr',j,'has more then 1 underlying Born'
+                  call pwhg_exit(-1)
+               endif
                flst_alr2born(j)=k
             endif
          enddo
+      enddo
+      do j=1,flst_nalr
+         if(flst_alr2born(j).eq.0) then
+            write(*,*) ' genflavreglist:'
+            write(*,*) ' error: alr without underlying Born'
+            write(*,*) ' alr=',j
+            write(*,*) flst_alr(:,j)
+            write(*,*) flst_alrres(:,j)
+            write(*,*) flst_alrtags(:,j)
+            call pwhg_exit(-1)
+         endif
       enddo
 c Build pointers from born -> alpha_r
       do j=1,flst_nborn
