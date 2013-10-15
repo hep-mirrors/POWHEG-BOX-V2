@@ -752,7 +752,7 @@ c Build pointers from born -> alpha_r
          flst_born2alr(0,j)=0
          do k=1,flst_nalr
             if(equal_lists(nlegborn,k,j,
-     1           flst_uborn,flst_ubornres,flst_uborntags(1,j),
+     1           flst_uborn,flst_ubornres,flst_uborntags,
      2           flst_born,flst_bornres,flst_borntags)) then
                flst_born2alr(0,j)=flst_born2alr(0,j)+1
                flst_born2alr(flst_born2alr(0,j),j)=k
