@@ -9,6 +9,7 @@ c Interface to mlmpdf package.
       integer j
       sx=x
       sxmu2=xmu2
+      fx=0
       call mlmpdf(ndns,ih,sxmu2,sx,sfx,5)
       do j=-5,5
          fx(j)=sfx(j)
@@ -17,12 +18,6 @@ c Interface to mlmpdf package.
       fx(-1)=sfx(-2)
       fx(2)=sfx(1)
       fx(-2)=sfx(-1)
-      do j=-22,-6
-         fx(j)=0
-      enddo
-      do j=6,21
-         fx(j)=0
-      enddo
       end
 
 c This subroutine is in LHAPDF, and is invoked in
