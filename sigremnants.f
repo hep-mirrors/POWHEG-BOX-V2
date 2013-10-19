@@ -131,6 +131,7 @@ c contributions from real graphs that do not have a singular region
             equivto(lreg)=-1
          enddo
          if(flg_smartsig) then
+            flg_in_smartsig = .true.
             call randomsave
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
@@ -152,6 +153,7 @@ c     they are proportional
             enddo
             call randomrestore
          endif
+         flg_in_smartsig = .false.
          ini=.false.
       endif
 c End initialization phase; compute graphs

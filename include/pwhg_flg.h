@@ -5,6 +5,10 @@ c flg_withsubtr: counterterms are included in NLO test
 c flg_withdamp: Born zero procedure
 c flg_withreg: if regular regions exist or not
 c flg_smartsig: remember or not equal squared amplitude
+c flg_in_smartsig: set to true when the program is comuputing
+c                  amplitudes to determine identical ones.
+c                  Can be use to turn off kinematical cuts
+c                  in the amplitudes
 c flg_bornonly: do the Born contribution only
 
 c flg_lightpart_check: in genflavreglist perform or not perform the check
@@ -19,18 +23,20 @@ c flg_collremnsamp:  importance sampling for collinear remnants
 c flg_reweight: outputs extra infos for reweighting LH events
 
       logical flg_nlotest,flg_withsubtr,flg_withdamp,flg_withreg,
-     1     flg_smartsig,flg_bornonly,flg_debug,flg_withnegweights,
-     2     flg_jacsing,flg_weightedev,flg_pdfreweight,flg_collremnsamp,
-     3     flg_lightpart_check,flg_btlscalereal,flg_btlscalect,
-     4     flg_bornzerodamp,flg_ckkwscalup,
-     5     flg_minlo,flg_minlo_nnll,flg_minlo_real,
-     6     flg_reweight,flg_newweight,flg_fastbtlbound,
-     7     flg_storemintupb,flg_doublefsr,flg_monitorubound,
-     8     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad
+     1     flg_smartsig,flg_in_smartsig,flg_bornonly,flg_debug,
+     2     flg_withnegweights,
+     3     flg_jacsing,flg_weightedev,flg_pdfreweight,flg_collremnsamp,
+     4     flg_lightpart_check,flg_btlscalereal,flg_btlscalect,
+     5     flg_bornzerodamp,flg_ckkwscalup,
+     6     flg_minlo,flg_minlo_nnll,flg_minlo_real,
+     7     flg_reweight,flg_newweight,flg_fastbtlbound,
+     8     flg_storemintupb,flg_doublefsr,flg_monitorubound,
+     9     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad
       character * 1 flg_btildepart
       character * 20 flg_processid
       common/pwhg_flg/flg_nlotest,flg_withsubtr,flg_withdamp,
-     2     flg_withreg,flg_smartsig,flg_bornonly,flg_debug,
+     1     flg_withreg,flg_smartsig,flg_in_smartsig,
+     2     flg_bornonly,flg_debug,
      3     flg_withnegweights,flg_jacsing,flg_weightedev,
      4     flg_pdfreweight,flg_collremnsamp,flg_lightpart_check,
      5     flg_btlscalereal,flg_btlscalect,

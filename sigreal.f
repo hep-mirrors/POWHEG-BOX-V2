@@ -602,6 +602,7 @@ c     endif
             equivto(alr)=-1
          enddo
          if(flg_smartsig) then
+            flg_in_smartsig = .true.
             call randomsave
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
@@ -631,6 +632,7 @@ c     < 0 for unequal:
             enddo
             call randomrestore
          endif
+         flg_in_smartsig = .false.
          ini=.false.
       endif
 c End initialization phase; compute graphs
@@ -788,6 +790,7 @@ c    csi^2 (1-y)   for FSR regions
             equivto(alr)=-1
          enddo
          if(flg_smartsig) then
+            flg_in_smartsig = .true.
             call randomsave
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
@@ -817,6 +820,7 @@ c     < 0 for unequal:
             enddo
             call randomrestore
          endif
+         flg_in_smartsig = .false.
          ini=.false.
       endif
 c End initialization phase; compute graphs

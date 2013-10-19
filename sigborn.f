@@ -86,6 +86,7 @@ c of the remnant component.
             equivto(iborn)=-1
          enddo
          if(flg_smartsig) then
+            flg_in_smartsig = .true.
             call randomsave
             call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
             do iborn=1,flst_nborn
@@ -106,6 +107,7 @@ c of the remnant component.
             enddo
             call randomrestore
          endif
+         flg_in_smartsig = .false.
          ini=.false.
       endif
       do iborn=1,flst_nborn
