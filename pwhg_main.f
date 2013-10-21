@@ -28,7 +28,22 @@
          testplots=.false.
       endif
       nev=powheginput('numevts')
+
+c whether to save btilde calls to set up upper bounding envelope
+      if(powheginput('#storemintupb').eq.1d0) then
+         flg_storemintupb = .true.
+      else
+         flg_storemintupb = .false.
+      endif
+c whether to save btilde calls to set up upper bounding envelope
+      if(powheginput('#fastbtlbound').eq.1d0) then
+         flg_fastbtlbound = .true.
+      else
+         flg_fastbtlbound = .false.
+      endif
+
       call newunit(iun)
+
 c The following allows to perform multiple runs with
 c different random seeds in the same directory.
 c If manyseeds is set to 1, the program asks for an integer j;

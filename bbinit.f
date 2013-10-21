@@ -14,18 +14,6 @@
       integer mcalls,icalls,j
       integer btilde,sigremnant
       external btilde,sigremnant
-c whether to save btilde calls to set up upper bounding envelope
-      if(powheginput('#storemintupb').eq.1d0) then
-         flg_storemintupb = .true.
-      else
-         flg_storemintupb = .false.
-      endif
-c whether to save btilde calls to set up upper bounding envelope
-      if(powheginput('#fastbtlbound').eq.1d0) then
-         flg_fastbtlbound = .true.
-      else
-         flg_fastbtlbound = .false.
-      endif
 c parallelstages:
 c 1   prepare the importance sampling grids
 c 2   prepare the upper bounding envelopes for the
@@ -60,21 +48,44 @@ c Override real integration parameters with powheg.input values
          ifold(ndiminteg-2) = powheginput("foldcsi")
          ifold(ndiminteg-1) = powheginput("foldy")
          ifold(ndiminteg)   = powheginput("foldphi")
-         call loadgrids(iret,xgrid,ymax,ymaxrat,xgridrm,ymaxrm,
-     2        ymaxratrm,ifold,ifoldrm,'grid')
+
+         if(flg_storemintupb) then
+            call loadgrids(iret,xgrid,ymax,ymaxrat,xgridrm,ymaxrm,
+     1           ymaxratrm,ifold,ifoldrm,'fullgrid')
+         else
+            call loadgrids(iret,xgrid,ymax,ymaxrat,xgridrm,ymaxrm,
+     2           ymaxratrm,ifold,ifoldrm,'grid')
+         endif
          if(iret.eq.0) then
             write(*,*) 'upper bound grids successfully loaded'
-            write(*,*)
-     1           ' stored grids successfully loaded'
             write(*,*) 'btilde pos.   weights:', rad_totposbtl,' +-',
      1           rad_etotposbtl
             write(*,*) 'btilde |neg.| weights:', rad_totnegbtl,' +-',
      1           rad_etotnegbtl
-            write(*,*) 'btilde total (pos.-|neg.|):', rad_totbtl,' +-',
-     1           rad_etotbtl
+            write(*,*)
+     1           'btilde total (pos.-|neg.|):', rad_totbtl,' +-',
+     2           rad_etotbtl
          else
             call bbinitgrids
+            if(flg_storemintupb) then
+               call loadmintupb(ndiminteg,'btildeupb',ymax,ymaxrat)
+               write(*,*) ' Upper bounding envelope for btilde computed'
+               write(*,*)
+     1              ' Efficiency for btilde generation is printed above'
+               if((flg_withreg.or.flg_withdamp)
+     1              .and..not.flg_bornonly) then
+                  call loadmintupb(ndiminteg,'remnupb',ymaxrm,ymaxratrm)
+                  write(*,*)
+     1                 ' Upper bounding envelope for remnants computed'
+                  write(*,*)
+     1             ' Efficiency for remnant generation is printed above'
+               endif
+               call storegrids(xgrid,ymax,ymaxrat,xgridrm,ymaxrm,
+     1              ymaxratrm,ifold,ifoldrm,-1,-1,'fullgrid')
+            endif
          endif
+
+
 c initialize gen; the array xmmm is set up at this stage.
          call gen(btilde,ndiminteg,xgrid,ymax,ymaxrat,xmmm,ifold,0,
      1    mcalls,icalls,xx)
