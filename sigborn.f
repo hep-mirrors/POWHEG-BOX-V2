@@ -71,6 +71,7 @@ c of the remnant component.
       integer equivto(maxprocborn)
       common/cequivtoborn/equivto
       real * 8 equivcoef(maxprocborn)
+      common/cequivcoef/equivcoef
       integer nmomset
       parameter (nmomset=10)
       real * 8 pborn(0:3,nlegborn,nmomset),cprop
@@ -80,7 +81,7 @@ c of the remnant component.
       integer iborn,ibornpr,mu,nu,k,j,iret
       logical ini
       data ini/.true./
-      save ini,/cequivtoborn/,equivcoef
+      save ini,/cequivtoborn/,/cequivcoef/
       if(ini) then
          do iborn=1,flst_nborn
             equivto(iborn)=-1
@@ -240,4 +241,34 @@ c
             bornjk(j,k)=bornjk(j,k)/(2*kn_sborn)
          enddo
       enddo
+      end
+
+
+      subroutine printbornequiv
+c When invoked after the first call to allborn,
+c it prints the set of equivalent Born configurations
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer equivto(maxprocborn)
+      common/cequivtoborn/equivto
+      real * 8 equivcoef(maxprocborn)
+      common/cequivcoef/equivcoef
+      integer j,k,iun
+      call newunit(iun)
+      open(unit=iun,file='Bornequiv',status='unknown')
+      do j=1,flst_nborn
+         if(equivto(j).eq.-1) then
+            write(iun,'(a)')
+     1           'Beginning sequence of equivalent amplitudes'
+            write(iun,100) 1d0,j, flst_born(:,j)
+            do k=1,flst_nborn
+               if(equivto(k).eq.j) then
+                  write(iun,100) equivcoef(k),k,flst_born(:,k)
+               endif
+            enddo
+         endif
+      enddo
+      close(iun)
+ 100  format(d10.4,5x,i4,5x,100(i4,1x))
       end

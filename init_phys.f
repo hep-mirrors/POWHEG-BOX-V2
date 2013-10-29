@@ -107,6 +107,10 @@ c     if true, perform the check that there are no coloured light
 c     partons before flst_lightpart
       flg_lightpart_check=.true.
 c
+
+      flg_evenmaxrat = .false.
+      if(powheginput("#evenmaxrat").eq.1) flg_evenmaxrat = .true.
+
 c initialize Lambda values for radiation
       call init_rad_lambda
 c
@@ -138,6 +142,7 @@ c initialize number of singular regions
          call newunit(iun)
          open(unit=iun,file='pwhg_checklimits')
          call checklims(iun)
+         call printbornequiv
          call flush(iun)
          write(*,*) ' POWHEG:  '
          write(*,*) ' Check of soft/collinear limits performed'

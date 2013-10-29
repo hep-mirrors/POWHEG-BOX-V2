@@ -205,6 +205,9 @@ c     final state radiation
             endif
          enddo    
       enddo
+
+      call evenmaxrat
+
       call newunit(iun)
       if(rnd_cwhichseed.eq.'none') then
          open(unit=iun,file=pwgprefix(1:lprefix)//'ubound.dat',
@@ -246,6 +249,52 @@ c this subroutine identifies the upper bounds for identical
 c contributions
 c      call maxratident
       end
+
+
+      subroutine evenmaxrat
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
+      include 'pwhg_rad.h'
+      integer equivto(maxprocborn)
+      common/cequivtoborn/equivto
+      integer j,k,iy,icsi,ir
+      if(.not.flg_evenmaxrat) return
+      do j=1,flst_nborn
+         if(equivto(j).eq.-1) then
+c first store in j maximum of norms in equivalente amplitudes
+            do k=1,flst_nborn
+               if(equivto(k).eq.j) then
+                  do iy=1,rad_nynorms
+                  do icsi=1,rad_ncsinorms
+                  do ir=1,rad_nkinreg
+                     rad_csiynorms(icsi,iy,ir,j)=
+     1                    max(rad_csiynorms(icsi,iy,ir,j),
+     2                        rad_csiynorms(icsi,iy,ir,k))
+                  enddo
+                  enddo
+                  enddo
+               endif
+            enddo
+c Now set all equivalent amplitudes equal to j
+            do k=1,flst_nborn
+               if(equivto(k).eq.j) then
+                  do iy=1,rad_nynorms
+                  do icsi=1,rad_ncsinorms
+                  do ir=1,rad_nkinreg
+                     rad_csiynorms(icsi,iy,ir,k)=
+     1                    rad_csiynorms(icsi,iy,ir,j)
+                  enddo
+                  enddo
+                  enddo
+               endif
+            enddo
+         endif
+      enddo
+      end
+
+                  
 
 
       subroutine inc_norms

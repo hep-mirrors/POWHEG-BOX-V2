@@ -211,8 +211,19 @@ c to find the upper bounding envelope
      1                 prodrat=prodrat*ymaxrat(ncell(kdim),kdim)
                enddo
                prod=(f/prod)
-               if(flg_fastbtlbound.and.ifun.eq.0)
-     1              prodrat=(f/vfun0/prodrat)
+               if(flg_fastbtlbound.and.ifun.eq.0) then
+                  if(vfun0.ne.0.and.prodrat.ne.0) then
+                     prodrat=(f/vfun0/prodrat)
+                  else
+c This should not really happen unless f is also zero; putting a warning
+c here may be dangerouse, though
+                     if(f.ne.0) then
+                        call increasecnt(
+     1                       "Integrator: f#0, prodrat*vfun0=0")
+                     endif
+                     prodrat=0
+                  endif
+               endif
                if(prod.gt.1) then
 c     This guarantees a 10% increase of the upper bound in this cell
                   prod=1+0.1d0/ndim
