@@ -30,6 +30,8 @@ c                 (this function does not support an avatar function)
       real * 8 xjac,suppfact
       logical valid_emitter
       external valid_emitter
+      logical pwhg_isfinite
+      external pwhg_isfinite
       sigremnant = 1
       if(ifirst.eq.2) then
          retval=rad_reg_tot+rad_damp_rem_tot
@@ -99,6 +101,15 @@ c     No need to generate phase space; it is already available
          enddo
       else
          rad_damp_rem_tot=0
+      endif
+
+      if (.not.pwhg_isfinite(rad_reg_tot)) then
+         rad_reg_tot=0d0
+         rad_reg_arr=0d0
+      endif
+      if (.not.pwhg_isfinite(rad_damp_rem_tot)) then
+         rad_damp_rem_tot=0d0
+         rad_damp_rem_arr=0d0
       endif
       retval=rad_reg_tot+rad_damp_rem_tot
       end

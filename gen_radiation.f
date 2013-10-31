@@ -47,15 +47,19 @@ c
          if(powheginput('#testsuda').eq.1) then
             call testsuda
          endif
+         if(.not.flg_LOevents) then
 c generate radiation
-         call reset_timer
-         call gen_radiation
-         call get_timer(seconds)
-         call addtocnt('radiation time (sec)',seconds)         
+            call reset_timer
+            call gen_radiation
+            call get_timer(seconds)
+            call addtocnt('radiation time (sec)',seconds)
+            rad_pt2max=pwhg_pt2()
+         else
+            kn_csi = 0
+         endif
 c add a random azimuthal rotation around beam axis
          call add_azimuth
 c --- set up les houches interface
-         rad_pt2max=pwhg_pt2()
          call gen_leshouches
 c if negative weight, flip the sign of weight
          if(rad_btilde_sign(rad_ubornidx).eq.-1) then

@@ -9,11 +9,18 @@
       include 'LesHouches.h'
       integer alr,em,rad,flem,flrad,coluborn(2)
       if(kn_csi.eq.0d0) then
-c it is a Born event
+c it is a Born event or a LO event
 c first assign flavours and colour to the underlying Born process
          call momenta_lh(kn_pborn,nlegborn)
          call born_lh
-         scalup=sqrt(rad_ptsqmin)
+         if (flg_LOevents) then
+c     set default scalup to the sqrt of the center-of-mass energy of the event.
+c     For processes that need different values, the scalup value can be
+c     overridden in the finalize_lh user subroutine.
+            scalup=2*kn_cmpborn(0,1)
+         else
+            scalup=sqrt(rad_ptsqmin)
+         endif
       else
 c it is an event with radiation
          call momenta_lh(kn_preal,nlegreal)

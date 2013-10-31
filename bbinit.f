@@ -89,15 +89,18 @@ c Override real integration parameters with powheg.input values
 c initialize gen; the array xmmm is set up at this stage.
          call gen(btilde,ndiminteg,xgrid,ymax,ymaxrat,xmmm,ifold,0,
      1    mcalls,icalls,xx)
+         
+         if (.not.flg_LOevents) then
 c load or compute normalization of upper bounding function for radiation
 c (iret ignored)
-         call do_maxrat(mcalls,icalls,-1,iret)
+            call do_maxrat(mcalls,icalls,-1,iret)
+         endif
 c print statistics
          call gen(btilde,ndiminteg,xgrid,ymax,ymaxrat,xmmm,ifold,3,
-     1    mcalls,icalls,xx)
+     1        mcalls,icalls,xx)
          if(xx(1).gt.0)
      1        write(*,*) 'POWHEG: efficiency in the generation'
-     2 //' of the Born variables =',xx(1)
+     2        //' of the Born variables =',xx(1)
          if((flg_withreg.or.flg_withdamp).and..not.flg_bornonly) then
 c initialize gen for remnants
             call gen(sigremnant,ndiminteg,xgridrm,ymaxrm,ymaxratrm,
@@ -199,12 +202,17 @@ c initialize gen for remnants
 c force compute upper bound for radiation (iret ignored)
          if(rnd_cwhichseed.ne.'none')
      1     call setrandom(rnd_initialseed,rnd_i1,rnd_i2)
-         call do_maxrat(mcalls,icalls,0,iret)
+         if (.not.flg_LOevents) then
+            call do_maxrat(mcalls,icalls,0,iret)
+         endif
          call pwhg_exit(0)
       endif
 
 c force loading bound for radiation (iret ignored)
-      call do_maxrat(mcalls,icalls,1,iret)
+      iret=0
+      if (.not.flg_LOevents) then
+         call do_maxrat(mcalls,icalls,1,iret)
+      endif
       if(iret.ne.0) then
          call pwhg_exit(0)
       endif

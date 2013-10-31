@@ -1,5 +1,3 @@
-
-      
       subroutine mboost(m,vec,beta,vin,vout)
 c     boosts the m vectors vin(0:3,m) into the vectors vout(0:3,m) (that can
 c     be the same) in the direction of vec(3) (|vec|=1) with velocity
@@ -10,6 +8,18 @@ c     beta.  Lorents convention: (t,x,y,z).
       real * 8 betav,gamma
       real * 8 vdotb
       integer ipart,idim
+      real * 8 tiny
+      parameter (tiny=1d-14)
+      if (abs(beta).ge.1d0) then
+         write(*,*) '********** WARNING ***************'
+         write(*,*) 'mboost called with beta=',beta
+         write(*,*) '**********************************'
+      endif
+      if (beta.ge.1d0) then
+         beta = 1-tiny
+      elseif (beta.le.-1d0) then
+         beta = -1+tiny
+      endif
       gamma=1/sqrt(1-beta**2)
       do ipart=1,m
          vdotb=vin(1,ipart)*vec(1)

@@ -75,6 +75,11 @@ c hdamp will replace the old hfact in new implementations
 c     If set do only the Born term
       flg_bornonly=.false.
       if (powheginput("#bornonly").eq.1) flg_bornonly=.true.
+      flg_LOevents=.false.
+      if (powheginput("#LOevents").eq.1) then
+         flg_LOevents=.true.
+         flg_bornonly=.true.
+      endif
 c     initialize random number sequence
       i1=powheginput('#iseed')
       if (i1.lt.0) i1=0
