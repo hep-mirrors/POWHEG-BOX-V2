@@ -315,7 +315,7 @@ c are consistent with total Born
                enddo
                tot=tot/br_born(iborn)
                if(abs((tot-1)/tot).gt.1d-8) then
-                  write(iun,'(f6.3,a,i2,a,20(i2,1x))')
+                  write(iun,'(f6.3,a,i2,a,20(i3,1x))')
      1    tot, ' spin correlated amplitude'//
      2 ' wrong for leg', j, ' flavour struct:',
      3                 (flst_born(k,iborn),k=1,nlegborn)
