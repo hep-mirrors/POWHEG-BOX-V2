@@ -459,7 +459,7 @@ c Commented out: now this is done at the end of the if block
 c     1/(p_em . p_ra) = 1/(p_bar_em(0,em)**2* x * (1-x) * (1-y);
 c     we multiply everything by (1-y) csi^2; one csi is included
 c     above; the other here.
-      res=ap/kn_cmpborn(0,em)**2/(xocsi*(1-x))
+      res=ap/q2/(xocsi*(1-x))
       if(is_em) then
          res = res * (4*pi*em_alpha)
       else
