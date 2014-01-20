@@ -10,11 +10,11 @@ c     beta.  Lorents convention: (t,x,y,z).
       integer ipart,idim
       real * 8 tiny
       parameter (tiny=1d-14)
-      if (abs(beta).ge.1d0) then
-         write(*,*) '********** WARNING ***************'
-         write(*,*) 'mboost called with beta=',beta
-         write(*,*) '**********************************'
-      endif
+c      if (abs(beta).ge.1d0) then
+c         write(*,*) '********** WARNING ***************'
+c         write(*,*) 'mboost called with beta=',beta
+c         write(*,*) '**********************************'
+c      endif
       if (beta.ge.1d0) then
          beta = 1-tiny
       elseif (beta.le.-1d0) then
