@@ -196,7 +196,6 @@ c to examine that event in particular
                endif
                call pwhgsetout
                call pwhgtopout(filename)
-               close(99)
             endif
          endif
  111     continue
@@ -211,7 +210,6 @@ c to examine that event in particular
          endif
          call pwhgsetout
          call pwhgtopout(filename)
-         close(99)
       endif
       call lhefwritetrailer(iun)
       close(iun)
