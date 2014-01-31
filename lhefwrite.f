@@ -6,6 +6,7 @@ c...writes initialization information to a les houches events file on unit nlf.
       include 'pwhg_flst.h'
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
+      include 'pwhg_lhrwgt.h'
       integer nlf
       real * 8 version
       common/cversion/version
@@ -26,6 +27,11 @@ c...writes initialization information to a les houches events file on unit nlf.
       write(nlf,*) 'Random number generator initialized with: ',
      # iran,' ',n1ran,' ',n2ran
       write(nlf,'(a)') '-->'
+      if(flg_reweight.and.lhrwgt_id.ne.' ') then
+         write(nlf,'(a)') '<header>'
+         call printrwghthdr(nlf)
+         write(nlf,'(a)') '</header>'
+      endif
       write(nlf,'(a)') '<init>'
       write(nlf,110) idbmup(1),idbmup(2),ebmup(1),ebmup(2),
      &pdfgup(1),pdfgup(2),pdfsup(1),pdfsup(2),idwtup,nprup
@@ -51,6 +57,7 @@ c...writes event information to a les houches events file on unit nlf.
       integer nlf
       include 'LesHouches.h'
       include 'pwhg_flg.h'
+      include 'pwhg_lhrwgt.h'
       integer i,j
       write(nlf,'(a)')'<event>'
       write(nlf,210) nup,idprup,xwgtup,scalup,aqedup,aqcdup
@@ -59,8 +66,15 @@ c...writes event information to a les houches events file on unit nlf.
      & mothup(2,i),icolup(1,i),icolup(2,i),(pup(j,i),j=1,5),
      & vtimup(i),spinup(i)
  200  continue
+      if(flg_reweight) then
+         call lhefwriteevrw(nlf)
+         if(lhrwgt_id.ne.' ') then
+            write(nlf,'(a)')'<rwgt>'
+            call printrwgtev(nlf,xwgtup)
+            write(nlf,'(a)')'</rwgt>'
+         endif
+      endif
       if(flg_pdfreweight) call lhefwritepdfrw(nlf)
-      if(flg_reweight) call lhefwriteevrw(nlf)
       if(flg_debug) call lhefwritextra(nlf)
       write(nlf,'(a)')'</event>'      
  210  format(1p,2(1x,i6),4(1x,e12.5))

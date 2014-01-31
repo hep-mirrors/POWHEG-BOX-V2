@@ -1,37 +1,31 @@
       subroutine wrtpowheginput(nlf)
       implicit none
       integer nlf
-      character * 100 line
+      include 'pwhg_pwin.h'
+      character * (maxlin) line
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
-      integer k,ios
+      integer ios,iun
+      call newunit(iun)
       if(pwgprefix(1:lprefix).eq.'pwg') then
-         open(unit=33,file='powheg.input',
-     #     status='old',iostat=ios)
+         open(unit=iun,file='powheg.input',
+     1     status='old',iostat=ios)
       else
-         open(unit=33,file=pwgprefix(1:lprefix)//'powheg.input',
-     #     status='old',iostat=ios)
+         open(unit=iun,file=pwgprefix(1:lprefix)
+     1     //'powheg.input',status='old',iostat=ios)
       endif
       if(ios.ne.0) then
-         write(*,*) ' cannot open powheginput.dat'
-         stop
+         write(*,*) ' cannot open powheg input file'
+         call exit(-1)
       endif
  1    continue
-      read(unit=33,fmt='(a)',iostat=ios,end=999) line
+      read(unit=iun,fmt='(a)',iostat=ios,end=999) line
       if(ios.ne.0) then
-         write(*,*) ' cannot read powheginput.dat'
-         stop
+         write(*,*) ' cannot read powheg input file'
+         call exit(-1)
       endif
-      k=100
- 2    if(k.gt.0) then
-         if(line(k:k).eq.' ') then
-            k=k-1
-            goto 2
-         endif
-      endif
-      if(k.eq.0) k=1
-      write(nlf,'(a)') line(1:k)
+      write(nlf,'(a)') trim(line)
       goto 1
  999  end
 
@@ -39,22 +33,19 @@
       implicit none
       real * 8 powheginput
       character *(*) stringa
-      integer maxnum
-      parameter (maxnum=150)
-      character * 100 line,line0
-      character * 20 string
+      include 'pwhg_pwin.h'
+      character * (maxlin) line,line0
+      character * (maxkey) string
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
-      character * 20 keywords(maxnum)
-      real * 8 values(maxnum)
-      logical used(maxnum),exist
-      integer ios,numvalues,j,k,l,imode
+      logical exist
+      integer ios,iun,j,k,l,imode,iret
       integer ini
       data ini/0/      
-      save ini, keywords, values, numvalues,used
-      string=stringa
+      save ini
       if(ini.eq.0) then
+         call newunit(iun)
          exist = .false.
          if(lprefix.gt.0.and.lprefix.le.len(pwgprefix)) then
             inquire(file=pwgprefix(1:lprefix)//'powheg.input',
@@ -69,7 +60,7 @@
               
          endif
          if(exist) then
-            open(unit=33,file=pwgprefix(1:lprefix)//'powheg.input',
+            open(unit=iun,file=pwgprefix(1:lprefix)//'powheg.input',
      1           status='old',iostat=ios)
             if(ios.ne.0) then         
                write(*,*) ' cannot open ',
@@ -83,7 +74,8 @@
             inquire(file='powheg.input',exist=exist)
             if(exist) then
                write(*,*) ' found input file powheg.input'
-               open(unit=33,file='powheg.input',status='old',iostat=ios)
+               open(unit=iun,file='powheg.input',
+     1              status='old',iostat=ios)
                if(ios.ne.0) then
                   write(*,*) ' cannot open powheg.input'
                   call exit(-1)
@@ -106,7 +98,7 @@
                lprefix=lprefix+1
                if(lprefix.gt.20) lprefix=20
                pwgprefix(lprefix:lprefix)='-'
-               open(unit=33,file=pwgprefix(1:lprefix)//'powheg.input',
+               open(unit=iun,file=pwgprefix(1:lprefix)//'powheg.input',
      1              status='old',iostat=ios)
                if(ios.ne.0) then            
                   write(*,*) ' cannot open ',
@@ -119,80 +111,114 @@
                endif
             endif
          endif
-         numvalues=0
+         pwin_numvalues=0
          do l=1,1000000
             line0=' '
-            read(unit=33,fmt='(a)',iostat=ios) line0
+            read(unit=iun,fmt='(a)',iostat=ios) line0
             if(ios.ne.0.and.line0.eq.' ') goto 10
             line=line0
-            do k=1,100
+            do k=1,maxlin
                if(line(k:k).eq.'#'.or.line(k:k).eq.'!') then
                   line(k:)=' '
                endif
             enddo
             if(line.ne.' ') then
-               if(numvalues.eq.maxnum) then
+               if(pwin_numvalues.eq.maxnum) then
                   write(*,*) ' too many entries in powheginput.dat'
                   call exit(-1)
                endif
-               numvalues=numvalues+1
-c skip blanks
- 12            if(line(1:1).eq.' ') then
-                  line=line(2:)
-                  goto 12
+               pwin_numvalues=pwin_numvalues+1
+c get first word in line
+               call firststringword(line,pwin_keywords(pwin_numvalues),
+     1              iret)
+               if(iret.lt.0) then
+                  write(*,*) ' powheginput: keyword too long:'
+                  write(*,*) trim(line)
+                  call exit(-1)
                endif
-               k=index(line,' ')
 c See if the same keyword is already there: give error in this case
-               if(numvalues.gt.1) then
-                  do j=1,numvalues-1
-                     if(keywords(j).eq.line(1:k-1)) then
-                        write(*,*) 'powheginput: keyword '//line(1:k-1)
+               if(pwin_numvalues.gt.1) then
+                  do j=1,pwin_numvalues-1
+                     if(pwin_keywords(j).eq.
+     1                    pwin_keywords(pwin_numvalues)) then
+                        write(*,*) 'powheginput: keyword '//
+     1                       trim(pwin_keywords(pwin_numvalues))
      1                     //' appears more than once in powheg.input:'
                         write(*,*) trim(line)
                         write(*,*) ' appeared after '
-                        write(*,*) line(1:k-1), values(j)
+                        write(*,*)  pwin_keywords(j), pwin_values(j)
                         write(*,*) 'Exiting'
                         call exit(-1)
                      endif
                   enddo
                endif
-               keywords(numvalues)=line(1:k-1)
-               line=line(k+1:)
-               read(unit=line,fmt=*,iostat=ios) values(numvalues)
-               used(numvalues)=.false.
-               if(ios.ne.0) then
-                  write(*,*) ' powheginput error: cannot parse '
-                  write(*,'(a)') line0
-                  stop
+               call skipfirstword(line,line,iret)
+c if the first character is a quote, it is a string
+               if(line(1:1).eq."'".or.line(1:1).eq.'"') then
+                  pwin_numstrings = pwin_numstrings + 1
+                  if(pwin_numstrings.gt.maxstrings) then
+                     write(*,*) ' powheginput: too many strings'
+                     write(*,*) ' increase maxstrings'
+                     call exit(-1)
+                  endif 
+                  pwin_stringptr(pwin_numvalues) = pwin_numstrings
+                  call getquotedstring(line,
+     1                 pwin_strings(pwin_numstrings),iret)
+                  if(iret.lt.0) then
+                     write(*,*) ' powheginput: cannot read string'
+                     call exit(-1)
+                  endif
+                  pwin_values(pwin_numvalues)=-1d6
+                  pwin_used(pwin_numvalues)=.false.
+               else
+                  pwin_stringptr(pwin_numvalues)=0
+                  read(unit=line,fmt=*,iostat=ios)
+     1                 pwin_values(pwin_numvalues)
+                  pwin_used(pwin_numvalues)=.false.
+                  if(ios.ne.0) then
+                     write(*,*) ' powheginput error: cannot parse '
+                     write(*,'(a)') line0
+                     stop
+                  endif
                endif
             endif
          enddo
  10      continue
-         close(33)
+         close(iun)
          ini=1
       endif
+      if(stringa.eq.'initialize powheginput') then
+         return
+      endif
       if(stringa.eq.'print unused tokens') then
-         do j=1,numvalues
-            if(.not.used(j)) then
+         do j=1,pwin_numvalues
+            if(.not.pwin_used(j)) then
                write(*,*)'powheginput WARNING: unused variable ',
-     1              keywords(j)
+     1              pwin_keywords(j)
             endif
          enddo
          return
       endif
+
+      call  assignstring(stringa,string,iret)
+      if(iret.lt.0) then
+         write(*,*) ' powheginput: input string too long:',trim(stringa)
+         call exit(-1)
+      endif
+
       if(string(1:1).eq.'#') then
          string=string(2:)
          imode=0
       else
          imode=1
       endif
-      do j=1,numvalues
-         if(string.eq.keywords(j)) then
-            powheginput=values(j)
-            if(.not.used(j)) then
-               used(j)=.true.
-               write(*,*) ' powheginput keyword ',keywords(j),
-     1                    ' set to ',values(j)
+      do j=1,pwin_numvalues
+         if(string.eq.pwin_keywords(j)) then
+            powheginput=pwin_values(j)
+            if(.not.pwin_used(j)) then
+               pwin_used(j)=.true.
+               write(*,*) ' powheginput keyword ',pwin_keywords(j),
+     1                    ' set to ',pwin_values(j)
             endif
             return
          endif
@@ -202,27 +228,192 @@ c See if the same keyword is already there: give error in this case
          call exit(-1)
       endif
 c Not found; assign value -1d6; store the token anyhow
-      if(numvalues.eq.maxnum) then
+      if(pwin_numvalues.eq.maxnum) then
          write(*,*) ' too many entries in powheginput.dat'
          write(*,*) ' increase maxnum in powheginput.f'
          call exit(-1)
       endif
-      numvalues=numvalues+1
-      keywords(numvalues)=string
-      values(numvalues)=-1d6
-      used(numvalues)=.true.
+      pwin_numvalues=pwin_numvalues+1
+      pwin_keywords(pwin_numvalues)=string
+      pwin_values(pwin_numvalues)=-1d6
+      pwin_used(pwin_numvalues)=.true.
       powheginput=-1d6
-      write(*,*) ' powheginput keyword ',keywords(j),
-     1     ' absent; set to ',values(j)
+      write(*,*) ' powheginput keyword ',pwin_keywords(j),
+     1     ' absent; set to ',pwin_values(j)
+      end
+
+      subroutine powheginputstring(stringa,stringout)
+      implicit none
+      character * (*) stringa,stringout
+      include 'pwhg_pwin.h'
+      character * (maxkey) string
+      real * 8 tmp,powheginput
+      integer j,imode,iret
+      logical ini
+      data ini/.true./
+      save ini
+      if(ini) then
+c just force loading of the powheg.input file
+         tmp = powheginput('initialize powheginput')
+         ini = .false.
+      endif
+
+      if(stringa(1:1).eq.'#') then
+         imode = 0
+      else
+         imode = 1
+      endif
+
+      call assignstring(stringa(2-imode:),string,iret)
+      if(iret.lt.0) then
+         write(*,*) ' powheginputstring: '
+         write(*,*) ' keyword too long'
+         call exit(-1)
+      endif
+
+      do j=1,pwin_numvalues
+         if(string.eq.pwin_keywords(j)) then
+            call assignstring(pwin_strings(pwin_stringptr(j)),
+     1           stringout,iret)
+            if(iret.lt.0) then
+               write(*,*) ' powheginputstring:'
+               write(*,*) ' output string too short'
+               call exit(-1)
+            endif
+            pwin_used(j)=.true.
+            goto 999
+         endif
+      enddo
+      if(imode.eq.0) then
+         stringout = ' '
+      else
+         write(*,*) ' powheginputstring: '
+         write(*,*) ' keyword '//trim(string)//' not present!'
+         call exit(-1)
+      endif
+ 999  continue
+      write(*,*) ' powheginput keyword ',pwin_keywords(j),
+     1                    ' set to ','"'//trim(stringout)//'"'
+
       end
 
 
-c      implicit none
-c      character * 10 string
-c      integer j
-c      real * 8 powheginput,res
-c      external powheginput
-c      string='QMASS'
-c      res= powheginput(string)
-c      write(*,*) string,res
-c      end
+c String utilities follow here. This may be useful in a separate
+c file ...
+
+      subroutine assignstring(stringin,stringout,iret)
+c assign string checking for overflow. Leading and trailing blanks are ignored
+c iret = 1: output string too short
+c iret = 0 OK
+      implicit none
+      character * (*) stringin,stringout
+      integer iret
+      integer lin,lout
+      integer j
+      lin = len(trim(adjustl(stringin)))
+      lout = len(stringout)
+      if(lout.lt.lin) then
+         write(*,*)
+     1        'assignstring: input string does not fit in output string'
+         iret = -1
+         return
+      endif
+      stringout = adjustl(stringin)
+      iret = 0
+      end
+
+      subroutine firststringword(stringin,word,iret)
+      implicit none
+      character * (*) stringin,word
+      integer iret
+      integer first,last
+      integer j,l
+      l=len(stringin)
+      first = 0
+      last = 0
+      do j=1,l
+         if(stringin(j:j).ne.' ') then
+            if(first.eq.0) first = j
+         else
+            if(first.ne.0) then
+               last = j-1
+               exit
+            endif
+         endif
+      enddo
+      if(first.eq.0) then
+         iret = 1
+         word = ' '
+         return
+      endif
+      if(last.eq.0) last = l
+      call assignstring(stringin(first:last),word,iret)
+      if(iret.lt.0) then
+         write(*,*) ' firststringword: output word too short'
+         return
+      endif
+      end
+            
+      subroutine skipfirstword(stringin,stringout,iret)
+      implicit none
+      character * (*) stringin,stringout
+      integer iret
+      integer first,last
+      integer j,l
+      l=len(stringin)
+      first = 0
+      last = 0
+      do j=1,l
+         if(stringin(j:j).ne.' ') then
+            if(first.eq.0) first = j
+         else
+            if(first.ne.0) then
+               last = j-1
+               exit
+            endif
+         endif
+      enddo
+      if(first.gt.0.and.last.eq.0) last = l
+      if(last.lt.l) then
+         call assignstring(stringin(last+1:),stringout,iret)
+         if(iret.lt.0) then
+            write(*,*) 'skipfirstword: output string too short'
+         endif
+      else
+         stringout = ' '
+         iret = 1
+      endif
+      end
+
+      subroutine getquotedstring(stringin,stringout,iret)
+      character *(*) stringin,stringout
+      integer iret
+      integer lin,lout,lclose
+      character * 1 quote 
+      lin=len(stringin)
+      lout=len(stringout)
+      stringout = adjustl(stringin)
+      quote = stringout(1:1)
+      if(quote.ne."'".and.quote.ne.'"') then
+         write(*,*) ' ************* ERROR ***********'
+         write(*,*) ' getquotedstring: did not find a quote in string'
+         iret = -1
+         return
+      endif
+      lclose = index(stringout(2:),quote) + 1
+      if(lclose.eq.0) then
+         write(*,*) ' ************* ERROR ***********'
+         write(*,*) ' getquotedstring: did not find end quote in string'
+         iret = -2
+         return
+      endif
+      stringout = stringout(2:lclose-1)
+      iret = 0
+      end
+
+      function stringlength(string)
+c length of string neglecting leading and trailing blanks
+      integer stringlength
+      character * (*) string
+      stringlength = len(trim(adjustl(string)))
+      end

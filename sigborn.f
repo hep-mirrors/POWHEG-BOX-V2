@@ -71,7 +71,7 @@ c of the remnant component.
       integer equivto(maxprocborn)
       common/cequivtoborn/equivto
       real * 8 equivcoef(maxprocborn)
-      common/cequivcoef/equivcoef
+      common/cequivcoefborn/equivcoef
       integer nmomset
       parameter (nmomset=10)
       real * 8 pborn(0:3,nlegborn,nmomset),cprop
@@ -81,7 +81,7 @@ c of the remnant component.
       integer iborn,ibornpr,mu,nu,k,j,iret
       logical ini
       data ini/.true./
-      save ini,/cequivtoborn/,/cequivcoef/
+      save ini,/cequivtoborn/,/cequivcoefborn/
       if(ini) then
          do iborn=1,flst_nborn
             equivto(iborn)=-1
@@ -253,10 +253,12 @@ c it prints the set of equivalent Born configurations
       integer equivto(maxprocborn)
       common/cequivtoborn/equivto
       real * 8 equivcoef(maxprocborn)
-      common/cequivcoef/equivcoef
-      integer j,k,iun
+      common/cequivcoefborn/equivcoef
+      integer j,k,iun,count
+      save count
+      data count/0/
       call newunit(iun)
-      open(unit=iun,file='Bornequiv',status='unknown')
+      open(unit=iun,file='bornequiv',status='unknown')
       do j=1,flst_nborn
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
@@ -267,8 +269,11 @@ c it prints the set of equivalent Born configurations
                   write(iun,100) equivcoef(k),k,flst_born(:,k)
                endif
             enddo
+            count=count+1
          endif
       enddo
+      write(iun,*) ''
+      write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
- 100  format(d10.4,5x,i4,5x,100(i4,1x))
+ 100  format(d11.4,5x,i4,5x,100(i4,1x))
       end

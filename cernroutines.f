@@ -1616,12 +1616,18 @@ C     ICMPCH=+1 IF HEX VALUES OF IC1 IS GREATER THAN IC2
 c **********  THIS IS NOT A CERN ROUTINE!!  ***************
       logical function pwhg_isfinite(x)
       implicit none
+      include 'nlegborn.h'
+      include 'pwhg_kn.h'
       real * 8 x
 c According to ieee standards, a NaN is the only real not
 c satisfying x.eq.x.
       if (.not.(x.eq.x)) then
          pwhg_isfinite = .false.
-         call increasecnt('NaN exception')
+         if(kn_jacborn.ne.0) then
+            call increasecnt('NaN exception')
+         else
+            call increasecnt('NaN exception with kn_jacborn=0')
+         endif
          return
       endif
 c Put constraint to avoid denormals

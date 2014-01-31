@@ -9,7 +9,8 @@
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
       include 'pwhg_weights.h'
-      integer j,iun,nev,maxev
+      include 'pwhg_lhrwgt.h'
+      integer j,iun,iunin,iunrwgt,nev,maxev
       common/cnev/nev
       real * 8 weight,tmp
       real * 8 powheginput
@@ -129,7 +130,13 @@ c
          write(*,*) ' No events requested'
          goto 999
       endif
-      call lhefwritehdr(iun)
+
+c Input the string variables for the standard xml reweight format
+      call getreweightinput
+
+      if(.not.flg_newweight) then
+         call lhefwritehdr(iun)
+      endif
       if (testplots) then
          call init_hist 
 c     let the analysis subroutine know that it is run by this program
@@ -154,8 +161,11 @@ c to examine that event in particular
       write(*,*)
       write(*,*)' POWHEG: generating events'
       if(flg_newweight) then
-         call opencount(maxev)
-         call openoutputrw
+         call opencountunit(maxev,iunin)
+         call openoutputrw(iunrwgt)
+         if(lhrwgt_id.ne.' ') then
+            call lhrwgt_copyheader(iunin,iunrwgt) 
+         endif
          if(maxev.ne.nev) then
             write(*,*) ' Warning: powheg.input says ',nev,' events'
             write(*,*) ' the file contains ', maxev, ' events'
@@ -165,7 +175,7 @@ c to examine that event in particular
       endif
       do j=1,nev
          if(flg_newweight) then
-            call pwhgnewweight
+            call pwhgnewweight(iunin,iunrwgt)
          else
             call pwhgevent
             if(nup.eq.0) then
@@ -211,11 +221,88 @@ c to examine that event in particular
          call pwhgsetout
          call pwhgtopout(filename)
       endif
-      call lhefwritetrailer(iun)
-      close(iun)
+      if(flg_newweight) then
+         call lhefwritetrailernw(iunin,iunrwgt)
+         close(iunin)
+         close(iunrwgt)
+      else
+         call lhefwritetrailer(iun)
+         close(iun)
+      endif
  999  continue
       call write_counters
 c this causes powheginput to print all unused keywords
 c in the powheg.input file; useful to catch mispelled keywords
       tmp=powheginput('print unused tokens')
+      end
+
+
+      subroutine opencountunit(maxev,iun)
+      implicit none
+      include 'pwhg_rnd.h'
+      integer maxev,iun
+      character * 30 file
+      character * 20 pwgprefix
+      integer lprefix
+      common/cpwgprefix/pwgprefix,lprefix
+      integer ios
+      character * 7 string
+      real * 8 powheginput
+      external powheginput
+      integer nev,j
+      call newunit(iun)
+      maxev=0
+      file='pwgevents.lhe'
+      open(unit=iun,file=file,status='old',iostat=ios)
+      if(ios.ne.0) then
+         do j=30,0,-1
+            if(file(j:j).ne.' ') exit
+         enddo
+         write(*,*)' file not found:',file(1:j)
+         write(*,*)' enter name of event file'
+         read(*,'(a)') file
+         open(unit=iun,file=file,status='old',iostat=ios)
+         if(ios.ne.0) then
+            write(*,*) 'cannot open; aborting ...'
+            call exit(-1)
+         endif
+c get the name prefix
+         j=index(file,'events')
+         if(j.gt.1) then
+            pwgprefix=file(1:j-1)
+            lprefix=j-1
+         else
+            lprefix=0
+         endif
+c or a sequence number for manyseeds usage
+         if(file(j+6:j+6).eq.'-') then
+            rnd_cwhichseed=file(j+7:j+10)
+         else
+            rnd_cwhichseed='none'
+         endif
+      else
+         pwgprefix='pwg'
+         lprefix=3
+         rnd_cwhichseed='none'
+      endif
+      write(*,*) 'prefix: "'//pwgprefix(1:lprefix)//'",', ' seed: "'//
+     1     rnd_cwhichseed//'"'
+c
+      write(*,*) ' Opened event file ',file
+      write(*,*) ' Counting events in ', file
+      write(*,*) ' This may take some time...'
+ 1    continue
+      read(unit=iun,fmt='(a)',end=2) string
+      if(string.eq.'</event') then
+         maxev=maxev+1
+         goto 1
+      endif
+      goto 1
+ 2    continue
+      write(*,*) ' Found ',maxev,' events in file ',file
+      if (maxev.eq.0) then
+         write(*,*) ' NO EVENTS!! Program exits'
+         call exit(3)
+      endif
+      rewind(iun)
       end

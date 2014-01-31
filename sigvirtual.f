@@ -7,7 +7,9 @@
       include 'pwhg_flg.h'
       real * 8 virt_arr(maxprocborn)
       integer equivto(maxprocborn)
+      common/cequivtovirt/equivto
       real * 8 equivcoef(maxprocborn)
+      common/cequivcoefvirt/equivcoef
       integer nmomset
       parameter (nmomset=10)
       real * 8 pborn(0:3,nlegborn,nmomset),cprop
@@ -15,7 +17,7 @@
       integer iborn,ibornpr,mu,nu,k,j,iret
       logical ini
       data ini/.true./
-      save ini,equivto,equivcoef
+      save ini,/cequivtovirt/,/cequivcoefvirt/
       logical pwhg_isfinite
       external pwhg_isfinite
       if(ini) then
@@ -48,6 +50,7 @@ c     check if virtual(j,iborn) is finite
          endif
          flg_in_smartsig = .false.
          ini=.false.
+         call printvirtequiv
       endif
       do iborn=1,flst_nborn
          if(equivto(iborn).lt.0) then
@@ -66,7 +69,7 @@ c     check if virt_arr(iborn) is finite
       subroutine compare_vecsv(nmomset,iborn,res,ibornpr,cprop,iret)
       implicit none
       real * 8 ep
-      parameter (ep=1d-12)
+      parameter (ep=1d-8)
       integer nmomset,iborn,ibornpr,iret,j,k
       real * 8 res(nmomset,iborn),cprop,rat
       do j=1,iborn-1
@@ -89,3 +92,36 @@ c     check if virt_arr(iborn) is finite
       end
 
 
+      subroutine printvirtequiv
+c When invoked after the first call to virtuals,
+c it prints the set of equivalent virtual configurations
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      integer equivto(maxprocborn)
+      common/cequivtovirt/equivto
+      real * 8 equivcoef(maxprocborn)
+      common/cequivcoefvirt/equivcoef
+      integer j,k,iun,count
+      save count
+      data count/0/
+      call newunit(iun)
+      open(unit=iun,file='virtequiv',status='unknown')
+      do j=1,flst_nborn
+         if(equivto(j).eq.-1) then
+            write(iun,'(a)')
+     1           'Beginning sequence of equivalent amplitudes'
+            write(iun,100) 1d0,j, flst_born(:,j)
+            do k=1,flst_nborn
+               if(equivto(k).eq.j) then
+                  write(iun,100) equivcoef(k),k,flst_born(:,k)
+               endif
+            enddo
+            count=count+1
+         endif
+      enddo
+      write(iun,*) ''
+      write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
+      close(iun)
+ 100  format(d11.4,5x,i4,5x,100(i4,1x))
+      end

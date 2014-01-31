@@ -104,7 +104,7 @@ c Now the transverse boost
       include 'pwhg_par.h'
       integer rflav(nlegreal),reslist(nlegreal),res
       real * 8 cmppborn(0:3,nlegreal)
-      real * 8 avub,getdistance,dalr
+      real * 8 avub,getdistance,dalr,tmp
       integer nub,mergeisr,mergefsr,i,j,k,ifl1,ifl2,onem
       parameter (onem=1000000)
       logical ini,olddij
@@ -161,15 +161,21 @@ c get average singularity from underlying Born
             ifl1=mergeisr(rflav(1),rflav(j))
             ifl2=mergeisr(rflav(2),rflav(j))
             if(ifl1.eq.rflav(1).and.ifl2.eq.rflav(2)) then
-               avub=avub*(1+dalr/getdistance(0,j,res,cmppborn))
+               tmp = getdistance(0,j,res,cmppborn)
+               if(tmp.eq.0) goto 999
+               avub=avub*(1+dalr/tmp)
                nub=nub+1
             else
                if(ifl1.ne.onem) then
-                  avub=avub*(1+dalr/getdistance(1,j,res,cmppborn))
+               tmp = getdistance(1,j,res,cmppborn)
+               if(tmp.eq.0) goto 999
+                  avub=avub*(1+dalr/tmp)
                   nub=nub+1
                endif
                if(ifl2.ne.onem) then
-                  avub=avub*(1+dalr/getdistance(2,j,res,cmppborn))
+               tmp = getdistance(2,j,res,cmppborn)
+               if(tmp.eq.0) goto 999
+                  avub=avub*(1+dalr/tmp)
                   nub=nub+1
                endif
             endif
@@ -177,12 +183,22 @@ c get average singularity from underlying Born
          do k=j+1,nlegreal
             if(reslist(k).ne.res) cycle
             if(mergefsr(rflav(j),rflav(k)).ne.onem) then
-               avub=avub*(1+dalr/getdistance(j,k,res,cmppborn))
+               tmp = getdistance(j,k,res,cmppborn)
+               if(tmp.eq.0) goto 999
+               avub=avub*(1+dalr/tmp)
                nub=nub+1
             endif
          enddo
       enddo
       dijterm=dalr*avub
+      return
+ 999  continue
+      dijterm = 1d200
+      if(dalr.eq.0) then
+         call increasecnt("dalr and ub distance = 0 in ubprojections")
+      else
+         call increasecnt("ub distance = 0 in ubprojections")
+      endif
       end
 
       function getdistance(em,rad,res,cmp)
