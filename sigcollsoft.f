@@ -563,6 +563,14 @@ c     The remaining csi=1-x factor has been applied earlier
 
 
       function colcorr(j,iub,res)
+c Returns true if parton j, in the underlying Born flavour
+c structure iub, belongs to a group of colour correlated particles
+c arising from the decay of the resonance res. This group is formed
+c by all coloured particles that are sons of the resonance res
+c (including eventually other coloured resonances) and by the resonance
+c itself if coloured.
+c The case res=0 corresponds to the partons produced promptly in the
+c hard process.
       implicit none
       logical colcorr
       integer iub,res,j
@@ -595,6 +603,11 @@ c - 1 for incoming antifermion or outgoing fermion
       end
 
       function colcorrem(j,iub,em)
+c Returns true if parton j, in the underlying Born flavour structure
+c iub, belongs to a group of colour correlated partons relevant for the
+c emitter em. This is essentially as the collcorr function, except that
+c it deals with the special case em=0 (that in POWHEG means radiation
+c from either initial state partons)
       implicit none
       logical colcorrem
       integer iub,em,res,j
