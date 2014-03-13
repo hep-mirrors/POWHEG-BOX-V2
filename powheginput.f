@@ -292,7 +292,7 @@ c just force loading of the powheg.input file
          call exit(-1)
       endif
  999  continue
-      write(*,*) ' powheginput keyword ',pwin_keywords(j),
+      write(*,*) ' powheginput keyword ',string,
      1                    ' set to ','"'//trim(stringout)//'"'
 
       end
