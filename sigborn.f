@@ -259,6 +259,7 @@ c it prints the set of equivalent Born configurations
       data count/0/
       call newunit(iun)
       open(unit=iun,file='bornequiv',status='unknown')
+      write(*,*) 'Writing bornequiv file...'
       do j=1,flst_nborn
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
@@ -275,5 +276,6 @@ c it prints the set of equivalent Born configurations
       write(iun,*) ''
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
+      write(*,*) 'Done'
  100  format(d11.4,5x,i4,5x,100(i4,1x))
       end

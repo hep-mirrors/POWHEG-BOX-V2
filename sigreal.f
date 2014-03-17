@@ -1139,6 +1139,7 @@ c it prints the set of equivalent Born configurations
       save count
       data count/0/
       call newunit(iun)
+      write(*,*) 'Writing realequivregions file...'
       open(unit=iun,file='realequivregions',status='unknown')
       do j=1,flst_nalr
          if(equivto(j).eq.-1) then
@@ -1156,6 +1157,7 @@ c it prints the set of equivalent Born configurations
       write(iun,*) ''
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
+      write(*,*) 'Done'
  100  format(d11.4,5x,i4,5x,100(i4,1x))
       end
 
@@ -1204,6 +1206,7 @@ c     < 0 for unequal:
 
       call newunit(iun)
       open(unit=iun,file='realequiv',status='unknown')
+      write(*,*) 'Writing realequiv file...'
       do j=1,flst_nreal
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
@@ -1220,6 +1223,7 @@ c     < 0 for unequal:
       write(iun,*) ''
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
+      write(*,*) 'Done'
  100  format(d11.4,5x,i4,5x,100(i4,1x))
       end
 

@@ -107,6 +107,7 @@ c it prints the set of equivalent virtual configurations
       data count/0/
       call newunit(iun)
       open(unit=iun,file='virtequiv',status='unknown')
+      write(*,*) 'Writing virtequiv file...'
       do j=1,flst_nborn
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
@@ -123,5 +124,6 @@ c it prints the set of equivalent virtual configurations
       write(iun,*) ''
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
+      write(*,*) 'Done'
  100  format(d11.4,5x,i4,5x,100(i4,1x))
       end
