@@ -608,8 +608,8 @@ c Notes/upperbounding-fsr.pdf
       common/cdfxmin/xmin
       real * 8 tmax
       common/ctmax/tmax
-      real *8 ktmaxqed
-      common/showerqed/ktmaxqed
+      real *8 kt2minqed
+      common/showerqed/kt2minqed
       real * 8 random,pt2solve,pwhg_alphas0,pwhg_upperb_rad,pwhg_pt2
       external random,pt2solve,pwhg_alphas0,pwhg_upperb_rad,pwhg_pt2
       unorm=rad_norms(rad_kinreg,rad_ubornidx)
@@ -618,7 +618,7 @@ c kn_sborn=kn_sreal:
       sborn=s
 c below is for the QED case; it will never hit that limit anyhow ...
       if(flg_em_rad) then
-         if(kt2max.lt.ktmaxqed.or.kt2max.lt.tmax) then
+         if(kt2max.lt.kt2minqed.or.kt2max.lt.tmax) then
             t=-1
             goto 3
          endif
