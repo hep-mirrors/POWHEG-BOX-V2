@@ -47,7 +47,14 @@ c coupling rescaling, for born (imode=1) and NLO corrections (imode=2)
          valid(iuborn)=.true.
       endif
       if(imode.eq.1) then
-         rescfac=basicfac*bornfac
+         if(flg_dummyvirtual) then
+c basicfac includes the Sudakov subtraction and the scale
+c compensation term for setting the scale in the virtual term.
+c If the virtual is not included, it must be omitted.            
+            rescfac=basicfac
+         else
+            rescfac=basicfac*bornfac
+         endif
       elseif(imode.eq.2) then
          rescfac=basicfac*nlofac
       endif

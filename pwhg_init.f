@@ -80,6 +80,10 @@ c     If set do only the Born term
          flg_LOevents=.true.
          flg_bornonly=.true.
       endif
+      flg_dummyvirtual=.false.
+      if (powheginput("#dummyvirtual").eq.1) then
+         flg_dummyvirtual=.true.
+      endif
 c     initialize random number sequence
       i1=powheginput('#iseed')
       if (i1.lt.0) i1=0
