@@ -62,6 +62,14 @@ c     We can then use the flst_born(jpart,1) of the FIRST Born
       do jpart=3,flst_lightpart-1
          idhep(jpart)=flst_born(jpart,1)
       enddo
+c     If a massive parton is treated as massless, in find_regions, we add it to idhep
+       do jpart=flst_lightpart,nlegborn
+          if (kn_masses(jpart).ne.0d0) then
+             idhep(jpart)=flst_born(jpart,1)
+          endif
+       enddo
+
+
 c     call analysis routine
       call analysis(dsig0)
       end
