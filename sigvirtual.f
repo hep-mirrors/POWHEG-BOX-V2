@@ -24,7 +24,7 @@
          do iborn=1,flst_nborn
             equivto(iborn)=-1
          enddo
-         if(flg_smartsig.and..not.flg_dummyvirtual) then
+         if(flg_smartsig.and..not.flg_novirtual) then
             flg_in_smartsig = .true.
             call randomsave
             call fillmomenta(nlegborn,nmomset,kn_masses,pborn)

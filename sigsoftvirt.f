@@ -36,7 +36,7 @@
       logical is_charged, is_coloured
       external is_charged, is_coloured
 c     if virtual.f, will not do smartsig when this flag is active
-      if (flg_dummyvirtual) then
+      if (flg_novirtual) then
          resvirt = 0d0
          return
       endif
