@@ -199,9 +199,34 @@ c Only an explicit save statement could prevent that.
 c Notice also that arguments are passed by reference: we always
 c pass the same copy of the arrays a,ares,atags and b,bres,btags to the ident
 c function.
+      integer ndeca,ndecb
       integer bmarked(n)
       integer ka,kb
       if(a(ia) /= b(ib) .or. atags(ia) /= btags(ib)) then
+         result = .false.
+         return
+      endif
+c First check if ia and ib have the same number of decay product.
+c If not, they can't be equivalent. If they don't have decay products,
+c they are equivalent (tags are the same, from previous condition).
+c
+c count how many decay products of ia
+      ndeca = 0
+      do ka=1,n
+         if(ares(ka).eq.ia) ndeca = ndeca + 1
+      enddo
+c count how many decay products of ib
+      ndecb = 0
+      do kb=1,n
+         if(bres(kb).eq.ib) ndecb = ndecb + 1
+      enddo
+c no decay products, they are equivalent
+      if(ndeca.eq.0.and.ndecb.eq.0) then
+         result = .true.
+         return
+      endif
+c different number of decay products: they are inequivalent
+      if(ndeca.ne.ndecb) then
          result = .false.
          return
       endif
@@ -236,10 +261,11 @@ c see if they are equal
       function flavequivl(m,n,ja,jb,arr,arrres,arrtags)
 c arr(m,*),arrres(m,*),arrtags(m,*) are the flavour list,
 c                               the resonance list, and the tag list
-c returns true if the ja and jb arr123(1:n,ja)  arr123(1:n,jb)
+c returns true if the ja and jb arr(1:n,ja)  arr(1:n,jb)
 c are equivalent up to a permutation, false otherwise
 c equivalent up to a permutation of the final state lines,
-c false otherwise.
+c false otherwise. The resonance structure and the tag assignments
+c should also be equivalent for a positive outcome.
       implicit none
       logical flavequivl
       integer m,n,ja,jb,arr(m,*),arrres(m,*),arrtags(m,*)
@@ -503,8 +529,7 @@ c they should all be inequivalent
             endif
          enddo
       enddo
-c sanity check on Born flavour configurations;
-c they should all be inequivalent
+c check if resonance assignments are consistent
       do j=1,flst_nborn
          if(.not.check_consistent_res(nlegborn,flst_bornres(:,j))) then
             write(*,*) 
@@ -512,6 +537,22 @@ c they should all be inequivalent
             call pwhg_exit(-1)
          endif
       enddo
+c at the moment, all born flavours should have the same resonance assignment
+c structure
+      do j=2,flst_nborn
+         do k=1,nlegborn
+            if(flst_bornres(k,j).ne.flst_bornres(k,1)) then
+               write(*,*)
+     1              'Found born flavour structures '//
+     2              'with inequivalent resonance assignment'
+               write(*,*) 'This is not allowed in the present '//
+     1              'implementation'
+               call pwhg_exit(-1)
+            endif
+         enddo
+      enddo      
+c sanity check on Born flavour configurations;
+c they should all be inequivalent
       do j=1,flst_nborn
          do k=j+1,flst_nborn
             if(flavequivl(nlegborn,nlegborn,j,k,flst_born,flst_bornres,

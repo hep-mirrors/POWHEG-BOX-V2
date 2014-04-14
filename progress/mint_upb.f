@@ -94,6 +94,10 @@ c upper bounding envelope in MINT
       end
 
       subroutine getlinemintupb1(filetag,ndim,cells,f,f0,iret)
+c iret = 0 normally, iret = 1 on end of data.
+c Subsequent call restart from the beginning of the data set.
+c A special call with iret = -10 causes the deallocation
+c of the memory arrays used to store the data.
       implicit none
       include 'nlegborn.h'
       character *(*) filetag
@@ -104,6 +108,13 @@ c upper bounding envelope in MINT
       real, dimension(:), allocatable, save :: allf0
       integer nlines,j
       integer status,index
+c the internal flag status is
+c 0     if the data has not been loaded into memory
+c       (typically upon the first invocation)
+c 1     if the data s in memory
+c the integer index is the data line to be read.
+c It is increased after each call, and upon the last
+c call (the one returning iret = 1) it is reset to 1
       data status/0/
       save status,index,nlines
 c a call with iret=-10 deallocate all arrays and returns ;
@@ -174,6 +185,7 @@ c          from the beginning
       integer ndim,cells(ndim),iret
       real * 8 f,f0
       include 'pwhg_rnd.h'
+      include 'pwhg_flg.h'
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
@@ -220,7 +232,7 @@ c file opened for reading
          status=1
       endif
  12   continue
-      if(filetag.eq.'btildeupb') then
+      if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
          read(unit=iunit,fmt=fmt,end=11) (cells(k),k=1,ndim),f,f0
       else
          read(unit=iunit,fmt=fmt,end=11) (cells(k),k=1,ndim),f
@@ -261,6 +273,7 @@ c file opened for reading
 
       subroutine loadmintupb(ndim,filetag,ymax,ymaxrat)
       implicit none
+      include 'pwhg_flg.h'
       integer ndim
       character *(*) filetag
       real * 8 ymax(50,ndim),xint,xintrat
@@ -271,12 +284,12 @@ c file opened for reading
       real * 8 fail,tot,ubtot,failrat,totrat,ubtotrat
       integer ipoints
       integer iterations
-      logical btildeflg
+      logical ratflg
       iterations=1
-      if(filetag.eq.'btildeupb') then
-         btildeflg=.true.
+      if(filetag.eq.'btildeupb'.and.flg_storemintupb) then
+         ratflg=.true.
       else
-         btildeflg=.false.
+         ratflg=.false.
       endif
 c First compute total for f and f/f0 (f/b)
       iret=0
@@ -288,7 +301,7 @@ c First compute total for f and f/f0 (f/b)
          if(iret.eq.-1) goto 998
          ipoints=ipoints+1
          xint=xint+f
-         if(btildeflg) then
+         if(ratflg) then
             if(f0.gt.0) xintrat=xintrat+f/f0
          endif
       enddo
@@ -303,7 +316,7 @@ c with the given integral
       do kdim=1,ndim
          do j=1,50
             ymax(j,kdim)=xint**(1d0/ndim)
-            if(btildeflg) then
+            if(ratflg) then
                if(xintrat.gt.0) ymaxrat(j,kdim)=xintrat**(1d0/ndim)
             endif
          enddo
@@ -320,7 +333,7 @@ c loop for reading u-bound data
          prodrat=1
          do kdim=1,ndim
             prod=prod*ymax(cells(kdim),kdim)
-            if(btildeflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
+            if(ratflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
          enddo
          if(f.gt.prod) then
             do kdim=1,ndim
@@ -328,7 +341,7 @@ c loop for reading u-bound data
      1              ymax(cells(kdim),kdim)*(f/prod+0.1)**(xmore/ndim)
             enddo
          endif
-         if(btildeflg) then
+         if(ratflg) then
             if(f0.gt.0) then
                if(f/f0.gt.prodrat) then
                   do kdim=1,ndim
@@ -345,7 +358,7 @@ c check if the failure rate is satisfactory
       fail=0
       tot=0
       ubtot=0
-      if(btildeflg) then
+      if(ratflg) then
          failrat=0
          totrat=0
          ubtotrat=0
@@ -355,15 +368,15 @@ c check if the failure rate is satisfactory
       if(iret.lt.0) goto 998
       if(iret.eq.0) then         
          prod=1
-         if(btildeflg) prodrat=1
+         if(ratflg) prodrat=1
          do kdim=1,ndim
             prod=prod*ymax(cells(kdim),kdim)
-            if(btildeflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
+            if(ratflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
          enddo
          if(f.gt.prod) fail=fail+(f-prod)
          tot=tot+f
          ubtot=ubtot+prod
-         if(btildeflg) then
+         if(ratflg) then
             if(f0.ne.0) then
                if(f.gt.f0*prodrat) failrat=failrat+(f-f0*prodrat)
                totrat=totrat+f
@@ -372,10 +385,10 @@ c check if the failure rate is satisfactory
          endif
          goto 2
       endif
-      if(fail/tot.gt.1d-3.or.(btildeflg.and.failrat/totrat.gt.1d-3))then
+      if(fail/tot.gt.1d-3.or.(ratflg.and.failrat/totrat.gt.1d-3))then
 c stop updating the rat grid, if satisfactory
-         if(btildeflg.and.failrat/totrat.lt.1d-3) then
-            btildeflg=.false.
+         if(ratflg.and.failrat/totrat.lt.1d-3) then
+            ratflg=.false.
             write(*,*) ' envelope efficiency',totrat/ubtotrat
             write(*,*) 'failure estimate',failrat/totrat
          endif
@@ -386,16 +399,16 @@ c stop updating the rat grid, if satisfactory
             write(*,*) ' this can take a moment ...'
          endif
          write(*,*) 'failure estimate',fail/tot
-         if(btildeflg) then
+         if(ratflg) then
             write(*,*) 'ratios failure estimate',failrat/totrat
          endif
          iterations=iterations+1
          goto 1
       endif
-      if(filetag.eq.'btildeupb') then
-         btildeflg=.true.
+      if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
+         ratflg=.true.
       endif
-      if(btildeflg) then
+      if(ratflg) then
          write(*,*) 'envelope efficiency: '
          write(*,*)
      1 ' # of generated configurations over number of btilde calls'
@@ -461,23 +474,6 @@ c stop updating the rat grid, if satisfactory
          write(iun,*) 'calls=',icalls,'f/ubound',x
          close(iun)
       endif
-      end
-
-
-      function strictubound(cells)
-      implicit none
-      include 'nlegborn.h'
-      include 'pwhg_flg.h'
-      integer cells(ndiminteg)
-      real * 8 strictubound
-      include 'cgengrids.h'
-      real * 8 prodrat
-      integer kdim
-      prodrat=1
-      do kdim=1,ndiminteg
-         prodrat=prodrat*ymaxrat(cells(kdim),kdim)
-      enddo
-      strictubound=prodrat
       end
 
       subroutine inttochar(int_arr,ch_arr,ndim)
