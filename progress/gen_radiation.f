@@ -185,6 +185,7 @@ c     final state radiation
                endif
                call gen_rad_fsr(t)
             endif
+            include 'pwhg_gen_radiation_hook.h'
             if(t.gt.tmax) then
                tmax=t
                kinreg=rad_kinreg
@@ -195,7 +196,7 @@ c     final state radiation
          endif
       enddo
 c Set up radiation kinematics
-      if(tmax.eq.0) then
+      if(kinreg.eq.0) then
 c Generate a Born like event
          kn_csi=0
          rad_kinreg=0
@@ -205,7 +206,7 @@ c Generate a Born like event
          kn_csi=csi
          kn_y=y
          kn_azi=azi
-         t=tmax
+         t=pwhg_pt2()
          if(rad_kinreg.eq.1) then
             call gen_real_phsp_isr_rad
          else
