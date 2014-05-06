@@ -958,6 +958,7 @@ c include pdf's
 
 c     produce ONLY events with minimum pt larger than ptcut
       ptcut=sqrt(kn_sbeams)/((nparticles+2)*10)
+      if(nparticles.eq.3) ptcut = 0d0
       if (debug)  write(*,*) 'ptcut min in fillmomenta = ',ptcut
 
 c     average value of the generated momentum.
