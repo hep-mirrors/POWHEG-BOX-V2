@@ -17,8 +17,7 @@ c...writes initialization information to a les houches events file on unit nlf.
       include 'LesHouches.h'
       write(nlf,'(a)') '<LesHouchesEvents version="1.0">'
       write(nlf,'(a)') '<!--'
-      write(nlf,'(a,f3.1)') 'file generated with POWHEG-BOX version ',
-     #     version
+      write(nlf,'(a,f3.1)') 'file generated with POWHEG-BOX-V2'
       write(nlf,'(a)') 'Input file powheg.input contained:'
       call wrtpowheginput(nlf)
       write(nlf,'(a)') 'End of powheg.input content'
