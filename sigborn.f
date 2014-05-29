@@ -46,6 +46,7 @@ c         res(j)=kn_jacborn/(2*kn_sborn)/flst_nborn
      2         bornjk(nlegborn,nlegborn),bmunu(0:3,0:3,nlegborn)
       call pdfcall(1,kn_xb1,pdf1)
       call pdfcall(2,kn_xb2,pdf2)
+      flst_cur_iborn = rad_ubornidx
       call setborn0(kn_cmpborn,flst_born(1,rad_ubornidx),born,
      #        bornjk,bmunu)
 c Store in the br_born arrays; they are used to compute
@@ -113,6 +114,7 @@ c of the remnant component.
       endif
       do iborn=1,flst_nborn
          if(equivto(iborn).lt.0) then
+            flst_cur_iborn = iborn
             call setborn0(kn_cmpborn,flst_born(1,iborn),br_born(iborn),
      #        br_bornjk(1,1,iborn),br_bmunu(0,0,1,iborn))
          else

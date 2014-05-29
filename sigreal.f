@@ -684,6 +684,7 @@ c            if(equivto(alr).lt.0.or..not.computed(equivto(alr))) then
                else
                   kn_resemitter=flst_alrres(nlegreal,alr)
                endif
+               flst_cur_alr = alr
                call realgr(flst_alr(1,alr),kn_cmpreal,r0(alr))
                sumdijinv=0
                do k=1,flst_allreg(1,0,alr)
@@ -848,6 +849,7 @@ c First mark as being computed
                else
                   kn_resemitter=flst_alrres(nlegreal,alr)
                endif
+               flst_cur_alr = alr
                call realgr(flst_alr(1,alr),kn_preal,r0(alr))
 c Supply FKS factor to separate singular region:
                sumdijinv=0

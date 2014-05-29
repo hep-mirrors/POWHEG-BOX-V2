@@ -54,6 +54,7 @@ c     check if virtual(j,iborn) is finite
       endif
       do iborn=1,flst_nborn
          if(equivto(iborn).lt.0) then
+            flst_cur_iborn = iborn
             call setvirtual(kn_cmpborn,flst_born(1,iborn),
      #           virt_arr(iborn))
 c     check if virt_arr(iborn) is finite

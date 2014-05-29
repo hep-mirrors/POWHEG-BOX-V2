@@ -63,6 +63,7 @@ c     born2alr(1.. born2alr(0,k),k)= pointer to corresponding alpha_r
       integer flst_born2alr(0:maxalr,maxprocborn)
       integer flst_lightpart
       logical flst_sonof,flst_isfs,flst_isres(nlegborn)
+      integer flst_cur_iborn,flst_cur_alr 
       common/pwhg_flst/
      1     flst_nborn, flst_born,flst_borntags,flst_bornres,
      2     flst_nreal,flst_real,flst_realtags,flst_realres,
@@ -72,5 +73,5 @@ c     born2alr(1.. born2alr(0,k),k)= pointer to corresponding alpha_r
      7     flst_ubmult,flst_emitter,flst_allreg,flst_alr2born,
      8     flst_born2alr,flst_lightpart,
      9     flst_nreson,flst_reslist,
-     1     flst_isres
+     1     flst_isres,flst_cur_iborn,flst_cur_alr
       save /pwhg_flst/
