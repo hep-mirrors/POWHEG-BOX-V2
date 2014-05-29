@@ -788,13 +788,13 @@ c    csi^2 (1-y)   for FSR regions
       save ini,/cequivtoreal/,/cequivcoefreal/
       real * 8 dijterm
       external dijterm
-      if(ini) then         
-         call  printrealequiv         
+      if(ini) then
          do alr=1,flst_nalr
             equivto(alr)=-1
          enddo
          if(flg_smartsig) then
             flg_in_smartsig = .true.
+            call  printrealequiv         
             call randomsave
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
@@ -824,8 +824,8 @@ c     < 0 for unequal:
             enddo
             call randomrestore
          endif
-         flg_in_smartsig = .false.
          call printrealequivregions
+         flg_in_smartsig = .false.
          ini=.false.
       endif
 c End initialization phase; compute graphs
@@ -1170,6 +1170,7 @@ c it prints the set of equivalent Born configurations
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       integer nmomset
       parameter (nmomset=10)

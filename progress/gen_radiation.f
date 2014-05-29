@@ -206,12 +206,12 @@ c Generate a Born like event
          kn_csi=csi
          kn_y=y
          kn_azi=azi
-         t=pwhg_pt2()
          if(rad_kinreg.eq.1) then
             call gen_real_phsp_isr_rad
          else
             call gen_real_phsp_fsr_rad
          endif
+         t=pwhg_pt2()
          call set_rad_scales(t)
 c We call sigborn_rad now, becayse the real may depend
 c upon the Born throught the soft and collinear terms,
