@@ -636,6 +636,8 @@ c     #     '   em:',flst_emitter(iflregl)
       nreg=iflregl
       flst_nalr=nreg
       write(*,*) ' **** Minimum maxalr allowed: ',nreg,' *********'
+      write(*,*) ' **** Number of born graphs:  ',flst_nborn
+      write(*,*) ' **** Number of real graphs:  ',flst_nreal
       call pretty_print_flst
 c bunch together identical elements, increasing their multiplicities
       do j=1,nreg

@@ -1129,8 +1129,7 @@ c     check if amp2 is finite
 
 
       subroutine printrealequivregions
-c When invoked after the first call to allborn,
-c it prints the set of equivalent Born configurations
+c it prints the set of equivalent alr regions
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
@@ -1165,8 +1164,7 @@ c it prints the set of equivalent Born configurations
       end
 
       subroutine printrealequiv
-c When invoked after the first call to allborn,
-c it prints the set of equivalent Born configurations
+c it prints the set of equivalent real configurations
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'

@@ -181,6 +181,7 @@ c End initialization phase; compute graphs
       do lreg=1,flst_nregular
 c ----------------
          if(equivto(lreg).lt.0) then
+            flst_cur_alr = -1
             call realgr(flst_regular(1,lreg),kn_cmpreal,r0(lreg))
          else
             r0(lreg)=r0(equivto(lreg))*equivcoef(lreg)
