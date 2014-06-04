@@ -1,5 +1,5 @@
-
       subroutine genericpdfset(ndns)
+      implicit none
 c wrap for pdfset; avoids subsequent
 c calls to pdfset (you never know)
       integer ndns
