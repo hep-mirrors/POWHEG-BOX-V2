@@ -2,7 +2,7 @@
       subroutine check_leshouches
       implicit none
       include 'LesHouches.h'
-      integer chain(nup)
+      integer chain(100)
       integer j,m
 
 c First check that colour and flavours are consistent
@@ -13,7 +13,8 @@ c First check that colour and flavours are consistent
      2                 (icolup(1,j).eq.0.or.icolup(2,j).ne.0) ) .or.
      3       (idup(j).le.-1.and.idup(j).ge.-6 .and.
      4                 (icolup(2,j).eq.0.or.icolup(1,j).ne.0) ) .or.
-     5       (icolup(2,j).ne.0.or.icolup(1,j).ne.0) ) then
+     5       ((abs(idup(j)).gt.6.and.idup(j).ne.21) .and.
+     6          (icolup(2,j).ne.0.or.icolup(1,j).ne.0)) ) then
             write(*,*) ' check_leshouches:'
             write(*,*) ' parton ',j,'had idup=',idup(j),
      1           'and icolup=',icolup(:,j)
@@ -61,7 +62,7 @@ c Now do it for all resonances
       implicit none
       include 'LesHouches.h'
       real * 8 ptot(1:4),charge
-      integer chain(nup)
+      integer chain(100)
       integer j,k,itmp,col,acol,ncol,nacol
       real * 8 chargeofid
       external chargeofid
@@ -88,7 +89,7 @@ c check momentum conservation
       if(sum(abs(ptot)).gt.1d-6) then
          write(*,*) ' check_leshouches_chain:'
          write(*,*) ' momentum violation for system '
-         write(*,'(500(1x,i3))') chain
+         write(*,'(500(1x,i3))') chain(1:nup)
       endif
 c colour conservation: a given colour
 c can match only a single anticolour
@@ -108,7 +109,7 @@ c can match only a single anticolour
      1           .or. (acol.ne.0 .and. nacol.ne.1) ) then
                write(*,*) ' check_leshouches_chain:'
                write(*,*) ' inconsistent colour assignment for system '
-               write(*,'(500(1x,i3))') chain
+               write(*,'(500(1x,i3))') chain(1:nup)
             endif
          endif
       enddo
@@ -122,7 +123,7 @@ c Check electric charge conservation
       if(abs(charge).gt.1d-6) then
          write(*,*) ' check_leshouches_chain:'
          write(*,*) ' charge not conserved for system '
-         write(*,'(500(1x,i3))') chain
+         write(*,'(500(1x,i3))') chain(1:nup)
       endif
 
 c invert back colour, flavour and momentum for incoming particles
