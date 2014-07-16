@@ -117,6 +117,7 @@ c if not it's all done
       if(i.eq.0) goto 99
       call lhfm_reshuffle(iret)
       if(iret.eq.-1) then
+         write(*,*) ' lhefinitemasses:'
          write(*,*) ' ***  Cannot reshuffle! ***'
          write(*,*) ' ***  kill event! ***'
          nup=0
@@ -281,6 +282,7 @@ c check that reshuffling is possible
       enddo
       moth=mothup(1,arr(1))
       if(mass.gt.pup(5,moth)) then
+         write(*,*) ' lhfm_reshuffle:'
          write(*,*) ' cannot reshuffle!'
          iret=-1
          return
@@ -347,7 +349,10 @@ c check momentum balance in array arr,n
          p(mu)=p(mu)-pup(mu,moth)
          diff=diff+abs(p(mu))
       enddo
-      if(diff.gt.1d-8) write(*,*)' checkmom:',p
+      if(diff.gt.1d-8) then
+         write(*,*) ' lhfm_checkmomres:'
+         write(*,*)' checkmom:',p
+      endif
       end
 
       subroutine lhfm_reboost(moth,sc)
@@ -402,7 +407,7 @@ c only for direct sons
       enddo
       if(.not.ini) then
          tot=abs(total(1))+abs(total(2))+abs(total(3))+abs(total(4))
-         if(tot.gt.1d-2) then
+         if(tot.gt.1d-4) then
             write(*,*) ' lhfm_reboosts, mom. cons. violation:',tot
             write(*,*) ' lhfm_reboosts, mom. cons. violation:',total
          endif
@@ -502,6 +507,7 @@ c     beta.  Lorents convention: (t,x,y,z).
          tmp=pup(1,i)**2+pup(2,i)**2+pup(3,i)**2+pup(5,i)**2-pup(4,i)**2
          tmp=abs(tmp)
          if(tmp.gt.1d-2) then
+            write(*,*) ' lhfm_checkmom'
             write(*,*) 'iup',i,' check mass:',tmp
             write(*,*) pup(1,i),pup(2,i),pup(3,i),pup(4,i),pup(5,i)
          endif
@@ -511,7 +517,8 @@ c     beta.  Lorents convention: (t,x,y,z).
             enddo
          endif
       enddo
-      if(sum().gt.1d-2) then
+      if(sum().gt.1d-4) then
+         write(*,*) ' lhfm_checkmom'
          write(*,*) ' total mom. cons.:',sum()
       endif
       do moth=3,nup
@@ -527,7 +534,8 @@ c     beta.  Lorents convention: (t,x,y,z).
                   enddo
                endif
             enddo
-            if(sum().gt.1d-2) then
+            if(sum().gt.1d-4) then
+               write(*,*) ' lhfm_checkmom'
                write(*,*) 'res.',moth,' mom. cons.:',sum()
             endif
          endif
