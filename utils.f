@@ -148,20 +148,32 @@ c id is in up position in ew doublet
       implicit none
       real * 8 chargeofid
       integer id
-      logical isutype,isdtype,islepton
-      if(abs(id).gt.16) then
-         write(*,*) ' this only works for light fermions'
-         write(*,*) ' if you need to extend it, go ahead'
-         call pwhg_exit(-1)
-      endif
-      if(isutype(id)) then
+      logical isutype,isdtype,islepton,isnu
+      if(abs(id).eq.24) then
+         chargeofid = sign(1,id)
+      elseif(id.eq.21.or.id.eq.22.or.id.eq.23.or.id.eq.25) then
+         chargeofid = 0
+      elseif(isutype(id)) then
          chargeofid = 2d0/3*sign(1,id)
       elseif(isdtype(id)) then
          chargeofid = -1d0/3*sign(1,id)
       elseif(islepton(id)) then
          chargeofid = -sign(1,id)
-      else
+      elseif(isnu(id)) then
          chargeofid = 0
+      else
+         write(*,*)
+     1        ' this only works for fermions, W, Z, photons and guons'
+         write(*,*) ' if you need to extend it, go ahead'
+         call pwhg_exit(-1)
+      endif
+      end
+
+      subroutine flavourconj(id)
+      implicit none
+      integer id
+      if(abs(id).le.18.or.abs(id).eq.24) then
+         id=-id
       endif
       end
 
