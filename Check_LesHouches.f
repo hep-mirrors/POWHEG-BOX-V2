@@ -100,7 +100,7 @@ c can match only a single anticolour
             nacol = 0
             ncol = 0
             do k=1,nup
-               if(chain(j).ne.0) then
+               if(chain(k).ne.0) then
                   if(acol.ne.0.and.icolup(1,k).eq.acol) nacol = nacol+1
                   if(col.ne.0.and.icolup(2,k).eq.col) ncol = ncol+1
                endif
@@ -114,8 +114,8 @@ c can match only a single anticolour
          endif
       enddo
 c Check electric charge conservation
+      charge = 0
       do j = 1,nup
-         charge = 0
          if(chain(j).ne.0) then
             charge = charge + chargeofid(idup(j))
          endif
