@@ -1,4 +1,4 @@
-c Integrator-Unweighter Package for POWHEG;
+c Integrtor-Unweighter Package for POWHEG;
 c Documented in arXiv:0709.2085: MINT: A Computer program for adaptive Monte Carlo
 c     integration and generation of unweighted distributions.
 c     Variations with respect to the version documented in the manual may be present
@@ -97,6 +97,11 @@ c
       logical pwhg_isfinite,gridinfo
       integer fun,ifun
       external random,pwhg_isfinite,fun,powheginput
+c      integer k
+c      real * 8 tmp
+c      data tmp/-1d0/
+c      save tmp
+
       if(ndim.gt.ndiminteg) then
          write(*,*) 'Mint: at most ',ndiminteg,' dimensions'
          write(*,*) 'Got ',ndim
@@ -122,6 +127,21 @@ c
             enddo
          enddo
       endif
+
+cc If you know there is a problem at btilde call 862478, for
+cc debugging uncomment the following:
+c      if(tmp.lt.0) then
+c         write(*,*) ' ramping up random()'
+c         do k=1,862477
+c            do  kdim=1,ndim
+c               tmp = random()
+c               tmp = random()
+c            enddo
+c         enddo
+c         write(*,*) ' finished ramping up random()'
+c      endif
+c      write(*,*) ' entering mint'
+
       nit=0
       ans=0
       err=0
