@@ -87,6 +87,10 @@ c     to the NLO analysis routine.
 c btildecoll and btildereal take care themselves to invoke the NLO
 c analysis if required.
             call reset_timer
+c in case btlscalereal is set, we need to reset the scales
+c to the underlying Born value for the computation of the
+c collinear remnants.
+            call setscalesbtilde
             call btildecoll(xrad,rescoll,www)
             call btildereal(xrad,resreal,www)
             call get_timer(seconds)
