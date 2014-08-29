@@ -162,10 +162,10 @@ c id is in up position in ew doublet
       elseif(isnu(id)) then
          chargeofid = 0
       else
-         write(*,*)
-     1        ' this only works for fermions, W, Z, photons and guons'
-         write(*,*) ' if you need to extend it, go ahead'
-         call pwhg_exit(-1)
+         write(*,*) ' chargeofid: warning, charge not known for id=',
+     1        id
+         write(*,*) ' returning absurd value 1000000'
+         chargeofid = 1000000d0
       endif
       end
 
