@@ -32,11 +32,14 @@ c link errors. It is never invoked in the present case.
 
       subroutine genericpdfpar(ndns,ih,xlam,scheme,iorder,iret)
       implicit none
+      include 'pwhg_pdf.h'
       integer ndns,ih
       real * 8 xlam
       character * 2 scheme
       integer iret,iorder
       call pdfpar(ndns,ih,xlam,scheme,iret)
+c set ad hoc value for q2min (not provided in mlmpdf)
+      pdf_q2min = 0
 c not yet implemented
       iorder=-1
       end
