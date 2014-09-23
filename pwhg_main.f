@@ -23,6 +23,12 @@
       common/cWHCPRG/WHCPRG
       integer iseed,n1,n2
       logical testplots
+
+c Print out svn information, if any
+      iun = 6
+      include 'svn.version'
+
+
       if (powheginput('#testplots').eq.1d0) then
          testplots=.true.
       else
