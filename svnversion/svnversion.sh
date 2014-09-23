@@ -23,7 +23,13 @@ do
 cd $dir
 
 svninfo
+
+pwd >> $currdir/svnversion.txt
+
 echo $url >> $currdir/svnversion.txt
+
+if [ a$revision != a ]
+then
 echo Rev.$revision >>  $currdir/svnversion.txt
 
 svn status | grep -e '^\?.*\.[fFch]$\|^[MA]'
@@ -36,6 +42,8 @@ then
 else
     echo "Warning: not a clean version:"  >> $currdir/svnversion.txt
     svn status | grep -e '^\?.*\.[fFch]$\|^[MA]' >> $currdir/svnversion.txt
+fi
+
 fi
 
 done
