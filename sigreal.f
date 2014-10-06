@@ -1035,8 +1035,8 @@ c     compute the minimum pt among each pair of final-state momenta
                costh=
      $          (pcm(1,k)*pcm(1,i)+pcm(2,k)*pcm(2,i)+pcm(3,k)*pcm(3,i))/
      $              modk/modi
-               ptmin=min(ptmin,modk*sqrt(1-costh**2),
-     $                         modi*sqrt(1-costh**2))
+               ptmin=min(ptmin,modk*sqrt(abs(1-costh**2)),
+     $                         modi*sqrt(abs(1-costh**2)))
             enddo
          enddo
          if (ptmin.lt.ptcut) then
