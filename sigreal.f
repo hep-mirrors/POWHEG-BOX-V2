@@ -344,6 +344,7 @@ c are consistent with total Born
      #r0s(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
       integer j,jexp,alr,alrp
       character * 15 flag
+      character * 32 fff
       logical ident(maxalr)
       real * 8 random,dotp
       external random,dotp
@@ -397,7 +398,9 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
                write(iun,*) ' some vanish and some do not'
             endif
             if(isnonzero.and..not.iszero) then
-               write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
+               fff = '(a,1x,i3,1x,a, 20(1x,i3),a,a,a)'
+               write(fff(15:17),'(i3)') nlegreal
+               write(iun,fff)
      $              ' emitter ',kn_emitter, ', process ',
      $              (flst_alr(j,alr),j=1,nlegreal)!,', ',label,':'
                do alrp=alr+1,flst_nalr
