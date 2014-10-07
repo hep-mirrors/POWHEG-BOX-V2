@@ -952,14 +952,16 @@ c include pdf's
       integer nparticles,nmomset
       real * 8 p(0:3,nparticles,nmomset),masses(nparticles)
       integer mu,j,k,i
-      real * 8 pl,en,scale
+      real * 8 pl,en,scale,ptki
       real * 8 random
       external random
       real * 8 ptmin,pt,ptcut,beta, vec(3),plab(0:3,nparticles),
-     $     pcm(0:3,nparticles),costh,modk,modi
+     $     pcm(0:3,nparticles)!,costh,modk,modi
       integer last,sign
       logical debug
       parameter (debug=.false.)
+      real * 8 dotp
+      external dotp
 
 c     produce ONLY events with minimum pt larger than ptcut
       ptcut=sqrt(kn_sbeams)/((nparticles+2)*10)
@@ -1030,17 +1032,20 @@ c            write(*,*) 'ptmin = ',ptmin
 c     compute the minimum pt among each pair of final-state momenta
          do k=3,nparticles-1
             do i=k+1,nparticles
-               modk=sqrt(pcm(1,k)**2+pcm(2,k)**2+pcm(3,k)**2)
-               modi=sqrt(pcm(1,i)**2+pcm(2,i)**2+pcm(3,i)**2)
-               costh=
-     $          (pcm(1,k)*pcm(1,i)+pcm(2,k)*pcm(2,i)+pcm(3,k)*pcm(3,i))/
-     $              modk/modi
-               ptmin=min(ptmin,modk*sqrt(abs(1-costh**2)),
-     $                         modi*sqrt(abs(1-costh**2)))
+c               modk=sqrt(pcm(1,k)**2+pcm(2,k)**2+pcm(3,k)**2)
+c               modi=sqrt(pcm(1,i)**2+pcm(2,i)**2+pcm(3,i)**2)
+c               costh=
+c     $          (pcm(1,k)*pcm(1,i)+pcm(2,k)*pcm(2,i)+pcm(3,k)*pcm(3,i))/
+c     $              modk/modi
+c               ptmin=min(ptmin,modk*sqrt(abs(1-costh**2)),
+c     $                         modi*sqrt(abs(1-costh**2)))
+               ptki = sqrt(abs(2*dotp(pcm(0,k),pcm(0,i))*
+     $              pcm(0,k)*pcm(0,i)/(pcm(0,k)+pcm(0,i))**2))               
+               ptmin=min(ptmin,ptki)
             enddo
          enddo
          if (ptmin.lt.ptcut) then
-c            write(*,*) 'ptmin = ',ptmin            
+            write(*,*) 'ptmin = ',ptmin            
             goto 1
          endif
 
