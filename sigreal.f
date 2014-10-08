@@ -1045,7 +1045,7 @@ c     $                         modi*sqrt(abs(1-costh**2)))
             enddo
          enddo
          if (ptmin.lt.ptcut) then
-            write(*,*) 'ptmin = ',ptmin            
+c            write(*,*) 'ptmin = ',ptmin            
             goto 1
          endif
 
