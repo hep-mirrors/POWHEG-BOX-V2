@@ -382,8 +382,9 @@ c Check soft limits
             ident(alr)=.false.
          enddo
          do alr=1,flst_nalr
-c only radiated gluons
-            if(flst_alr(nlegreal,alr).ne.0) cycle
+c only radiated gluons or photons
+            if(flst_alr(nlegreal,alr).ne.0 .and.
+     1         flst_alr(nlegreal,alr).ne.22  ) cycle
             if(ident(alr)) cycle
 c     if one r0 is zero, all others must be zero
             iszero=.false.
