@@ -847,6 +847,66 @@ c Construct kperp
       endif
       end
 
+c This returns in rcs the soft-collinear approximation to
+c the real cross section (multiplied by csi^2(1-y^2) or (1-y))
+c to be used to construct the damping factor in the real
+c cross section used in Btilde
+      subroutine collsoftbtl(rcs)
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_kn.h'
+      real * 8 rcs(maxalr)
+      integer alr,em,i
+      real * 8 kperp(0:3),kperp2,q0,xocsi,csi,x,phi,r1,r2,kncsisave
+      kncsisave = kn_csi
+      kn_csi = 0
+      em=kn_emitter
+      if(em.gt.2) then
+c     for fsr csi is y independent
+         csi=kn_csi
+         call buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
+         do alr=1,flst_nalr
+            if(em.eq.flst_emitter(alr)) then
+               call collfsralr(alr,csi,xocsi,x,q0,kperp,kperp2,rcs(alr))
+            else
+               rcs(alr)=0
+            endif
+         enddo
+      else
+         phi=kn_azi
+c Construct kperp
+         kperp(1)=sin(phi)
+         kperp(2)=cos(phi)
+         kperp(3)=0
+         kperp(0)=0
+         do alr=1,flst_nalr
+            if(flst_emitter(alr).eq.em) then
+               if(em.ne.2) then
+                  i=1
+                  csi=kn_csi*kn_csimaxp/kn_csimax
+                  call collisralr(alr,i,csi,kperp,r1)
+               endif
+               if(em.ne.1) then
+                  i=2
+                  csi=kn_csi*kn_csimaxm/kn_csimax
+                  call collisralr(alr,i,csi,kperp,r2)
+               endif
+               if(em.eq.0) then
+                  rcs(alr)=(r1*(1+kn_y)+r2*(1-kn_y))/2
+               elseif(em.eq.1) then
+                  rcs(alr)=r1
+               elseif(em.eq.2) then
+                  rcs(alr)=r2
+               endif
+            else
+               rcs(alr)=0
+            endif
+         enddo
+      endif
+      kn_csi = kncsisave
+      end
+
 c This returns in rc the collinear approximation to
 c the real cross section to be used to construct the damping factor
 c in the real radiation cross section
@@ -924,3 +984,59 @@ c     Construct kperp
          endif
       enddo
       end
+
+
+c This returns in rcs the soft-collinear approximation to
+c the real cross section to be used to construct the damping factor
+c in the real radiation cross section
+      subroutine collsoftrad(rcs)
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_kn.h'
+      include 'pwhg_rad.h'
+      real * 8 rcs(maxalr)
+      integer alr,em
+      real * 8 q0,xocsi,csi,phi,x,kperp(0:3),kperp2,r1,r2,kncsisave
+      integer j
+      kncsisave = kn_csi
+      kn_csi = 0
+      do j=1,rad_alr_nlist
+         alr=rad_alr_list(j)
+         em=flst_emitter(alr)
+c     check if emitter corresponds to current radiation region (i.e. rad_kinreg):
+         if(rad_kinreg.eq.1.and.em.le.2) then
+            phi=kn_azi
+c     Construct kperp
+            kperp(1)=sin(phi)
+            kperp(2)=cos(phi)
+            kperp(3)=0
+            kperp(0)=0
+            if(em.ne.2) then
+               csi=kn_csi*kn_csimaxp/kn_csimax
+               call collisralr(alr,1,csi,kperp,r1)
+            endif
+            if(em.ne.1) then
+               csi=kn_csi*kn_csimaxm/kn_csimax
+               call collisralr(alr,2,csi,kperp,r2)
+            endif
+            if(em.eq.0) then
+               rcs(alr)=(r1*(1+kn_y)+r2*(1-kn_y))/2
+            elseif(em.eq.1) then
+               rcs(alr)=r1
+            elseif(em.eq.2) then
+               rcs(alr)=r2
+            endif
+            rcs(alr)=rcs(alr)/(kncsisave**2*(1-kn_y**2))
+         elseif(flst_lightpart+rad_kinreg-2.eq.em) then
+            csi=kn_csi
+            call buildfsrvars(em,q0,xocsi,x,kperp,kperp2)
+            call collfsralr(alr,csi,xocsi,x,q0,kperp,kperp2,rcs(alr))
+            rcs(alr)=rcs(alr)/kncsisave**2/(1-kn_y)
+         else
+            rcs(alr)=0
+         endif
+      enddo
+      kn_csi = kncsisave
+      end
+

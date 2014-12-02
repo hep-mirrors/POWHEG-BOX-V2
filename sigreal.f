@@ -583,7 +583,7 @@ c     endif
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
       include 'pwhg_pdf.h'
-      real * 8 r0(maxalr),rc(maxalr),rs(maxalr)
+      real * 8 r0(maxalr),rc(maxalr),rs(maxalr),rcs(maxalr)
       integer alr,alrpr,iret,em
       integer nmomset,emitter
       parameter (nmomset=10)
@@ -647,6 +647,7 @@ c End initialization phase; compute graphs
       call pdfcall(2,kn_x2,pdf2)
       if(flg_withdamp) then
          call collrad(rc)
+         call collsoftrad(rcs)
          call softrad(rs)
       endif
       do alr=1,flst_nalr
@@ -723,7 +724,8 @@ c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
 c supply Born zero damping factor, if required
                if(flg_withdamp) then
                   r=r0(alr)
-                  call bornzerodamp(alr,r,rc(alr),rs(alr),dampfac)
+                  call bornzerodamp(alr,r,rc(alr),rs(alr),rcs(alr),
+     1                 dampfac)
                   r0(alr)=r0(alr) * dampfac
                endif
                computed(alr)=.true.
@@ -773,7 +775,7 @@ c    csi^2 (1-y)   for FSR regions
       include 'pwhg_pdf.h'
       integer imode
       real * 8 r0(maxalr)
-      real * 8 rc(maxalr),rs(maxalr),r
+      real * 8 rc(maxalr),rs(maxalr),rcs(maxalr),r
       integer alr,alrpr,iret
       integer nmomset
       parameter (nmomset=10)
@@ -839,6 +841,7 @@ c End initialization phase; compute graphs
       enddo
       if(flg_withdamp) then
          call collbtl(rc)
+         call collsoftbtl(rcs)
          call softbtl(rs)
       endif
       do alr=1,flst_nalr
@@ -898,7 +901,8 @@ c supply Born zero damping factor, if required
                      r=r0(alr)*(1-kn_y**2)*kn_csi**2
                   endif
                   r=r*flst_mult(alr)
-                  call bornzerodamp(alr,r,rc(alr),rs(alr),dampfac)
+                  call bornzerodamp(alr,r,rc(alr),rs(alr),rcs(alr),
+     1                 dampfac)
                   if(imode.eq.0) then
                      r0(alr) =r0(alr) * dampfac
                   elseif(imode.eq.1) then
