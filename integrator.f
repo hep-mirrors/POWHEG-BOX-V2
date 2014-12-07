@@ -94,9 +94,15 @@ c
       real * 8 dx(ndimmax),f,vtot,etot,prod,vfun,vfun0,prodrat
       integer kdim,kint,kpoint,nit,ibin,iret,nintcurr,ifirst
       real * 8 random,powheginput
-      logical pwhg_isfinite,gridinfo
+      logical pwhg_isfinite,gridinfo,fixedgrid,ini
       integer fun,ifun
       external random,pwhg_isfinite,fun,powheginput
+      data ini/.true./
+      save fixedgrid,ini
+      if(ini) then
+         fixedgrid = powheginput('#fixedgrid').eq.1
+         ini = .false.
+      endif
 c      integer k
 c      real * 8 tmp
 c      data tmp/-1d0/
@@ -295,10 +301,10 @@ c nitmax*ncalls calls.
      1     +(nit-1)*(ans-vtot)**2/(ncalls*nit**3))
          ans=((nit-1)*ans+vtot)/nit
       endif
-      if(imode.eq.0) then
+      if(imode.eq.0.and..not.fixedgrid) then
          do kdim=1,ndim
             call regrid(xacc(0,kdim),xgrid(0,kdim),
-     #           nhits(1,kdim),kdim,nintervals)
+     1           nhits(1,kdim),kdim,nintervals)
          enddo
       endif
 

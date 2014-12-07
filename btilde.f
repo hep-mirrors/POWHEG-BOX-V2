@@ -30,6 +30,17 @@ c     for x_1 and x_2, and take away an overall azimuth
       real *8 totborn,totvirt,ptotborn
       logical pwhg_isfinite 
       external pwhg_isfinite
+      real * 8 powheginput
+      logical ini,btildebornon,btildevirton,btildecollon,btilderealon
+      data ini/.true./
+      save ini,btildebornon,btildevirton,btildecollon,btilderealon
+      if(ini) then
+         btildebornon = .not.(powheginput("#btildeborn").eq.0)
+         btildevirton = .not.(powheginput("#btildevirt").eq.0)
+         btildecollon = .not.(powheginput("#btildecoll").eq.0)
+         btilderealon = .not.(powheginput("#btildereal").eq.0)
+         ini = .false.
+      endif
       btilde=0
       www=www0*hc2
       do j=1,ndiminteg-3
@@ -48,14 +59,27 @@ c set scales
          call allborn
 c     sets xscaled, y, phi in kinematics common block
          call btildeborn(resborn)
+         if(.not.btildebornon) resborn = 0
          if (.not.flg_bornonly.and..not.imode.eq.0) then
             call reset_timer
-            call btildevirt(resvirt)
+            if(btildevirton) then
+               call btildevirt(resvirt)
+            else
+               resvirt = 0
+            endif
             call get_timer(seconds)
             call addtocnt('virt time (sec)',seconds)
             call reset_timer
-            call btildecoll(xrad,rescoll,www)
-            call btildereal(xrad,resreal,www)
+            if(btildecollon) then
+               call btildecoll(xrad,rescoll,www)
+            else
+               rescoll = 0
+            endif
+            if(btilderealon) then
+               call btildereal(xrad,resreal,www)
+            else
+               resreal = 0
+            endif
             call get_timer(seconds)
             call addtocnt('real time (sec)',seconds)
          endif
@@ -91,8 +115,16 @@ c in case btlscalereal is set, we need to reset the scales
 c to the underlying Born value for the computation of the
 c collinear remnants.
             call setscalesbtilde
-            call btildecoll(xrad,rescoll,www)
-            call btildereal(xrad,resreal,www)
+            if(btildecollon) then
+               call btildecoll(xrad,rescoll,www)
+            else
+               rescoll = 0
+            endif
+            if(btilderealon) then
+               call btildereal(xrad,resreal,www)
+            else
+               resreal = 0
+            endif
             call get_timer(seconds)
             call addtocnt('real time (sec)',seconds)
          endif
