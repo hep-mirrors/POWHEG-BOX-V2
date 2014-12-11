@@ -123,6 +123,13 @@ c for fsr csi is y independent
       phi=kn_azi
       x=kn_csi*xocsi
       call buildkperp(phi,pem,kperp,kperp2)
+c The correctness of this has not been tested yet in any specific process
+c (typically a process with a gluon splitting in resonance decay).
+c The question is: should the kperp vector be boosted back from
+c the resonance frame to the CM frame?
+c      if(kres.ne.0) then
+c         call boost2reson(kn_cmpborn(:,kres),1,kperp,kperp)
+c      endif
       end
 
       subroutine buildkperp(phi,pem,kperp,kperp2)
@@ -449,6 +456,10 @@ c Commented out: now this is done at the end of the if block
          is_em = .true.
          ap=(1+(1-x)**2)/xocsi*br_born(iub)
      1        *chargeofparticle(emflav)**2
+      elseif(raflav.ne.0.and.emflav.eq.22) then
+         is_em = .true.
+         ap=(1+x**2)/(1-x)*csi*br_born(iub)
+     1        *chargeofparticle(emflav)**2
       else
          write(*,*) 'coll (fsr): unammissible flavour structure'
          call pwhg_exit(-1)
@@ -605,7 +616,7 @@ c - 1 for incoming antifermion or outgoing fermion
       function colcorrem(j,iub,em)
 c Returns true if parton j, in the underlying Born flavour structure
 c iub, belongs to a group of colour correlated partons relevant for the
-c emitter em. This is essentially as the collcorr function, except that
+c emitter em. This is essentially as the colcorr function, except that
 c it deals with the special case em=0 (that in POWHEG means radiation
 c from either initial state partons)
       implicit none
