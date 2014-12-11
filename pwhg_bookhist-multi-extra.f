@@ -179,6 +179,8 @@ c makes an empty duplicate of histogram str1 into histogram str2
       include 'pwhg_bookhist-multi.h'
       character * (*) str1,str2
       integer j,k,n,ind1,ind2,istage
+      real * 8 delk,delj
+      logical pwhg_app
       ind1=0
       ind2=0
       do j=1,jhist
@@ -203,26 +205,30 @@ c check that x values are compatible
       istage = 0
       do k=1,nbins(ind1)
          if(istage.eq.0) then
-            if(xhistarr(k+1,ind1).le.xhistarr(j,ind2)) cycle
-            if(xhistarr(k,ind1).ne.xhistarr(j,ind2)) goto 888
+            if(pwhg_app('le',xhistarr(k+1,ind1),xhistarr(j,ind2))) cycle
+            if(pwhg_app('ne',xhistarr(k,ind1),xhistarr(j,ind2)))
+     1           goto 888
             istage = 1
          endif
-         if(.not.(xhistarr(k,ind1).ge.xhistarr(j,ind2).and.
-     1      xhistarr(k+1,ind1).le.xhistarr(j+1,ind2))) then
+         if(.not.(pwhg_app('ge',xhistarr(k,ind1),xhistarr(j,ind2)).and.
+     1      pwhg_app('le',xhistarr(k+1,ind1),xhistarr(j+1,ind2)))) then
             j=j+1
             if(j.gt.nbins(ind2)) then
                exit
             else
-               if(.not.(xhistarr(k,ind1).ge.xhistarr(j,ind2).and.
-     1              xhistarr(k+1,ind1).le.xhistarr(j+1,ind2))) then
+               if(.not.(pwhg_app('ge',xhistarr(k,ind1),xhistarr(j,ind2))
+     1   .and. pwhg_app('le',xhistarr(k+1,ind1),xhistarr(j+1,ind2))))
+     2              then
                   goto 888
                endif
             endif
          endif
+         delk = xhistarr(k+1,ind1)-xhistarr(k,ind1)
+         delj = xhistarr(j+1,ind2)-xhistarr(j,ind2)
          yhistarr2(1,j,ind2) = yhistarr2(1,j,ind2) +
-     1        yhistarr2(1,k,ind1)
+     1        yhistarr2(1,k,ind1)*delk/delj
          errhistarr2(1,j,ind2) = sqrt(errhistarr2(1,j,ind2)**2+
-     1        errhistarr2(1,k,ind1)**2)
+     1        (errhistarr2(1,k,ind1)*delk/delj)**2)
       enddo
       return
  888  continue
@@ -232,5 +238,29 @@ c check that x values are compatible
       end
 
 
-      
-      
+      logical function pwhg_app(op,a,b)
+      implicit none
+      character * 2 op
+      real * 8 a,b
+      real * 8 r
+      if(a.eq.0.and.b.eq.0) then
+         r=0
+      else
+         r = (a-b)/(abs(a)+abs(b))
+         if(abs(r).lt.1d-6) r = 0
+      endif
+      if(op.eq.'ge') then
+         pwhg_app = r .ge. 0
+      elseif(op.eq.'le') then
+         pwhg_app = r .le. 0
+      elseif(op.eq.'eq') then
+         pwhg_app = r .eq. 0
+      elseif(op.eq.'ne') then
+         pwhg_app = r .ne. 0
+      elseif(op.eq.'lt') then
+         pwhg_app = r .lt. 0
+      elseif(op.eq.'gt') then
+         pwhg_app = r .gt. 0
+      endif
+      end
+

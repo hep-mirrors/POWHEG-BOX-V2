@@ -27,6 +27,8 @@ c if this is set we are sure that setupmulti was called
       xx(1)=xlow
       do k=2,maxbins+1
          xx(k)=xx(k-1)+binsize
+c avoid funny bin edges near zero ...
+         if(abs(xx(k)/binsize).lt.1d-6) xx(k) = 0
          if(xx(k)-(xhigh-binsize/1e4).gt.0) goto 10
       enddo
       write(*,*) 'bookupeqbins: too many bins in hist ',string
