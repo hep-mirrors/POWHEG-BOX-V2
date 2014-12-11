@@ -1,4 +1,4 @@
-c Integrtor-Unweighter Package for POWHEG;
+c Integrator-Unweighter Package for POWHEG;
 c Documented in arXiv:0709.2085: MINT: A Computer program for adaptive Monte Carlo
 c     integration and generation of unweighted distributions.
 c     Variations with respect to the version documented in the manual may be present
@@ -488,9 +488,9 @@ c     the returned coordinate vector of the generated point
       integer icell(ndimmax),ncell(ndimmax)
       integer ifold(ndimmax),kfold(ndimmax)
       real * 8 r,f,ubound,vol,vfun,vfun0,random,xmmm(nintervals,ndimmax)
-      real * 8 rand(ndimmax),strictubound,ub,fsu,f0
+      real * 8 rand(ndimmax),ub,fsu,f0
       logical savelogical,pwhg_isfinite
-      external fun,random,strictubound,pwhg_isfinite
+      external fun,random,pwhg_isfinite
       integer icalls,mcalls,kdim,kint,nintcurr,iret,ifirst,istep,ifun
       integer gen_seed,gen_n1,gen_n2
       common/cgenrand/gen_seed,gen_n1,gen_n2
