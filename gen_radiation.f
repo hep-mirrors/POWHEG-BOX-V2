@@ -185,6 +185,7 @@ c     final state radiation
                endif
                call gen_rad_fsr(t)
             endif
+            include 'pwhg_gen_radiation_hook.h'
             if(t.gt.tmax) then
                tmax=t
                kinreg=rad_kinreg
@@ -195,7 +196,7 @@ c     final state radiation
          endif
       enddo
 c Set up radiation kinematics
-      if(tmax.eq.0) then
+      if(kinreg.eq.0) then
 c Generate a Born like event
          kn_csi=0
          rad_kinreg=0
@@ -205,12 +206,12 @@ c Generate a Born like event
          kn_csi=csi
          kn_y=y
          kn_azi=azi
-         t=tmax
          if(rad_kinreg.eq.1) then
             call gen_real_phsp_isr_rad
          else
             call gen_real_phsp_fsr_rad
          endif
+         t=pwhg_pt2()
          call set_rad_scales(t)
 c We call sigborn_rad now, becayse the real may depend
 c upon the Born throught the soft and collinear terms,
@@ -618,6 +619,13 @@ c kn_sborn=kn_sreal:
       sborn=s
 c below is for the QED case; it will never hit that limit anyhow ...
       if(flg_em_rad) then
+         if(rad_iupperfsr.eq.1) then
+            write(*,*)
+     1  'error gen_rad_fsr: '
+            write(*,*) 
+     1  'cannot use iupperfsr = 1 for electromagnetic radiation'
+            call exit(-1)
+         endif
          if(kt2max.lt.kt2minqed.or.kt2max.lt.tmax) then
             t=-1
             goto 3
@@ -675,7 +683,7 @@ c vetoes:
       endif
 c Only for pp ->W, to account for em radiation from the electron
       if(flg_em_rad) then
-c This probably does not work for rad_iupperfsr=1, yielding tmp>1
+c This should be equivalent at setting tmp=1
          tmp=tmp/st_alpha
       endif
       if(tmp.gt.1.000000001d0) then

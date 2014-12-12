@@ -896,6 +896,11 @@ c this in case a massive fermion j, treated as light, radiates
 c a massless boson k 
                kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
      1              ek/ej )**par_dijexp
+            elseif(kn_masses(k).gt.0.and.kn_masses(j).eq.0) then
+c this in case a massive fermion k, treated as light, radiates
+c a massless boson j 
+               kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
+     1              ej/ek )**par_dijexp
             else
                kn_dijterm(j,k)=(2*dotp(kn_cmpreal(0,k),kn_cmpreal(0,j))*
      1              ek*ej /  (ek+ej)**2 )**par_dijexp
