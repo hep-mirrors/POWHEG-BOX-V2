@@ -60,6 +60,15 @@ c...writes event information to a les houches events file on unit nlf.
       include 'pwhg_flg.h'
       include 'pwhg_lhrwgt.h'
       integer i,j
+      integer, save :: counter=0
+      if(flg_noevents) then
+c do not write events, write only the event count
+         counter = counter + 1
+         if((counter/1000)*1000.eq.counter) then
+            write(nlf,*) counter
+         endif
+         return
+      endif
       write(nlf,'(a)')'<event>'
       write(nlf,210) nup,idprup,xwgtup,scalup,aqedup,aqcdup
       do 200 i=1,nup

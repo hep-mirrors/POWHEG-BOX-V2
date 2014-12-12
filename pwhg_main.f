@@ -179,6 +179,15 @@ c to examine that event in particular
             nev = maxev 
          endif
       endif
+
+      flg_noevents = powheginput("#noevents") .eq. 1
+
+      if(flg_noevents) then
+         testplots = .true.
+         write(*,*) ' Since noevents is specified, testplots will be produced'
+         write(*,*) ' irrespective of the testplot flag setting.'
+      endif
+
       do j=1,nev
          if(flg_newweight) then
             call pwhgnewweight(iunin,iunrwgt)
