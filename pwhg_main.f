@@ -184,7 +184,8 @@ c to examine that event in particular
 
       if(flg_noevents) then
          testplots = .true.
-         write(*,*) ' Since noevents is specified, testplots will be produced'
+         write(*,*) 
+     1' Since noevents is specified, testplots will be produced'
          write(*,*) ' irrespective of the testplot flag setting.'
       endif
 
