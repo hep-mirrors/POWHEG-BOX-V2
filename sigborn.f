@@ -30,6 +30,10 @@ c     uncomment the following (with or without the flux factor 1/(2*kn_sborn)
 c        
 c         res(j)=kn_jacborn/(2*kn_sborn)/flst_nborn
       enddo
+c If born rescaling of some sort is needed, the user should provide
+c its own rescaling procedure in a file named pwhg_born_rescaling_hook.h.
+c The default one is in the include directory, and is empty
+      include 'pwhg_born_rescaling_hook.h'
       end
 
       subroutine sigborn_rad(born)
