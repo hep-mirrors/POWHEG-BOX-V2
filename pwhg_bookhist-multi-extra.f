@@ -264,3 +264,59 @@ c check that x values are compatible
       endif
       end
 
+
+      subroutine pwhginteghisto(dir,str1,str2)
+c Integrates histogram str1 into histogram str2 (that is created).
+c If dir=1, integrates from the low bin forward,
+c if dir=-1, it integrates from the high bin backward
+      implicit none
+      include 'pwhg_bookhist-multi.h'
+      character * (*) str1,str2
+      integer dir,j,n,ind1,ind2
+      real * 8 del
+      ind1=0
+      do j=1,jhist
+         if(stringhist(j).eq.str1) then
+            ind1=j
+            exit
+         endif
+      enddo
+      if(ind1.eq.0) then
+         write(*,*) ' pwhginteghisto: histogram ',trim(str1),
+     1        ' not found, exiting ...'
+         call exit(-1)
+      endif
+c      call pwhgemptyduphisto(str1,str2)
+      ind2=0
+      do j=1,jhist
+         if(stringhist(j).eq.str2) then
+            ind2=j
+            exit
+         endif
+      enddo
+      n = nbins(ind1)
+      if(dir.eq.-1) then
+         yhistarr2(1,n,ind2) = yhistarr2(1,n+1,ind1) 
+         errhistarr2(1,n,ind2) = errhistarr2(1,n+1,ind1) 
+         do j=n,1,-1
+            del = xhistarr(j+1,ind1)-xhistarr(j,ind1)
+            yhistarr2(1,j,ind2) = yhistarr2(1,j+1,ind2)
+     1           +yhistarr2(1,j,ind1)*del
+            errhistarr2(1,j,ind2) = sqrt(
+     1           errhistarr2(1,j+1,ind2)**2
+     2           +errhistarr2(1,j,ind1)**2*del**2)
+         enddo
+      else
+         yhistarr2(1,1,ind2) = yhistarr2(1,0,ind1) 
+         errhistarr2(1,1,ind2) = errhistarr2(1,0,ind1) 
+         do j=1,n
+            del = xhistarr(j+1,ind1)-xhistarr(j,ind1)
+            yhistarr2(1,j,ind2) = yhistarr2(1,j-1,ind2)
+     1           +yhistarr2(1,j,ind1)*del
+            errhistarr2(1,j,ind2) = sqrt(
+     1           errhistarr2(1,j-1,ind2)**2
+     2           +errhistarr2(1,j,ind1)**2*del**2)
+         enddo
+      endif
+      end
+
