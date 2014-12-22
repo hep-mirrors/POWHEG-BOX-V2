@@ -286,7 +286,7 @@ c if dir=-1, it integrates from the high bin backward
      1        ' not found, exiting ...'
          call exit(-1)
       endif
-c      call pwhgemptyduphisto(str1,str2)
+      call pwhgemptyduphisto(str1,str2)
       ind2=0
       do j=1,jhist
          if(stringhist(j).eq.str2) then
@@ -296,8 +296,11 @@ c      call pwhgemptyduphisto(str1,str2)
       enddo
       n = nbins(ind1)
       if(dir.eq.-1) then
-         yhistarr2(1,n,ind2) = yhistarr2(1,n+1,ind1) 
-         errhistarr2(1,n,ind2) = errhistarr2(1,n+1,ind1) 
+c each entry contains the integral from xhistarr(j) up to infinity (including
+c the overflow). When printed with pwhgtopout, the first column contains
+c the x, the third one the corresponding value of the integral.
+         yhistarr2(1,n+1,ind2) = yhistarr2(1,n+1,ind1) 
+         errhistarr2(1,n+1,ind2) = errhistarr2(1,n+1,ind1) 
          do j=n,1,-1
             del = xhistarr(j+1,ind1)-xhistarr(j,ind1)
             yhistarr2(1,j,ind2) = yhistarr2(1,j+1,ind2)
@@ -306,17 +309,25 @@ c      call pwhgemptyduphisto(str1,str2)
      1           errhistarr2(1,j+1,ind2)**2
      2           +errhistarr2(1,j,ind1)**2*del**2)
          enddo
-      else
+      elseif(dir.eq.1) then
+c each entry j contains the integral up to xhistarr(j);
+c thus j=1 contains only the underflow. When printed with pwhgtopout,
+c the first column contains the x, the third one the corresponding
+c value of the integral.
          yhistarr2(1,1,ind2) = yhistarr2(1,0,ind1) 
          errhistarr2(1,1,ind2) = errhistarr2(1,0,ind1) 
-         do j=1,n
-            del = xhistarr(j+1,ind1)-xhistarr(j,ind1)
+         do j=2,n
+            del = xhistarr(j,ind1)-xhistarr(j-1,ind1)
             yhistarr2(1,j,ind2) = yhistarr2(1,j-1,ind2)
-     1           +yhistarr2(1,j,ind1)*del
+     1           +yhistarr2(1,j-1,ind1)*del
             errhistarr2(1,j,ind2) = sqrt(
      1           errhistarr2(1,j-1,ind2)**2
-     2           +errhistarr2(1,j,ind1)**2*del**2)
+     2           +errhistarr2(1,j-1,ind1)**2*del**2)
          enddo
+      else
+         write(*,*) ' pwhginteghisto: error: first argument should be'
+         write(*,*) ' either 1 or -1; got ',dir
+         call exit(-1)
       endif
       end
 
