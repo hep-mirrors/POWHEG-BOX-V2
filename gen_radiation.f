@@ -21,6 +21,7 @@
       real * 8 seconds
       integer lh_seed,lh_n1,lh_n2
       common/lhseeds/lh_seed,lh_n1,lh_n2
+      logical notfinite_kin
       flg_monitorubound = .true.
 c If at the end the event is not generated for some reason (nup=0)
 c restart from here
@@ -39,6 +40,7 @@ c     store current random seeds. To be used to restart at problematic events
 c     generate underlying Born kinematics
          call reset_timer
          call gen_btilde(mcalls,icalls)
+         if(notfinite_kin('Born')) goto 1
          call get_timer(seconds)
          call addtocnt('btilde time (sec)',seconds)
 c     generate underlying Born flavour
@@ -51,6 +53,7 @@ c
 c generate radiation
             call reset_timer
             call gen_radiation
+            if(notfinite_kin('Real')) goto 1
             call get_timer(seconds)
             call addtocnt('radiation time (sec)',seconds)
             rad_pt2max=pwhg_pt2()
@@ -72,12 +75,14 @@ c rad_type=1 for btilde events (used only for debugging purposes)
 c generate remnant n+1 body cross section
          call reset_timer
          call gen_sigremnant
+         if(notfinite_kin('Real')) goto 1
          call get_timer(seconds)
          call addtocnt("remnant time (sec)",seconds)
 c pick a configuration according to its cross section
 c iret=1: rem contribution (leftover from damping factor on R)
 c iret=2: reg contribution (real graphs without singular regions)
          call gen_remnant(iret)
+         if(notfinite_kin('Real')) goto 1
 c         if (pwhg_pt2().lt.rad_ptsqmin) then
 c            write(*,*) '****************************************'
 c            write(*,*) 'WARNING in gen_remnant'
@@ -122,6 +127,43 @@ c restart from here
       if(nup.eq.0) goto 1
       xwgtup = weight
       end
+
+      logical function notfinite_kin(BornOrReal)
+      implicit none
+      character * 4 BornOrReal
+      logical pwhg_isfinite
+      integer j,mu
+      include 'nlegborn.h'
+      include 'pwhg_kn.h'
+      if(BornOrReal.eq.'Born') then
+         do j=1,nlegborn
+            do mu=0,3
+               if(.not.pwhg_isfinite(kn_pborn(mu,j))) then
+                  call increasecnt("not_finite_kin in Born")
+                  notfinite_kin = .true.
+                  return
+               endif
+            enddo
+         enddo
+      elseif(BornOrReal.eq.'Real') then
+         do j=1,nlegreal
+            do mu=0,3
+               if(.not.pwhg_isfinite(kn_preal(mu,j))) then
+                  call increasecnt("not_finite_kin in Real")
+                  notfinite_kin = .true.
+                  return
+               endif
+            enddo
+         enddo
+      else
+         write(*,*) 'not_finite_kin: error, argument should be'
+     1        //'either Born or Real, got ',BornOrReal
+         call exit(-1)
+      endif
+      notfinite_kin = .false.
+      end
+
+
 
 
       subroutine gen_radiation
