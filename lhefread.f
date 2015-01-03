@@ -7,7 +7,7 @@ c...reads initialization information from a les houches events file on unit nlf.
       integer ipr
       include 'LesHouches.h'
  1    read(nlf,fmt='(a)',err=998,end=998) string
-      if(string(1:5).eq.'<init') then
+      if(string(1:6).eq.'<init>') then
          read(nlf,*) idbmup(1),idbmup(2),ebmup(1),ebmup(2),
      &        pdfgup(1),pdfgup(2),pdfsup(1),pdfsup(2),idwtup,nprup
          do ipr=1,nprup
