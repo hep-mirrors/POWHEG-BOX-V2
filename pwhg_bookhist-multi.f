@@ -106,26 +106,61 @@ c the overflow.
       character * (*) string
       include 'pwhg_bookhist-multi.h'
       integer indexhist
-      integer j
+      integer j,khist
+      if(string.eq.' ') then
+         write(*,*) ' indexhist: error, empty name'
+         call exit(-1)
+      endif
+      khist = -1
       do j=1,jhist
+         if(stringhist(j).eq.' ') then
+            khist = j
+         endif
          if(stringhist(j).eq.string) then
             indexhist=j
             return
          endif
       enddo
+      if(khist.gt.0) then
+         goto 999
+      endif
       if(jhist.eq.nhist) then
          write(*,*) ' no more rooms for histograms'
          write(*,*) ' Histogram "',string,'" cannot be booked'
          call exit(-1)
       endif
       jhist=jhist+1
-      stringhist(jhist)=string
-      if(stringhist(jhist).ne.string) then
+      khist = jhist
+ 999  stringhist(khist)=trim(adjustl(string))
+      if(stringhist(khist).ne.trim(adjustl(string))) then
          write(*,*) ' Histogram string "',string,'" too long'
          call exit(-1)
       endif
 c the negative sign indicates a new histogram
-      indexhist=-jhist
+      indexhist=-khist
+      end
+
+
+      subroutine deletehist(string,iret)
+      implicit none
+      character * (*) string
+      integer iret
+      include 'pwhg_bookhist-multi.h'
+      integer j
+      if(string.eq.' ') then
+         write(*,*) ' deletehist: error, empty name'
+         call exit(-1)
+      endif
+      do j=1,jhist
+         if(stringhist(j).eq.string) then
+            stringhist(j)=' '
+            return
+            iret = 0
+         endif
+      enddo
+      write(*,*) ' deletehist: histogram '//string
+     1     //' not present'
+      iret = -1
       end
 
       subroutine filld(string,xval,weight)
