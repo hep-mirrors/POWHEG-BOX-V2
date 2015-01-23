@@ -49,11 +49,9 @@ FPE = -fpe0
 endif
 endif
 
-GOSAMLIBS=$(shell cd GoSamlib ; echo *.f *.f90 ' ' | sed 's/qlonshellcutoff.f// ; s/qlconstants.f// ; s/.f /.o /g ; s/.f90 /.o /g ; ' | tee GoSamlib.txt)
-
 PWD=$(shell pwd)
 WDNAME=$(shell basename $(PWD))
-VPATH= ./:../:$(OBJDIR):./GoSamlib/
+VPATH= ./:../:$(OBJDIR)
 
 INCLUDE0=$(PWD)
 INCLUDE1=$(PWD)/include
@@ -120,7 +118,7 @@ PWHG=pwhg_main.o pwhg_init.o bbinit.o btilde.o lhefwrite.o		\
 	init_phys.o powheginput.o pdfcalls.o sigreal.o sigcollremn.o	\
 	pwhg_analysis_driver.o checkmomzero.o		                \
 	setstrongcoupl.o integrator.o newunit.o mwarn.o sigsoftvirt.o	\
-	reshufflemoms.o pwhg_gosam.o                                    \
+	reshufflemoms.o                                                 \
 	sigcollsoft.o sigvirtual.o  ubprojections.o                     \
 	pwhgreweight.o setlocalscales.o mint_upb.o opencount.o          \
 	validflav.o $(PDFPACK) $(USER) $(FPEOBJ)
@@ -134,11 +132,8 @@ MADLIBS=libdhelas3.a libmadgraph.a libmodel.a
 $(shell ../svnversion/svnversion.sh>/dev/null)
 
 # target to generate LHEF output
-pwhg_main:gosamlib.a $(PWHG) $(MADLIBS)
-	$(FF) $(patsubst %,$(OBJ)/%,$(PWHG)) $(LINKMGLIBS) $(LIBS) $(LIBSFASTJET) $(STATIC)  $(OBJ)/gosamlib.a -o $@
-
-gosamlib.a: $(GOSAMLIBS)
-	\rm $(OBJ)/gosamlib.a ; $(PWD)/GoSamlib/compile_gosamlib.sh $(PWD)/$(OBJ)
+pwhg_main:$(PWHG) $(MADLIBS)
+	$(FF) $(patsubst %,$(OBJ)/%,$(PWHG)) $(LINKMGLIBS) $(LIBS) $(LIBSFASTJET) $(STATIC) -o $@
 
 LHEF=lhef_analysis.o boostrot.o random.o cernroutines.o		\
      opencount.o powheginput.o $(PWHGANAL)	\
@@ -194,11 +189,10 @@ clean:
 
 veryclean:
 	rm -f $(OBJ)/*.o $(OBJ)/*.mod $(OBJ)/*.a pwhg_main lhef_analysis main-HERWIG-lhef	\
-	main-PYTHIA-lhef *.a DHELAS/*.o Madlib/*.o MODEL/*.o GoSamlib.lst
+	main-PYTHIA-lhef *.a DHELAS/*.o Madlib/*.o MODEL/*.o
 
 ##########################################################################
 
-include GoSamlib/Makefile.virt.dep
 
 # Dependencies of SVN version stamp code
 pwhg_main.o: svn.version
