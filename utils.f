@@ -9,8 +9,8 @@ c up to ngenerations, default 4
       integer j,kcurr
       integer ngenerations
       parameter (ngenerations=4)
+      kcurr = k
       do j=1,ngenerations
-         kcurr=jmohep(1,k)
          if(kcurr.eq.0) then
             comesfrom = .false.
             return
@@ -19,6 +19,7 @@ c up to ngenerations, default 4
             comesfrom = .true.
             return
          endif
+         kcurr=jmohep(1,kcurr)
       enddo
       comesfrom=.false.
       end
@@ -34,8 +35,8 @@ c  It looks backup to ngenerations, default 4
       integer j,kcurr
       integer ngenerations
       parameter (ngenerations=4)
+      kcurr = k
       do j=1,ngenerations
-         kcurr = jmohep(1,kcurr)
          if(kcurr.eq.0) then
             comesfromid = .false.
             return
@@ -44,6 +45,7 @@ c  It looks backup to ngenerations, default 4
             comesfromid = .true.
             return
          endif
+         kcurr = jmohep(1,kcurr)
       enddo
       comesfromid=.false.
       end
