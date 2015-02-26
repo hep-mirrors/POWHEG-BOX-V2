@@ -81,7 +81,9 @@ c generate remnant n+1 body cross section
 c pick a configuration according to its cross section
 c iret=1: rem contribution (leftover from damping factor on R)
 c iret=2: reg contribution (real graphs without singular regions)
+c and regenerate real phase space accordingly
          call gen_remnant(iret)
+         include 'post_gen_remnant_hook.h'
          if(notfinite_kin('Real')) goto 1
 c         if (pwhg_pt2().lt.rad_ptsqmin) then
 c            write(*,*) '****************************************'

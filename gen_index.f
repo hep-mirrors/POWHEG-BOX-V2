@@ -30,6 +30,7 @@
       include 'pwhg_rad.h'
       call pick_random(rad_alr_nlist,rad_real_arr,rad_realidx)
       rad_realalr=rad_alr_list(rad_realidx)
+      kn_emitter = flst_emitter(rad_realalr)
       end
 
       subroutine pick_random(n,r,jret)
