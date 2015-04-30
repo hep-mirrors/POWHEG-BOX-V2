@@ -529,7 +529,7 @@ c with parallel grids only one iteration is allowed
 c ********** CALL to mint for btilde
 
       call mint(btilde,ndiminteg,ncall1,itmx1,ifold,imode,iun,
-     1     xgrid,xint,xacc,nhits,ndiminteg,ymax,ymaxrat,sigbtl,errbtl)
+     1     xgrid,xint,xacc,nhits,ymax,ymaxrat,sigbtl,errbtl)
 
 c **********
       call regridplotclose
