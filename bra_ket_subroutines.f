@@ -126,9 +126,7 @@ C
                   RETURN
             END IF
             KMAGNI = SQRT(KBAR(1)**2+KBAR(2)**2+KBAR(3)**2)
-c     Carlo Oleari: the next line should be replaced by the next one 
-c            NORMAL = KBAR(4)/(KBAR(0)*KMAGNI)
-            NORMAL = KBAR(0)/(KBAR(4)*KMAGNI)
+            NORMAL = KBAR(4)/(KBAR(0)*KMAGNI)
             EPSCAR(1) = KBAR(1)*NORMAL
             EPSCAR(2) = KBAR(2)*NORMAL
             EPSCAR(3) = KBAR(3)*NORMAL
