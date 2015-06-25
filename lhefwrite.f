@@ -15,7 +15,7 @@ c...writes initialization information to a les houches events file on unit nlf.
       character * 3 whichpdfpk
       external whichpdfpk
       include 'LesHouches.h'
-      write(nlf,'(a)') '<LesHouchesEvents version="1.0">'
+      write(nlf,'(a)') '<LesHouchesEvents version="3.0">'
       write(nlf,'(a)') '<!--'
       write(nlf,'(a,f3.1)') 'file generated with POWHEG-BOX-V2'
       iun = nlf
