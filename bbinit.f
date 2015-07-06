@@ -701,7 +701,7 @@ c communicate file to load upper bound data
       real * 8 tot(2,8),rtot(2,8)
       integer ifold(ndiminteg),ifoldrm(ndiminteg)
       integer iifold(ndiminteg),iifoldrm(ndiminteg)
-      integer iret,iretcheck,jfound
+      integer iret,jfound
       character *(*) gridtag
 c
       integer ios
@@ -715,9 +715,6 @@ c
       integer ih1x, ih2x, ndns1x, ndns2x
       integer j,k,iun,jfile,nfiles,ncall2,itmx2
       logical lpresent,manyfiles,filefound
-      double precision, allocatable :: totarr(:,:)
-      logical, allocatable :: goodentries(:)
-      logical firsttime
       real * 8 powheginput
       external powheginput
       if(powheginput('use-old-grid').eq.0) then
@@ -733,18 +730,12 @@ c
       else
          nfiles=par_maxseeds
          manyfiles=.true.
-         allocate(totarr(2,nfiles),goodentries(nfiles))
-         goodentries = .true.
-         totarr = 0
       endif
 c Try to open and merge a set of grid files, generated with different
 c random seeds
-      firsttime = .true.
- 11   continue
       filefound=.false.
       jfound=0
       do jfile=1,nfiles
-         if(.not.goodentries(jfile)) cycle
          if(manyfiles) then
             write(chseed,'(i4)') jfile
             do k=1,4
@@ -795,7 +786,6 @@ c random seeds
      1      .or.ios.ne.0)
      2        goto 998
          read(iun,iostat=ios) ((tot(k,j),k=1,2),j=1,8)
-         totarr(:,jfile)=tot(:,1)
          if(ios.ne.0) goto 998
          jfound=jfound+1
          if(jfound.lt.2) then
@@ -879,112 +869,10 @@ c random seeds
          close(iun)
  111     continue
       enddo
-      if(filefound) then
-         if(manyfiles) then
-c check that the different runs are more or less consistent
-            if(firsttime) then
-               call check_stat_consistency(nfiles,totarr,goodentries,iretcheck)
-               if(iretcheck.eq.-1) then
-                  firsttime = .false.
-                  goto 11
-               endif
-            endif
-            deallocate(goodentries,totarr)
-         endif
-         return
-      endif
+      if(filefound) return
  998  continue
       iret=-1
       end
-
-      subroutine  check_stat_consistency(nentries,res,goodentries,iret)
-      implicit none
-      integer nentries,iret
-      integer indices(nentries)
-      double precision res(2,nentries)
-      logical goodentries(nentries)
-      double precision average,weight,tmpav,tmpweight
-      double precision tmp2(2),ow,oav
-      integer nonz,j,k,itmp
-      logical :: ex=.true.
-      goodentries = .true.
-c DEBUG
-c      res(1,7) = 3.7
-c      res(2,7) = 1
-c      res(1,5) = 3.7
-c      res(2,5) = 1
-c      res(1,3) = 3.7
-c      res(2,3) = 1
-c end DEBUG
-      do j=1,nentries
-         indices(j)=j
-      enddo
-c bubblesort
-      do while(ex)
-         ex = .false.
-         do j=1,nentries-1
-c swap in growing order, but put zeros at the end
-            if((res(2,j+1).ne.0.and.res(2,j+1).lt.res(2,j)).or.
-     1        (res(2,j+1).ne.0.and.res(2,j).eq.0)) then
-               tmp2 = res(:,j)
-               res(:,j) = res(:,j+1)
-               res(:,j+1) = tmp2
-               itmp = indices(j)
-               indices(j) = indices(j+1)
-               indices(j+1) = itmp
-               ex = .true.
-            endif
-         enddo
-      enddo
-      do j=1,nentries
-         if(res(2,j).eq.0) then
-            nonz = j - 1
-            exit
-         endif
-      enddo
-c Compute the average. Neglect zero entries.
-      average = 0
-      weight = 0
-      do j=1,nonz
-         if(res(1,j).ne.0) then
-            oav = average
-            ow = weight
-            average = (average*(j-1) + res(1,j))/j
-            weight = sqrt((weight*(j-1))**2 + res(2,j)**2)/j
-            if(j.gt.1) then
-c               write(*,*) ' old,new av.',oav,average
-c               write(*,*) ' old,new err.',ow,weight
-c               write(*,*) ' deviation:',abs(oav-average)/ow
-c after half of the runs
-               if(abs(oav-average)/ow.gt.10) then
-                  write(*,*) ' check_stat_consistency:'
-                  write(*,*) ' The program has detected inconsistent results'
-                  write(*,*) ' among different runs. The runs:'
-                  write(*,*) (indices(k),k=j,nonz)
-                  write(*,*) ' look suspicious. '
-                  write(*,*) ' Inspect your runs at stage 2 '
-                  if(nonz-j+1.gt. nonz/10) then
-                     write(*,*)
-     1               ' The fraction of inconsistent runs is too large'
-                     write(*,*) ' exiting ...'
-                     call exit(-1)
-                  else
-                     write(*,*)
-     1               ' The fraction of inconsistent file is < 10%'
-                     write(*,*) ' We discard the files and reload the good ones'                     
-                  endif
-                  do k=j,nonz
-                     goodentries(indices(k)) = .false.
-                  enddo
-                  iret = -1
-                  return
-               endif
-            endif
-         endif
-      enddo
-      iret = 0
-      end
-
 
       subroutine storexgrid(xgrid,xint,xgridrm,xintrm)
       implicit none
