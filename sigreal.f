@@ -6,16 +6,26 @@
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
       real * 8 xrad(3),resreal(maxprocborn),www
-      real * 8 r0(maxalr),rc(maxalr),rp(maxalr),rm(maxalr),
-     # r0s(maxalr),rcs(maxalr),rps(maxalr),rms(maxalr),xl,xlp,xlm,
+      real * 8 rr(maxalr),rc(maxalr),rp(maxalr),rm(maxalr),
+     # rs(maxalr),rcs(maxalr),rps(maxalr),rms(maxalr),xl,xlp,xlm,
      # jac_over_csi,jac_over_csi_coll,jac_over_csi_soft,
-     # jac_over_csi_p,jac_over_csi_m,rrr0,rrrc,rrr0s,rrrcs,
+     # jac_over_csi_p,jac_over_csi_m,rrr,rrrc,rrrs,rrrcs,
      # rrrp,rrrps,rrrm,rrrms,remnant,out0,out1
+      real * 8, allocatable :: out1arr(:),out0arr(:)
       integer j,iuborn
       logical valid_emitter
       external valid_emitter
       logical pwhg_isfinite
       external pwhg_isfinite
+      logical, save :: ini=.true.
+
+      if(ini) then
+         if(flg_analysisextrainfo) then
+            allocate(out1arr(maxalr),out0arr(maxalr))
+         endif
+         ini = .false.
+      endif
+
       do j=1,flst_nborn
          resreal(j)=0
       enddo
@@ -23,6 +33,10 @@
 c output values for analysis_driver
          out0=0
          out1=0
+         if(flg_analysisextrainfo) then
+            out0arr = 0
+            out1arr = 0
+         endif
 c check that emitter is valid
          if(valid_emitter(kn_emitter)) then
             if(kn_emitter.gt.2) then
@@ -32,47 +46,53 @@ c     final state radiation
 c This subroutine may set the scales with values depending
 c upon the real emission kinematics
                call setscalesbtlreal
-c sigreal fills the array r0 with the value of the R_alpha contribution
+c sigreal fills the array rr with the value of the R_alpha contribution
 c that have emitter equal to kn_emitter. All other contributions are set
 c to zero. 
-               call sigreal_btl(r0)
+               call sigreal_btl(rr)
                if(flg_withsubtr) then
 c We may prefer to set the counterterms scales different from the real scales
                   call setscalesbtlct
                   call collfsr(rc)
 c     soft subtraction
-                  call soft(r0s)
+                  call soft(rs)
                   call softcollfsr(rcs)
 c     in final state radiation csimax is independent of y
                   xl=log(kn_csimax/par_csicut)
                endif
                do j=1,flst_nalr
                   iuborn=flst_alr2born(j)
-                  rrr0=r0(j)*kn_jacborn
+                  rrr=rr(j)*kn_jacborn
      #                 *jac_over_csi/(1-kn_y)/kn_csitilde
                   if(flg_withsubtr) then
                      rrrc=rc(j)*kn_jacborn
      #                 *jac_over_csi_coll/(1-kn_y)/kn_csitilde
-                     rrr0s=r0s(j)*kn_jacborn
+                     rrrs=rs(j)*kn_jacborn
      #                 *jac_over_csi_soft/(1-kn_y)/kn_csitilde
                      rrrcs=rcs(j)*kn_jacborn
      #                 *jac_over_csi_soft/(1-kn_y)/kn_csitilde
-                     remnant=(rrr0s-rrrcs)*xl*kn_csitilde
+                     remnant=(rrrs-rrrcs)*xl*kn_csitilde
                   endif
                   if(flg_withsubtr) then
-                     resreal(iuborn)= resreal(iuborn)+rrr0-rrrc
-     #-rrr0s+rrrcs+remnant
+                     resreal(iuborn)= resreal(iuborn)+rrr-rrrc
+     #-rrrs+rrrcs+remnant
                   else
 c     provide a damping factor for the singular region,
 c     to avoid divergent integral (25 is an ad hoc value
                      resreal(iuborn)= resreal(iuborn)
-     #               +rrr0*(1-kn_y**2)*kn_csi/
+     #               +rrr*(1-kn_y**2)*kn_csi/
      #                  (25/kn_sbeams+(1-kn_y**2)*kn_csi)
                   endif
                   if(flg_nlotest) then
-                     out1=out1+rrr0
+                     out1=out1+rrr
+                     if(flg_analysisextrainfo) then
+                        out1arr(j) = rrr
+                     endif
                      if(flg_withsubtr) then
-                        out0=out0-rrrc-rrr0s+rrrcs+remnant
+                        out0=out0-rrrc-rrrs+rrrcs+remnant
+                        if(flg_analysisextrainfo) then
+                           out0arr(j) = -rrrc-rrrs+rrrcs+remnant
+                        endif
                      endif
                   endif
                enddo
@@ -84,10 +104,10 @@ c     zero rm (rp).
      #(xrad,jac_over_csi,jac_over_csi_p,jac_over_csi_m,
      #jac_over_csi_soft)
                call setscalesbtlreal
-               call sigreal_btl(r0)
+               call sigreal_btl(rr)
                if(flg_withsubtr) then
                   call setscalesbtlct
-                  call soft(r0s)
+                  call soft(rs)
                   if(kn_emitter.ne.2) then
                      call collisrp(rp)
                      call softcollisrp(rps)
@@ -102,12 +122,12 @@ c     remnants (see xscaled.pdf in docs directory)
                   xlm=log(kn_csimaxm/par_csicut)
                endif
                do j=1,flst_nalr
-                  rrr0=r0(j)*kn_jacborn
+                  rrr=rr(j)*kn_jacborn
      #                 *jac_over_csi/(1-kn_y**2)/kn_csitilde
                   if(flg_withsubtr) then
-                     rrr0s=r0s(j)*kn_jacborn
+                     rrrs=rs(j)*kn_jacborn
      #                 *jac_over_csi_soft/(1-kn_y**2)/kn_csitilde
-                     remnant=rrr0s*xl*kn_csitilde
+                     remnant=rrrs*xl*kn_csitilde
                      if(kn_emitter.ne.2) then
                         rrrp=rp(j)*kn_jacborn
      #                 *jac_over_csi_p/(1-kn_y)/kn_csitilde/2
@@ -131,19 +151,26 @@ c     remnants (see xscaled.pdf in docs directory)
                   endif
                   iuborn=flst_alr2born(j)
                   if(flg_withsubtr) then
-                     resreal(iuborn)= resreal(iuborn)+rrr0
-     #              -rrr0s-rrrp-rrrm+rrrps+rrrms+remnant
+                     resreal(iuborn)= resreal(iuborn)+rrr
+     #              -rrrs-rrrp-rrrm+rrrps+rrrms+remnant
                   else
 c     provide a damping factor for the singular region,
 c     to avoid divergent integral (25 is an ad hoc value)
                      resreal(iuborn)= resreal(iuborn)
-     #               +rrr0*(1-kn_y**2)*kn_csi/
+     #               +rrr*(1-kn_y**2)*kn_csi/
      #                  (25/kn_sbeams+(1-kn_y**2)*kn_csi)
                   endif
                   if(flg_nlotest) then
-                     out1=out1+rrr0
+                     out1=out1+rrr
+                     if(flg_analysisextrainfo) then
+                        out1arr(j) = rrr
+                     endif
                      if(flg_withsubtr) then
-                        out0=out0-rrr0s-rrrp-rrrm+rrrps+rrrms+remnant
+                        out0=out0-rrrs-rrrp-rrrm+rrrps+rrrms+remnant
+                        if(flg_analysisextrainfo) then
+                           out0arr(j) = -rrrs-rrrp-rrrm+rrrps+rrrms
+     1                          +remnant
+                        endif
                      endif
                   endif
                enddo
@@ -153,11 +180,17 @@ c     to avoid divergent integral (25 is an ad hoc value)
             out0 = 0d0 
             out1 = 0d0 
             resreal = 0d0 
+            if(flg_analysisextrainfo) then
+               out1arr = 0
+               out0arr = 0
+            endif
          endif
          if(flg_nlotest) then
             out0=out0*www
             out1=out1*www
+            call analysis_extrainfo('realct',flst_nalr,out0arr,www)
             if(out0.ne.0d0) call analysis_driver(out0,0)
+            call analysis_extrainfo('real',flst_nalr,out1arr,www)
             if(out1.ne.0d0) call analysis_driver(out1,1)
          endif
       enddo
@@ -340,8 +373,8 @@ c are consistent with total Born
       integer nexp
       parameter (nexp=5)
       real * 8 jac_over_csi,
-     #jac_over_csi_coll,jac_over_csi_soft,r0(maxalr,nexp),
-     #r0s(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
+     #jac_over_csi_coll,jac_over_csi_soft,rr(maxalr,nexp),
+     #rs(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
       integer j,jexp,alr,alrp
       character * 15 flag
       character * 32 fff
@@ -375,8 +408,8 @@ c Check soft limits
      $              jac_over_csi_m,jac_over_csi_soft)
             endif
             write(iun,*) '### Check soft',xrad(1)
-            call sig(r0(1,jexp))
-            call sigs(r0s(1,jexp))
+            call sig(rr(1,jexp))
+            call sigs(rs(1,jexp))
          enddo
          do alr=1,flst_nalr
             ident(alr)=.false.
@@ -386,14 +419,14 @@ c only radiated gluons or photons
             if(flst_alr(nlegreal,alr).ne.0 .and.
      1         flst_alr(nlegreal,alr).ne.22  ) cycle
             if(ident(alr)) cycle
-c     if one r0 is zero, all others must be zero
+c     if one rr is zero, all others must be zero
             iszero=.false.
             isnonzero=.false.
             do jexp=1,nexp
-c               if(r0s(alr,jexp).ne.0) isnonzero=.true.
-c               if(r0s(alr,jexp).eq.0) iszero=.true.
-               if(r0(alr,jexp).ne.0) isnonzero=.true.
-               if(r0(alr,jexp).eq.0) iszero=.true.
+c               if(rs(alr,jexp).ne.0) isnonzero=.true.
+c               if(rs(alr,jexp).eq.0) iszero=.true.
+               if(rr(alr,jexp).ne.0) isnonzero=.true.
+               if(rr(alr,jexp).eq.0) iszero=.true.
             enddo
             if(iszero.and.isnonzero) then
                write(iun,*) ' some vanish and some do not'
@@ -407,8 +440,8 @@ c               if(r0s(alr,jexp).eq.0) iszero=.true.
                do alrp=alr+1,flst_nalr
                   isequal=.true.
                   do jexp=1,nexp
-                     if(r0(alr,jexp).ne.r0(alrp,jexp).or. r0s(alr,jexp)
-     $                    .ne.r0s(alrp,jexp)) isequal=.false.
+                     if(rr(alr,jexp).ne.rr(alrp,jexp).or. rs(alr,jexp)
+     $                    .ne.rs(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
 c                     write(iun,'(a,1x,i3,1x,a,20(1x,i3))')
@@ -419,8 +452,8 @@ c     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
                enddo
                do jexp=2,nexp
                   call setwarnflag
-     1           (abs(r0s(alr,jexp)/r0(alr,jexp)-1),jexp,2,flag)
-                  write(iun,*) r0s(alr,jexp)/r0(alr,jexp),flag
+     1           (abs(rs(alr,jexp)/rr(alr,jexp)-1),jexp,2,flag)
+                  write(iun,*) rs(alr,jexp)/rr(alr,jexp),flag
                enddo
             endif
          enddo
@@ -441,8 +474,8 @@ c     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
       integer nexp
       parameter (nexp=8)
       real * 8 jac_over_csi,
-     #jac_over_csi_coll,jac_over_csi_soft,r0(maxalr,nexp),
-     #r0c(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
+     #jac_over_csi_coll,jac_over_csi_soft,rr(maxalr,nexp),
+     #rc(maxalr,nexp),jac_over_csi_p,jac_over_csi_m
       integer j,jexp,jexpfirst,alr,alrp
       real * 8 random
       external random
@@ -477,15 +510,15 @@ c     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
      #jac_over_csi_soft)
             endif
             write(iun,*) '######### Check coll',xrad(2)
-            call sig(r0(1,jexp))
-            call sigc(r0c(1,jexp))
+            call sig(rr(1,jexp))
+            call sigc(rc(1,jexp))
          enddo
          do alr=1,flst_nalr
             ident(alr)=.false.
          enddo
          do alr=1,flst_nalr
             do jexp=1,nexp
-               if(r0c(alr,jexp).ne.r0c(alr,1)) then
+               if(rc(alr,jexp).ne.rc(alr,1)) then
                   write(iun,*)
      #' checklims error : coll lim depends upon coll variable'
                endif
@@ -493,16 +526,16 @@ c     $                    (flst_alr(j,alrp),j=1,nlegreal) !,', ',label,':'
          enddo
          do alr=1,flst_nalr
             if(ident(alr)) cycle
-c     if one r0 is zero, all others must be zero
+c     if one rr is zero, all others must be zero
             iszero=.false.
             isnonzero=.false.
             jexpfirst=2
             do jexp=nexp,1,-1
-c               if(r0c(alr,jexp).ne.0) isnonzero=.true.
-c               if(r0c(alr,jexp).eq.0) iszero=.true.
-c               if(r0(alr,jexp).ne.0) isnonzero=.true.
-               if(r0(alr,jexp).eq.0) then
-                  if(r0c(alr,jexp).ne.0) then
+c               if(rc(alr,jexp).ne.0) isnonzero=.true.
+c               if(rc(alr,jexp).eq.0) iszero=.true.
+c               if(rr(alr,jexp).ne.0) isnonzero=.true.
+               if(rr(alr,jexp).eq.0) then
+                  if(rc(alr,jexp).ne.0) then
                      write(iun,*) ' some vanish and some do not'
                   endif
                   jexpfirst=jexp+1
@@ -516,8 +549,8 @@ c               if(r0(alr,jexp).ne.0) isnonzero=.true.
                do alrp=alr+1,flst_nalr
                   isequal=.true.
                   do jexp=1,nexp
-                     if(r0(alr,jexp).ne.r0(alrp,jexp).or.
-     #r0c(alr,jexp).ne.r0c(alrp,jexp)) isequal=.false.
+                     if(rr(alr,jexp).ne.rr(alrp,jexp).or.
+     #rc(alr,jexp).ne.rc(alrp,jexp)) isequal=.false.
                   enddo
                   if(isequal) then
 c                     write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
@@ -526,14 +559,14 @@ c     # kn_emitter,', process ',(flst_alr(j,alrp),j=1,nlegreal)
                   endif
                enddo
                do jexp=jexpfirst,nexp
-                  call setwarnflag(abs(r0c(alr,jexp)/r0(alr,jexp)-1),
+                  call setwarnflag(abs(rc(alr,jexp)/rr(alr,jexp)-1),
      1                 jexp,jexpfirst,flag)
 c     Added this 'if' to be sure that no division by zero occurs
-c     if((r0(alr,jexp-1)-r0c(alr,jexp-1)).ne.0d0) then
-c     write(iun,*) (r0(alr,jexp)-r0c(alr,jexp))/
-c     #(r0(alr,jexp-1)-r0c(alr,jexp-1)),r0c(alr,jexp)/r0(alr,jexp),flag
+c     if((rr(alr,jexp-1)-rc(alr,jexp-1)).ne.0d0) then
+c     write(iun,*) (rr(alr,jexp)-rc(alr,jexp))/
+c     #(rr(alr,jexp-1)-rc(alr,jexp-1)),rc(alr,jexp)/rr(alr,jexp),flag
 c     endif
-                  write(iun,*) r0c(alr,jexp)/r0(alr,jexp),flag
+                  write(iun,*) rc(alr,jexp)/rr(alr,jexp),flag
  1             enddo
             endif
          enddo
@@ -583,7 +616,7 @@ c     endif
       include 'pwhg_flg.h'
       include 'pwhg_par.h'
       include 'pwhg_pdf.h'
-      real * 8 r0(maxalr),rc(maxalr),rs(maxalr),rcs(maxalr)
+      real * 8 rr(maxalr),rc(maxalr),rs(maxalr),rcs(maxalr)
       integer alr,alrpr,iret,em
       integer nmomset,emitter
       parameter (nmomset=10)
@@ -641,7 +674,7 @@ c     < 0 for unequal:
       endif
 c End initialization phase; compute graphs
       do alr=1,flst_nalr
-         r0(alr)=0
+         rr(alr)=0
       enddo
       call pdfcall(1,kn_x1,pdf1)
       call pdfcall(2,kn_x2,pdf2)
@@ -667,7 +700,7 @@ c check if we have a g -> Q Qbar splitting below threshold:
                   if(abs(flst_alr(em,alr)).eq.4
      #  .and.ptsq.lt.rad_charmthr2.or.
      # abs(flst_alr(em,alr)).eq.5.and.ptsq.lt.rad_bottomthr2) then
-                     r0(alr)=0
+                     rr(alr)=0
                      goto 995
                   endif
                endif
@@ -690,64 +723,64 @@ c            if(equivto(alr).lt.0.or..not.computed(equivto(alr))) then
                   kn_resemitter=flst_alrres(nlegreal,alr)
                endif
                flst_cur_alr = alr
-               call realgr(flst_alr(1,alr),kn_cmpreal,r0(alr))
+               call realgr(flst_alr(1,alr),kn_cmpreal,rr(alr))
                sumdijinv=0
                do k=1,flst_allreg(1,0,alr)
                   sumdijinv=sumdijinv
      #+1/dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr),alr)
                enddo
-               r0(alr)=r0(alr)/dijterm(em,nlegreal,alr)/sumdijinv
+               rr(alr)=rr(alr)/dijterm(em,nlegreal,alr)/sumdijinv
                if(em.gt.2) then
                   if(flg_doublefsr) then
 c    supply a factor E_em/(E_em+E_rad), times 2 if both gluons
-                     r0(alr)=r0(alr)
+                     rr(alr)=rr(alr)
      1                    *kn_cmpreal(0,kn_emitter)**par_2gsupp/
      2                    (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                    +kn_cmpreal(0,nlegreal)**par_2gsupp)
                      if(flst_alr(kn_emitter,alr).eq.0.and.
      1                    flst_alr(nlegreal,alr).eq.0) then
-                        r0(alr)=r0(alr)*2
+                        rr(alr)=rr(alr)*2
                      endif
                   else
 c     If the emitter is in the final state, and if the emitted and emitter
 c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
                      if(flst_alr(kn_emitter,alr).eq.0.and.
      1                    flst_alr(nlegreal,alr).eq.0) then
-                        r0(alr)=r0(alr)*2
+                        rr(alr)=rr(alr)*2
      1                       *kn_cmpreal(0,kn_emitter)**par_2gsupp/
      2                       (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                       +kn_cmpreal(0,nlegreal)**par_2gsupp)
                      endif
                   endif
                endif
-               r0(alr)=r0(alr)*flst_mult(alr)
+               rr(alr)=rr(alr)*flst_mult(alr)
 c supply Born zero damping factor, if required
                if(flg_withdamp) then
-                  r=r0(alr)
+                  r=rr(alr)
                   call bornzerodamp(alr,r,rc(alr),rs(alr),rcs(alr),
      1                 dampfac)
-                  r0(alr)=r0(alr) * dampfac
+                  rr(alr)=rr(alr) * dampfac
                endif
                computed(alr)=.true.
                if(equivto(alr).gt.0) then
-                  r0(equivto(alr))=r0(alr)/equivcoef(alr)
+                  rr(equivto(alr))=rr(alr)/equivcoef(alr)
                   computed(equivto(alr))=.true.
                endif
             else
-               r0(alr)=r0(equivto(alr))*equivcoef(alr)
+               rr(alr)=rr(equivto(alr))*equivcoef(alr)
             endif
          else
-            r0(alr)=0
+            rr(alr)=0
          endif
  995     continue
       enddo
       sig=0
       do j=1,rad_alr_nlist
          alr=rad_alr_list(j)
-         if(r0(alr).ne.0) then
-            r0(alr)=r0(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
-            sig=sig+r0(alr)
-            rad_real_arr(j)=r0(alr)
+         if(rr(alr).ne.0) then
+            rr(alr)=rr(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+            sig=sig+rr(alr)
+            rad_real_arr(j)=rr(alr)
          else
             rad_real_arr(j)=0
          endif
@@ -755,17 +788,17 @@ c supply Born zero damping factor, if required
       end
 
 
-      subroutine sigreal_btl(r0)
+      subroutine sigreal_btl(rr)
       implicit none
-      real * 8 r0(*)
-      call sigreal_btl0(r0,0)
+      real * 8 rr(*)
+      call sigreal_btl0(rr,0)
       end
 
 c Real cross section, required by btilde;
-c fills the array r0(alr) with the invariant cross section, multiplied
+c fills the array rr(alr) with the invariant cross section, multiplied
 c by csi^2 (1-y^2) for ISR regions
 c    csi^2 (1-y)   for FSR regions
-      subroutine sigreal_btl0(r0,imode)
+      subroutine sigreal_btl0(rr,imode)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
@@ -774,7 +807,7 @@ c    csi^2 (1-y)   for FSR regions
       include 'pwhg_par.h'
       include 'pwhg_pdf.h'
       integer imode
-      real * 8 r0(maxalr)
+      real * 8 rr(maxalr)
       real * 8 rc(maxalr),rs(maxalr),rcs(maxalr),r
       integer alr,alrpr,iret
       integer nmomset
@@ -836,7 +869,7 @@ c     < 0 for unequal:
       endif
 c End initialization phase; compute graphs
       do alr=1,flst_nalr
-         r0(alr)=0
+         rr(alr)=0
          markused(alr)=0
       enddo
       if(flg_withdamp) then
@@ -857,7 +890,7 @@ c First mark as being computed
                   kn_resemitter=flst_alrres(nlegreal,alr)
                endif
                flst_cur_alr = alr
-               call realgr(flst_alr(1,alr),kn_preal,r0(alr))
+               call realgr(flst_alr(1,alr),kn_preal,rr(alr))
 c Supply FKS factor to separate singular region:
                sumdijinv=0
 c Loop over all singular regions of the given contribution
@@ -866,27 +899,27 @@ c flst_allreg({1,2},...) are the two legs that identify the k'th region
                   sumdijinv=sumdijinv
      1      +1/dijterm(flst_allreg(1,k,alr),flst_allreg(2,k,alr),alr)
                enddo
-               r0(alr)=r0(alr)/dijterm(kn_emitter,nlegreal,alr)
+               rr(alr)=rr(alr)/dijterm(kn_emitter,nlegreal,alr)
      1              /sumdijinv
 c If the emitter is in the final state, and if the emitted and emitter
 c are both gluons, supply a factor E_em/(E_em+E_rad) * 2
                if(kn_emitter.gt.2) then
                   if(flg_doublefsr) then
 c    supply a factor E_em/(E_em+E_rad), times 2 if both gluons
-                     r0(alr)=r0(alr)
+                     rr(alr)=rr(alr)
      1                    *kn_cmpreal(0,kn_emitter)**par_2gsupp/
      2                    (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                    +kn_cmpreal(0,nlegreal)**par_2gsupp)
                      if(flst_alr(kn_emitter,alr).eq.0.and.
      1                    flst_alr(nlegreal,alr).eq.0) then
-                        r0(alr)=r0(alr)*2
+                        rr(alr)=rr(alr)*2
                      endif
                   else
 c     If the emitter is in the final state, and if the emitted and emitter
 c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
                      if(flst_alr(kn_emitter,alr).eq.0.and.
      1                    flst_alr(nlegreal,alr).eq.0) then
-                        r0(alr)=r0(alr)*2
+                        rr(alr)=rr(alr)*2
      1                       *kn_cmpreal(0,kn_emitter)**par_2gsupp/
      2                       (kn_cmpreal(0,kn_emitter)**par_2gsupp
      3                       +kn_cmpreal(0,nlegreal)**par_2gsupp)
@@ -896,17 +929,17 @@ c     are both gluons, supply a factor E_em/(E_em+E_rad) * 2
 c supply Born zero damping factor, if required
                if(flg_withdamp) then
                   if(kn_emitter.gt.2) then
-                     r=r0(alr)*(1-kn_y)*kn_csi**2
+                     r=rr(alr)*(1-kn_y)*kn_csi**2
                   else
-                     r=r0(alr)*(1-kn_y**2)*kn_csi**2
+                     r=rr(alr)*(1-kn_y**2)*kn_csi**2
                   endif
                   r=r*flst_mult(alr)
                   call bornzerodamp(alr,r,rc(alr),rs(alr),rcs(alr),
      1                 dampfac)
                   if(imode.eq.0) then
-                     r0(alr) =r0(alr) * dampfac
+                     rr(alr) =rr(alr) * dampfac
                   elseif(imode.eq.1) then
-                     r0(alr) =r0(alr) * (1-dampfac)
+                     rr(alr) =rr(alr) * (1-dampfac)
                   else
                      write(*,*) ' sigreal_btl0: improper call'
                   endif
@@ -916,7 +949,7 @@ c supply Born zero damping factor, if required
                   write(*,*) ' error: sigreal_btl flg_smartsig bug'
                   call exit(1)
                endif
-               r0(alr)=r0(equivto(alr))*equivcoef(alr)
+               rr(alr)=rr(equivto(alr))*equivcoef(alr)
                markused(alr)=1
             endif
          endif
@@ -934,14 +967,14 @@ c supply Born zero damping factor, if required
             call pdfcall(1,kn_x1,pdf1)
             call pdfcall(2,kn_x2,pdf2)
          endif
-         r0(alr)=r0(alr)*flst_mult(alr)
+         rr(alr)=rr(alr)*flst_mult(alr)
          if(kn_emitter.gt.2) then
-            r0(alr)=r0(alr)*(1-kn_y)*kn_csi**2
+            rr(alr)=rr(alr)*(1-kn_y)*kn_csi**2
          else
-            r0(alr)=r0(alr)*(1-kn_y**2)*kn_csi**2
+            rr(alr)=rr(alr)*(1-kn_y**2)*kn_csi**2
          endif
 c include pdf's
-         r0(alr)=r0(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
+         rr(alr)=rr(alr)*pdf1(flst_alr(1,alr))*pdf2(flst_alr(2,alr))
      1        *rescfac
       enddo
       end

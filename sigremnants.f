@@ -65,6 +65,7 @@ c upon the real emission kinematics
          call setscalesbtlreal
          call sigreal_reg(xjac,rad_reg_tot,rad_reg_arr)
          if(flg_nlotest) then
+            call analysis_extrainfo('reg',flst_nregular,rad_reg_arr,1d0)
             call analysis_driver(rad_reg_tot,1)
          endif
       else
@@ -82,6 +83,8 @@ c     No need to generate phase space; it is already available
                   call setscalesbtlreal
                   call sigreal_damp_rem(xjac,ttt,rad_damp_rem_arr)
                   if(flg_nlotest) then
+                     call analysis_extrainfo('remn',
+     1                    flst_nalr,rad_damp_rem_arr,1d0)
                      call analysis_driver(ttt,1)
                   endif
                   rad_damp_rem_tot=rad_damp_rem_tot+ttt
@@ -93,6 +96,8 @@ c     No need to generate phase space; it is already available
                   call setscalesbtlreal
                   call sigreal_damp_rem(xjac,ttt,rad_damp_rem_arr)
                   if(flg_nlotest) then
+                     call analysis_extrainfo('remn',
+     1                    flst_nalr,rad_damp_rem_arr,1d0)
                      call analysis_driver(ttt,1)
                   endif
                   rad_damp_rem_tot=rad_damp_rem_tot+ttt

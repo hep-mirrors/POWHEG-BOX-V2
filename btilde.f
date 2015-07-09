@@ -159,6 +159,7 @@ c compute Born, to return in retval0
          if(flg_nlotest) then
 c     output Born
             if(.not.imode.eq.0) then
+               call analysis_extrainfo('born',flst_nborn,resborn,wwwtot)
                call analysis_driver(totborn,0)
             endif
             if(.not.flg_bornonly.and..not.imode.eq.0) then
@@ -172,6 +173,7 @@ c     output virtual
                   totvirt = 0d0 
                   resvirt = 0d0 
                endif
+               call analysis_extrainfo('virt',flst_nborn,resvirt,wwwtot)
                call analysis_driver(totvirt,0)
             endif
             call pwhgaccumup

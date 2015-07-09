@@ -30,6 +30,7 @@
             call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
             do iborn=1,flst_nborn
                do j=1,nmomset
+                  flst_cur_iborn = iborn 
                   call setvirtual(pborn(0,1,j),flst_born(1,iborn),
      #                 virtual(j,iborn))
 c     check if virtual(j,iborn) is finite

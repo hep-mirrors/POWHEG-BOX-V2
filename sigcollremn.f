@@ -272,6 +272,7 @@ c     WEW, add photon remnants
       endif
       if(flg_nlotest) then
          tot=tot*www
+         call analysis_extrainfo('colr',flst_nborn,rescoll,www)
          call analysis_driver(tot,0)
       endif
       end

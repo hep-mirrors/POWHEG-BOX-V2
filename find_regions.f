@@ -679,6 +679,7 @@ c     #     '   em:',flst_emitter(iflregl)
       write(*,*) ' **** Minimum maxalr allowed: ',nreg,' *********'
       write(*,*) ' **** Number of born graphs:  ',flst_nborn
       write(*,*) ' **** Number of real graphs:  ',flst_nreal
+      write(*,*) ' **** Number of regular regions:',flst_nregular
       call pretty_print_flst
 c bunch together identical elements, increasing their multiplicities
       do j=1,nreg
@@ -891,9 +892,19 @@ c     debug information
       next=lastnb(string)
       do j=3,n
          if(emitter.eq.j) then
-            string(next:)='('//partnames(flav(j))//').'
+            if(flav(j).gt.max_partnames.or.flav(j).lt.min_partnames
+     1     .or. partnames(j).eq.' ') then
+               string(next:)='(XXX)'
+            else
+               string(next:)='('//partnames(flav(j))//').'
+            endif
          else
-            string(next:)=' '//partnames(flav(j))//' .'
+            if(flav(j).gt.max_partnames.or.flav(j).lt.min_partnames
+     1     .or. partnames(j).eq.' ') then
+               string(next:)='XXX'
+            else
+               string(next:)=' '//partnames(flav(j))//' .'
+            endif
          endif
          next=lastnb(string) 
       enddo
@@ -949,6 +960,10 @@ c     write(unit=iun,fmt=*) ' index= ',index
      1        flst_ubmult(j)
          write(iun,'(20(1x,2(1x,i2)))')
      #   ((flst_allreg(l,k,j),l=1,2),k=1,flst_allreg(1,0,j))
+         if(.not.all(flst_alrtags(:,j)==0)) then
+            write(iun,*) ' alr tags:  ', flst_alrtags(:,j)
+            write(iun,*) ' uborn tags:', flst_uborntags(:,j)
+         endif
       enddo
       close(iun)
       end
@@ -1170,6 +1185,7 @@ c do not come from the same resonance
       subroutine same_splitting0
      1     (iof,fl1,fl2,tag1,tag2,itag,ibornfl,iret)
       implicit none
+      include 'pwhg_flg.h'
       character * 3 iof
       integer fl1,fl2,tag1,tag2,itag,ibornfl,iret
       logical is_charged, is_coloured
@@ -1178,26 +1194,33 @@ c do not come from the same resonance
 c in the isr case, 2 is the outgoing parton
          fl2=-fl2
       endif
-      iret=1
-      if(fl1+fl2.eq.0.and.is_coloured(fl1).and.tag1.eq.tag2) then
-         ibornfl=0
-         itag=0
-      elseif(fl2.eq.0.and.is_coloured(fl1)) then
-         ibornfl=fl1
-         itag=tag1
-      elseif(fl1.eq.0.and.is_coloured(fl2)) then
-         ibornfl=fl2
-         itag=tag2
-      elseif(fl1.eq.22.and.is_charged(fl2)) then
-         ibornfl=fl2
-         itag=tag2
-      elseif(fl2.eq.22.and.is_charged(fl1)) then
-         ibornfl=fl1
-         itag=tag1
+
+      
+      if (.not. flg_doubletags) then 
+         iret=1
+         if(fl1+fl2.eq.0.and.is_coloured(fl1).and.tag1.eq.tag2) then
+            ibornfl=0
+            itag=0
+         elseif(fl2.eq.0.and.is_coloured(fl1)) then
+            ibornfl=fl1
+            itag=tag1
+         elseif(fl1.eq.0.and.is_coloured(fl2)) then
+            ibornfl=fl2
+            itag=tag2
+         elseif(fl1.eq.22.and.is_charged(fl2)) then
+            ibornfl=fl2
+            itag=tag2
+         elseif(fl2.eq.22.and.is_charged(fl1)) then
+            ibornfl=fl1
+            itag=tag1
+         else
+c     cannot come from the same splitting
+            iret=-1
+         endif
       else
-c cannot come from the same splitting
-         iret=-1
+         call mergetags(tag1,tag2,fl1,fl2,itag,ibornfl,iret)
       endif
+
       if(iof.eq.'isr'.and.fl2.ne.22) then
          fl2=-fl2
       endif
@@ -1318,3 +1341,140 @@ c we need the parameter nlegreal
       enddo
       flavequiv=.true.
       end
+
+c from here to the end is for handling double tags is present.
+      subroutine doubletag_entry(born_or_real,tag_f,tag,leg,graph)
+c     This soubroutine is invoked if "double tags" are needed, i.e.
+c     lines are tagged with a flavour conserved number (tag_f) and with
+c     a second tag that also applies to gluon lines (tag).
+c     Instead of assigning tags in the user init_processes one calls
+c     call doubletag_entry('born',tag_f,tag,leg,graph)
+c     or
+c     call doubletag_entry('born',tag_f,tag,leg,graph)
+c     The POWHEG BOX takes care of encoding the tags in the tag arrays 
+      implicit none
+      include 'nlegborn.h'
+      include 'pwhg_flst.h'
+      include 'pwhg_flg.h'
+      character * 4 born_or_real
+      integer tag_f,tag,leg,graph
+      integer, allocatable, save :: tagborn(:,:,:),tagreal(:,:,:)
+      integer maxtag_f,ileg,igraph
+      logical :: ini=.true.
+      integer tag_factor
+      common/cdoubletag/tag_factor
+      if(ini) then
+         flg_doubletags = .true.
+         allocate(tagborn(2,nlegborn,maxprocborn))
+         allocate(tagreal(2,nlegreal,maxprocreal))
+         tagborn = 0
+         tagreal = 0
+         ini = .false.
+      endif
+      if(born_or_real.eq.'born') then
+         tagborn(1,leg,graph) = tag_f
+         tagborn(2,leg,graph) = tag
+      elseif(born_or_real.eq.'real') then
+         tagreal(1,leg,graph) = tag_f
+         tagreal(2,leg,graph) = tag
+      elseif(born_or_real.eq.'fin ') then
+c finalize tag array
+         maxtag_f = 0
+         do igraph=1,flst_nborn
+            do ileg=1,nlegborn
+               maxtag_f = max(maxtag_f,tagborn(2,ileg,igraph))
+            enddo
+         enddo
+         do igraph=1,flst_nreal
+            do ileg=1,nlegreal
+               maxtag_f = max(maxtag_f,tagreal(2,ileg,igraph))
+            enddo
+         enddo
+         if(maxtag_f.eq.0) then
+            tag_factor = 1
+         else
+c     find nearest power of 10 larger than maxtag_f
+            tag_factor = 10**(1+int(log10(dble(maxtag_f))))
+         endif
+         do igraph=1,flst_nborn
+            do ileg=1,nlegborn
+               flst_borntags(ileg,igraph) = tagborn(2,ileg,igraph)
+     1              + tag_factor * tagborn(1,ileg,igraph)
+            enddo
+         enddo
+         do igraph=1,flst_nreal
+            do ileg=1,nlegreal
+               flst_realtags(ileg,igraph) = tagreal(2,ileg,igraph)
+     1              + tag_factor * tagreal(1,ileg,igraph)
+            enddo
+         enddo
+         deallocate(tagborn,tagreal)
+      endif
+      end
+
+      subroutine finalize_tags
+      implicit none
+      integer dum1,dum2,dum3,dum4
+      call doubletag_entry('fin ',dum1,dum2,dum3,dum4)
+      end
+
+
+
+      subroutine mergetags(fulltag1,fulltag2,fl1,fl2,
+     1     fullmergedtag,fl,iret)
+      implicit none
+      integer fulltag1,fulltag2,fullmergedtag
+      integer fl1,fl2,fl
+      integer tag1,tag2,tag_f1,tag_f2
+      integer merged1,merged2,iret
+      integer tag_factor
+      logical is_coloured 
+      common/cdoubletag/tag_factor
+
+      tag_f1 = fulltag1/tag_factor
+      tag_f2 = fulltag2/tag_factor
+
+      tag1 = mod(fulltag1,tag_factor)
+      tag2 = mod(fulltag2,tag_factor)
+
+      iret = -1 
+C     gg -> g 
+      if (fl1.eq. 0 .and. fl2 .eq. 0) then 
+         if (fulltag1 .eq. fulltag2) then 
+            if (tag_f1 .ne. 0 .or. tag_f2 .ne. 0) then 
+               write(*,*) 'mergetags: gg->g but incompatible tags'
+               write(*,*) 'fulltag1,fulltag2:', fulltag1, fulltag2
+               write(*,*) 'tag_f1,tag_f2:', tag_f1, tag_f2
+               write(*,*) 'tag1,tag2:', tag1, tag2
+               write(*,*) 'tag_factor', tag_factor 
+               call exit(-1) 
+            endif
+            fullmergedtag = fulltag1
+            fl = 0 
+            iret = 1 
+         endif
+C     qg -> q 
+      elseif (fl1.ne. 0 .and. is_coloured(fl1) .and. fl2 .eq. 0) then 
+         if (tag1 .eq. tag2) then 
+            fullmergedtag = fulltag2
+            fl = fl1
+            iret = 1 
+         endif
+C     gq -> q 
+      elseif (fl2.ne. 0 .and. is_coloured(fl2) .and. fl1 .eq. 0) then 
+         if (tag1 .eq. tag2) then 
+            fullmergedtag = fulltag1
+            fl = fl2 
+            iret = 1 
+         endif
+C     qq -> g 
+      elseif (fl2.ne. 0 .and. is_coloured(fl2) .and. fl1+fl2 .eq. 0)then
+         if (fulltag1 .eq. fulltag2) then 
+            fullmergedtag = tag1
+            fl = 0 
+            iret = 1 
+         endif
+      endif
+
+      end
+

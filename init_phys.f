@@ -13,7 +13,7 @@
       character * 5 scheme
       character * 3 whichpdfpk
       real * 8 powheginput
-      integer iorder,iret,iun,j
+      integer iorder,iret,iun,j,k
       external whichpdfpk,powheginput
 c Initialization of default values for common block
 c variables. These may be overridden by the user program
@@ -114,7 +114,20 @@ c
 c initialize Lambda values for radiation
       call init_rad_lambda
 c
+
+c By default tags act as if the tagged fermion lines had
+c different flavours (i.e. the tag is a conserved quantum number)
+c some user processes require a second, "contagious" tag, that propagates also
+c to gluons
+      flg_doubletags = .false.
+      flg_analysisextrainfo = .false. 
       call init_processes
+c if double tags where entered, by calling the subroutine
+c for example: call doubletag_entry('born',tag1,tag2,ileg,iborn)
+c              call doubletag_entry('real',tag1,tag2,ileg,iborn)
+c the following subroutine encodes the tag information in the flst_*tags arrays
+      if (flg_doubletags)   call finalize_tags
+
       call setup_reson
 
       call init_couplings

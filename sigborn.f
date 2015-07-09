@@ -97,6 +97,7 @@ c of the remnant component.
             call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
             do iborn=1,flst_nborn
                do j=1,nmomset
+                  flst_cur_iborn = iborn 
                   call setborn0(pborn(0,1,j),flst_born(1,iborn),
      1                 born(j,iborn),bornjk(1,1,j,iborn),
      2                 bmunu(0,0,1,j,iborn))
