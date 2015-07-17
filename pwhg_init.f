@@ -142,16 +142,16 @@ c proton and antiproton
 c neutron and antineutron
         idbmup(1) = 2112*pdf_ih1/abs(pdf_ih1)
       else
-         write(*,*) ' unimplemented hadron 1 ',pdf_ih1
-         call pwhg_exit(-1)
+c can be used to pass directly the pdg id of the projectilr
+         idbmup(1)=pdf_ih1
       endif
       if(abs(pdf_ih2).eq.1) then
         idbmup(2) = 2212*pdf_ih2
       elseif(abs(pdf_ih2).eq.2) then
         idbmup(2) = 2112*pdf_ih2/abs(pdf_ih2)
       else
-         write(*,*) ' unimplemented hadron 2 ',pdf_ih2
-         call pwhg_exit(-1)
+c can be used to pass directly the pdg id of the projectilr
+         idbmup(2)=pdf_ih2
       endif
 c pdf group; negative to use internal herwig pdf's for showering
       pdfgup(1)=-1
