@@ -245,6 +245,8 @@
       endif
       write (12,*) '        enddo'
       write (12,*) '     enddo'
+      if (need_switching) write (12,*)
+     & '     call invertic(ic,nexternal)'
       if (need_switching)
      &     write (12,*) '     call switchcolor(color1,color,'
       if (need_switching) write (12,*) '    &     ic,nexternal)'

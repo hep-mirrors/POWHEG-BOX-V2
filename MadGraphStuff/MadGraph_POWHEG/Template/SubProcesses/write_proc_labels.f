@@ -148,6 +148,10 @@
       endif
       write (12,*) '20   wgt=0d0'
 
+      if(need_switching) write (12,*)
+     & '     call invertic(ic,nexternal-1)'
+
+
       if (need_switching) write (12,*) '     call switchborns('//
      &     'wgt1(1),wgt2,wgtjk1,wgtjk,wgtmunu1,wgtmunu,'
       if (need_switching) write (12,*) '    &     ic,nexternal-1)'
@@ -171,6 +175,16 @@
       write (12,*) '     '
       write (12,*) '     '
 
+      write (12,*) '      subroutine invertic(ic,n)  '       
+      write (12,*) '      implicit none              ' 
+      write (12,*) '      integer n,ic(n),invic(n)   ' 
+      write (12,*) '      integer j                  ' 
+      write (12,*) '      do j=1,n                   ' 
+      write (12,*) '         invic(ic(j)) = j        ' 
+      write (12,*) '      enddo                      ' 
+      write (12,*) '      ic = invic                 ' 
+      write (12,*) '      end                        ' 
+      write (12,*) '                                 '
 
 
       write (12,*) '     subroutine born_color(legs,color)'
@@ -285,6 +299,8 @@
       endif
       write (12,*) '        enddo'
       write (12,*) '     enddo'
+      if (need_switching) write(12,*)
+     & '     call invertic(ic,nexternal-1)'
       if (need_switching)
      &     write (12,*) '     call switchcolor(color1,color,'
       if (need_switching) write (12,*) '    &     ic,nexternal-1)'

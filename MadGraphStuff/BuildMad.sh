@@ -22,7 +22,9 @@ now modifies the write_proc_labels*.f files, so that they check for
 all permutation of final state particles that match the internally
 computed one. This generates more flexible code.  If you want the
 older behaviour, edit the BuildMad.sh script and delete the lines
-indicated after this comment.  Press <enter> to continue ...
+indicated after this comment.
+
+Press <enter> to continue ...
 EOF
 
 read line
