@@ -15,6 +15,39 @@ fi
 
 cd MadTMP
 
+cat <<EOF >&2
+
+Warning: as of revision 3087 the BuildMad code has been changed.  It
+now modifies the write_proc_labels*.f files, so that they check for
+all permutation of final state particles that match the internally
+computed one. This generates more flexible code.  If you want the
+older behaviour, edit the BuildMad.sh script and delete the lines
+indicated after this comment.  Press <enter> to continue ...
+EOF
+
+read line
+
+# Modify the sborn_proc and sborn_real so that all fs particle permutations are tried.
+
+ed ./MadGraph_POWHEG/Template/SubProcesses/write_proc_labels.f <<EOF
+42
+i
+      l=2
+.
+wq
+EOF
+
+ed ./MadGraph_POWHEG/Template/SubProcesses/write_proc_labels_real.f <<EOF
+41
+i
+      l=2
+.
+wq
+EOF
+
+# End modification.
+
+
 
 ./NewProcess.sh $*
 
