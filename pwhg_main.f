@@ -167,7 +167,13 @@ c to examine that event in particular
       write(*,*)
       write(*,*)' POWHEG: generating events'
       if(flg_newweight) then
+         flg_fullrwgt = powheginput("#fullrwgt") .eq. 1
          call opencountunit(maxev,iunin)
+         if(flg_fullrwgt) then
+c the following reads the pdf used in the input .lhe file;
+c this is needed for fullrwgt.
+            call readpowheginputinfo(iunin)
+         endif
          call openoutputrw(iunrwgt)
          if(lhrwgt_id.ne.' ') then
             call lhrwgt_copyheader(iunin,iunrwgt) 

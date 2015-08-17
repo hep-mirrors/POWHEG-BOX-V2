@@ -21,18 +21,6 @@
       character * 200 string
       real * 8 powheginput
       external powheginput
-      logical ini
-      data ini/.true./
-      save ini
-      if(ini) then
-         flg_fullrwgt = powheginput("#fullrwgt") .eq. 1
-         if(flg_fullrwgt) then
-c the following reads the pdf used in the input .lhe file;
-c this is needed for fullrwgt.
-            call readpowheginputinfo(iunin)
-         endif
-         ini = .false.
-      endif
       call lhefreadevnew(iunin,iunrwgt,iret,stringin)
       if(iret.lt.0) then
          write(*,*) ' End of event file! Aborting ...'
