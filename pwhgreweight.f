@@ -710,7 +710,8 @@ c Sudakov sikmplified (HERWIG kind)
             exponent = simplesudakov(lam5,mu2,q2)
          elseif(mode.eq.3) then
 c Sudakov sikmplified (Sjostrand kind)
-            exponent = simplesudakovx(lam5,mu2,q2,kn_xb1,kn_xb2,fl1b,fl2b)
+            exponent =
+     1           simplesudakovx(lam5,mu2,q2,kn_xb1,kn_xb2,fl1b,fl2b)
          endif
       else
          exponent = 0
@@ -760,7 +761,8 @@ c Sudakov sikmplified (HERWIG kind)
             exponentorig = simplesudakov(lam5,mu2,q2)
          elseif(mode.eq.3) then
 c Sudakov sikmplified (Sjostrand kind)
-            exponentorig = simplesudakovx(lam5,mu2,q2,kn_xb1,kn_xb2,fl1b,fl2b)
+            exponentorig =
+     1           simplesudakovx(lam5,mu2,q2,kn_xb1,kn_xb2,fl1b,fl2b)
          endif
       else
          exponentorig = 0
@@ -798,7 +800,8 @@ c Compute reweighting factor:
 
 
 
-      double precision function simplesudakovx(lam5,q2low,q2high,x1,x2,fl1,fl2)
+      double precision function
+     1     simplesudakovx(lam5,q2low,q2high,x1,x2,fl1,fl2)
       implicit none
       double precision lam5,q2low,q2high,x1,x2
       integer fl1,fl2
@@ -830,7 +833,8 @@ c Setup gaussian weights and points
       simplesudakovx = res
       end
 
-      double precision function simplesudakovx0(lam5,q2low,q2high,x1,x2,fl1,fl2,xxx)
+      double precision function
+     1     simplesudakovx0(lam5,q2low,q2high,x1,x2,fl1,fl2,xxx)
       implicit none
       double precision lam5,q2low,q2high,x1,x2,xxx(2)
       integer fl1,fl2,fl,j
@@ -838,7 +842,8 @@ c Setup gaussian weights and points
       include 'pwhg_pdf.h'
       include 'pwhg_st.h'
       real * 8 kt2,x,xjac,lq2,as,eta,xi,ximax,ximin,y,ymax,z,xx
-      real * 8 fxr(-pdf_nparton:pdf_nparton),fxb(-pdf_nparton:pdf_nparton)
+      real * 8 fxr(-pdf_nparton:pdf_nparton),
+     1         fxb(-pdf_nparton:pdf_nparton)
       real * 8 mcalphas
       external mcalphas
       xjac = 1
@@ -1064,7 +1069,8 @@ c -*- Fortran -*-
      2     wgauss,shat,z,em,kmom,aslim,ycmmin,ycmmax,alphads
 c end     'phspsudint.h'
  
-      double precision kt2,xjac,x1,x2,taub,gg,gq,qg,att,auu,kl,alphas,x,x1b,x2b,k0
+      double precision kt2,xjac,x1,x2,taub,gg,gq,qg,att,auu,
+     1     kl,alphas,x,x1b,x2b,k0
       include 'pwhg_pdf.h'
 c sing1 and sing2 will stand for the singlet on the 1 and 2 incoming particles
       real * 8 pdf1(-pdf_nparton:pdf_nparton),
@@ -1119,30 +1125,34 @@ c emission respectively
 
       if(fl1r .ne. 0 .and. fl2r .ne. 0) then
          res = - ( cf * (1+x**2)/(1-x) * (pdf1(fl1r)*pdf2(fl2r))
-     2     +   tf * (x**2+(1-x)**2) * (pdf1(0)*pdf2(fl2r)*(k0+kl)+pdf1(fl1r)*pdf2(0)*(k0-kl))/(2*k0) )
-     3     *  as*(8*pi) /(kt2/(1-x)) 
+     2     +   tf * (x**2+(1-x)**2) *
+     3 (pdf1(0)*pdf2(fl2r)*(k0+kl)+pdf1(fl1r)*pdf2(0)*(k0-kl))/(2*k0))
+     4     *  as*(8*pi) /(kt2/(1-x)) 
       elseif(fl1r .eq. 0 .and. fl2r .eq. 0) then
          sing1 = sum(pdf1(-6:-1)) + sum(pdf1(1:6))
          sing2 = sum(pdf2(-6:-1)) + sum(pdf2(1:6))
-         res = - ( 2*ca * (x/(1-x)+(1-x)/x+x*(1-x)) * (pdf1(fl1r)*pdf2(fl2r))
-     2     +   cf * (1+(1-x)**2)/x * (sing1*pdf2(fl2r)*(k0+kl)+pdf1(fl1r)*sing2*(k0-kl))/(2*k0) )
-     3     *  as*(8*pi) /(kt2/(1-x))
+         res = - ( 2*ca * (x/(1-x)+(1-x)/x+x*(1-x))
+     2      * (pdf1(fl1r)*pdf2(fl2r)) +   cf * (1+(1-x)**2)/x *
+     3 (sing1*pdf2(fl2r)*(k0+kl)+pdf1(fl1r)*sing2*(k0-kl))/(2*k0) )
+     4     *  as*(8*pi) /(kt2/(1-x))
       elseif(fl1r .eq. 0 .and. fl2r .ne. 0) then
          sing1 = sum(pdf1(-6:-1)) + sum(pdf1(1:6))
          res = - (
-     1        (2*ca * (x/(1-x)+(1-x)/x+x*(1-x)) * (k0+kl) + cf * (1+x**2)/(1-x) * (k0-kl))
-     2        * (pdf1(fl1r)*pdf2(fl2r))
-     3     +  cf * (1+(1-x)**2)/x * sing1*pdf2(fl2r)*(k0+kl)
-     4     +  tf * (x**2+(1-x)**2) * pdf1(fl1r)*pdf2(0)*(k0-kl) ) /(2*k0)
-     3     *  as*(8*pi) /(kt2/(1-x))
+     1        (2*ca * (x/(1-x)+(1-x)/x+x*(1-x)) * (k0+kl)
+     2         + cf * (1+x**2)/(1-x) * (k0-kl))
+     3        * (pdf1(fl1r)*pdf2(fl2r))
+     4     +  cf * (1+(1-x)**2)/x * sing1*pdf2(fl2r)*(k0+kl)
+     5     +  tf * (x**2+(1-x)**2) * pdf1(fl1r)*pdf2(0)*(k0-kl) )/(2*k0)
+     6     *  as*(8*pi) /(kt2/(1-x))
       elseif(fl1r .ne. 0 .and. fl2r .eq. 0) then
          sing2 = sum(pdf2(-6:-1)) + sum(pdf2(1:6))
          res = - (
-     1        (cf * (1+x**2)/(1-x) * (k0+kl)) + 2*ca * (x/(1-x)+(1-x)/x+x*(1-x)) * (k0-kl) 
-     2        * (pdf1(fl1r)*pdf2(fl2r))
+     1        (cf * (1+x**2)/(1-x) * (k0+kl)) +
+     2         2*ca * (x/(1-x)+(1-x)/x+x*(1-x)) * (k0-kl) 
+     3        * (pdf1(fl1r)*pdf2(fl2r))
      4     +  tf * (x**2+(1-x)**2) * pdf1(0)*pdf2(fl2r)*(k0+kl)
-     3     +  cf * (1+(1-x)**2)/x * pdf1(fl1r)*sing2*(k0-kl)    ) /(2*k0)
-     3     *  as*(8*pi) /(kt2/(1-x))
+     5     +  cf * (1+(1-x)**2)/x * pdf1(fl1r)*sing2*(k0-kl)    )/(2*k0)
+     6     *  as*(8*pi) /(kt2/(1-x))
       endif
 
 c 8 pi as (1-x) shat/(tk uk) according to MNR, = 8 pi as (1-x)/kt2
