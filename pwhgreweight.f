@@ -608,7 +608,7 @@ c
       if(ini) then
          npdforig = pdf_ndns1lhe
          mode = powheginput("#fullrwgtmode")
-         if(mode.lt.0) mode = 1
+         if(mode.lt.0) mode = 4
          if(pdf_ndns1.ne.pdf_ndns2) then
             write(*,*) " fullpdfrwgt now works only for identical pdf's"
             write(*,*) " for the two beams ! exiting ..."
