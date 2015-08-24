@@ -14,11 +14,14 @@ compute_rwgt 1
 in the Les Houches file.
 
 The reweighting operates only on the generation of initial
-state radiation. It is thus effective for processes as W, H and
-t-tbar (with no radiation from top decay). Final
+state radiation. It is thus effective for processes as W/Z, H and
+t-tbar (with no radiation from top decay) and similar processes (i.e.
+W/Z pairs, HW, HZ, etc.). Final
 state radiation does not depend directly upon the PDF's;
 however, the different value of Lambda_QCD associated with
 different PDF's can have an effect on final state radiation.
+Furthermore, final state radiation competes with initial state
+radiation in POWHEG, thus modifying the Sudakov form factors.
 An extension of the procedure to final state radiation may
 be possible, but it is not pursued at the moment.
 
