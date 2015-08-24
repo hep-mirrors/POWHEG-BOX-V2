@@ -569,9 +569,11 @@ c and Sudakov form factor (the last one in an approximate way).
       include 'pwhg_st.h'
       include 'pwhg_pdf.h'
       include 'LesHouches.h'
-      integer iord
+c These are needed to call generipdfpar.
+      integer iord,ih,iret
       real * 8 lam5
-      common/cgenericpdf/lam5,iord
+      character * 2 scheme
+c
       real * 8 mu2
       integer fl1b,fl2b,fl1r,fl2r
       real * 8 pdf(-pdf_nparton:pdf_nparton)
@@ -617,9 +619,25 @@ c
          npdf = pdf_ndns1
          ini = .false.
       endif
+
+      x1r = pup(4,1)/ebmup(1)
+      x2r = pup(4,2)/ebmup(2)
+
+      fl1b = flst_born(1,rad_ubornidx)
+      fl2b = flst_born(2,rad_ubornidx)
+
+      fl1r = idup(1)
+      if(fl1r.eq.21) fl1r = 0
+      fl2r = idup(2)
+      if(fl2r.eq.21) fl2r = 0
+
 c If it has Born kinematics, it is already reweighted by the standard POWHEG reweighter.
 c However, it must be reweighted with the Sudakov form factor for not emitting below the cutoff scale
-      if(nup.ne.6) then
+c Check that it has Born kinematics by requiring the same flavours and same x_1/2 for real and born.
+c Reals are written to the LH file with a precision of 1d-9
+      if(fl1r .eq. fl1b .and. fl2r .eq. fl2b .and.
+     1     abs((kn_xb1-x1r)/x1r) .lt. 2d-9   .and. 
+     2     abs((kn_xb2-x2r)/x2r) .lt. 2d-9)   then
          if(mode.eq.4) then
 c we must compute the Sudakov form factor at the current scale with current pdf's
             mu2=rad_ptsqmin
@@ -630,7 +648,7 @@ c     Sudakov, Sjostrand kind, exact phase space
 c     Compute the same for original pdf's
             pdf_ndns1 = npdforig
             pdf_ndns2 = npdforig
-            call genericpdfset(npdforig)
+            call genericpdfpar(npdforig,ih,lam5,scheme,iord,iret)
             st_lambda5MSB = lam5
 c     Sudakov, Sjostrand kind, exact phase space
             call sudakovxxx(mu2,exponentorig)
@@ -643,22 +661,20 @@ c Set parameters affecting pdf's as in the current settings
             st_mufact2 = save_st_mufact2
             pdf_ndns1 = npdf
             pdf_ndns2 = npdf
-            call genericpdfset(npdf)
+            call genericpdfpar(npdf,ih,lam5,scheme,iord,iret)
          endif
          return
       endif
 c Set scale equal to boson pt; take real kinematics from LH event;
 c the kn_*real variables are undefined during reweighting.
       mu2 = pup(1,nup)**2 + pup(2,nup)**2
-      x1r = pup(4,1)/ebmup(1)
-      x2r = pup(4,2)/ebmup(2)
       q2 = dotp(kn_cmpborn(:,3)+kn_cmpborn(:,4),
      1          kn_cmpborn(:,3)+kn_cmpborn(:,4))
 
       save_st_mufact2 = st_mufact2
 c Compute Born lum for current pdf's
-      fl1b = flst_born(1,rad_ubornidx)
-      fl2b = flst_born(2,rad_ubornidx)
+
+      call genericpdfpar(npdf,ih,lam5,scheme,iord,iret)
 
       if(mode.ne.3.and.mode.ne.4) then
 c in these mode, it is assumed that HERWIG style Sudakovs is a good approximation
@@ -673,10 +689,6 @@ c Sjostrand style Sudakov; must supply the ratio of born luminosities computed a
       endif
 
 c Compute Real lum for current pdf's
-      fl1r = idup(1)
-      if(fl1r.eq.21) fl1r = 0
-      fl2r = idup(2)
-      if(fl2r.eq.21) fl2r = 0
 
       st_mufact2 =  max(pdf_q2min,mu2)
       call pdfcall(1,x1r,pdf)
@@ -712,7 +724,7 @@ c Sudakov, Sjostrand kind, exact phase space
 c Compute the same for original pdf's
       pdf_ndns1 = npdforig
       pdf_ndns2 = npdforig
-      call genericpdfset(npdforig)
+      call genericpdfpar(npdforig,ih,lam5,scheme,iord,iret)
 
       if(mode.ne.3.and.mode.ne.4) then
          st_mufact2 = max(pdf_q2min,q2)
@@ -765,7 +777,7 @@ c Set parameters affecting pdf's as in the current settings
       st_mufact2 = save_st_mufact2
       pdf_ndns1 = npdf
       pdf_ndns2 = npdf
-      call genericpdfset(npdf)
+      call genericpdfpar(npdf,ih,lam5,scheme,iord,iret)
 c Compute reweighting factor:
       
       fact =   as/asorig                               ! as for radiation updated
@@ -1250,57 +1262,57 @@ c      return
          enddo
       enddo
       end
-
-      subroutine plotdeltasud
-      implicit none
-      real * 8 res
-c      include 'phspsudint.h'
-c -*- Fortran -*-
-      double precision mm,mm2,ym,ptm,q,ptm2,q2,mtm,mtm2,
-     1     logtaumin,logtaumax,taumin,taumax,taubmin
-      integer ngauss
-      parameter (ngauss=16)
-      double precision xgauss(ngauss),wgauss(ngauss)
-      double precision shat,z,em,kmom,aslim,ycmmin,ycmmax,
-     1  alphads
-      common/cdeltasud/mm,mm2,ym,ptm,q,ptm2,q2,mtm,mtm2,
-     1     logtaumin,logtaumax,taumin,taumax,taubmin,xgauss,
-     2     wgauss,shat,z,em,kmom,aslim,ycmmin,ycmmax,alphads
-c end phspsudint.h     
-
-      integer ncalls
-      parameter (ncalls=100000)
-      character * 20 str
-      real * 8 xx(2),deltasud1,random
-      integer j,k
-      logical ini
-      data ini/.true./
-      save ini
-      write(str,'(f4.1,"-",i3)') ym,int(ptm)
-      do j=1,15
-         do k=1,2
-            if(str(j:j).eq.' ') str(j:)=str(j+1:)
-         enddo
-      enddo
-      write(*,*) '!'//str//'!'
-
-      call inihists
-      call bookupeqbins('x1',0.01d0,0d0,1d0)
-      call bookupeqbins('x2',0.01d0,0d0,1d0)
-
-      res = 0
-      do k = 1,ncalls
-         xx(1) = random()
-         xx(2) = random()
-         res = deltasud1(xx)
-         call filld('x1',xx(1),res)
-         call filld('x2',xx(2),res)
-         call pwhgaccumup
-      enddo
-      call pwhgsetout
-      call pwhgtopout("deltasudhists-"//trim(str))
-      end
-
+c$$$
+c$$$      subroutine plotdeltasud
+c$$$      implicit none
+c$$$      real * 8 res
+c$$$c      include 'phspsudint.h'
+c$$$c -*- Fortran -*-
+c$$$      double precision mm,mm2,ym,ptm,q,ptm2,q2,mtm,mtm2,
+c$$$     1     logtaumin,logtaumax,taumin,taumax,taubmin
+c$$$      integer ngauss
+c$$$      parameter (ngauss=16)
+c$$$      double precision xgauss(ngauss),wgauss(ngauss)
+c$$$      double precision shat,z,em,kmom,aslim,ycmmin,ycmmax,
+c$$$     1  alphads
+c$$$      common/cdeltasud/mm,mm2,ym,ptm,q,ptm2,q2,mtm,mtm2,
+c$$$     1     logtaumin,logtaumax,taumin,taumax,taubmin,xgauss,
+c$$$     2     wgauss,shat,z,em,kmom,aslim,ycmmin,ycmmax,alphads
+c$$$c end phspsudint.h     
+c$$$
+c$$$      integer ncalls
+c$$$      parameter (ncalls=100000)
+c$$$      character * 20 str
+c$$$      real * 8 xx(2),deltasud1,random
+c$$$      integer j,k
+c$$$      logical ini
+c$$$      data ini/.true./
+c$$$      save ini
+c$$$      write(str,'(f4.1,"-",i3)') ym,int(ptm)
+c$$$      do j=1,15
+c$$$         do k=1,2
+c$$$            if(str(j:j).eq.' ') str(j:)=str(j+1:)
+c$$$         enddo
+c$$$      enddo
+c$$$      write(*,*) '!'//str//'!'
+c$$$
+c$$$      call inihists
+c$$$      call bookupeqbins('x1',0.01d0,0d0,1d0)
+c$$$      call bookupeqbins('x2',0.01d0,0d0,1d0)
+c$$$
+c$$$      res = 0
+c$$$      do k = 1,ncalls
+c$$$         xx(1) = random()
+c$$$         xx(2) = random()
+c$$$         res = deltasud1(xx)
+c$$$         call filld('x1',xx(1),res)
+c$$$         call filld('x2',xx(2),res)
+c$$$         call pwhgaccumup
+c$$$      enddo
+c$$$      call pwhgsetout
+c$$$      call pwhgtopout("deltasudhists-"//trim(str))
+c$$$      end
+c$$$
 
       subroutine checkkin(x1,x2,kt2)
       implicit none
