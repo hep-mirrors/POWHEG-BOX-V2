@@ -23,7 +23,7 @@ c newunit.f:
 c      implicit none
 c      integer j
 c      call inihists
-c      call pwhgloadhistos('pwg-NLO.top')
+c      call pwhgloadhisos('pwg-NLO.top')
 c      call bookupeqbins('a0-rebin',4d0,0d0,100d0)
 c      call bookupeqbins('pt2_rebin',4d0,0d0,100d0)
 c      call pwhgrebin('a0','a0-rebin')
@@ -50,10 +50,11 @@ c reads a file with output histograms and reloads them
       parameter (nchunk=100)
       real * 8, allocatable :: x1(:),x2(:),v(:),e(:),tmp(:)
       character * 100 string,line
-      integer j,k,l,jh
+      integer j,k,l,jh,iun
       integer indexhist
       procedure() :: indexhist
-      open(unit=10,file=fname,status='old',err=700)
+      call newunit(iun)
+      open(unit=iun,file=fname,status='old',err=700)
       maxbins = nchunk
       allocate(x1(maxbins+1),x2(maxbins),v(maxbins),e(maxbins))
       do j=1,1000000
@@ -81,7 +82,6 @@ c count the lines
             enddo
          endif
       enddo
-      return
       write(*,*) ' pwhgloadhistos: more than 10^6 lines in '//fname
       write(*,*) ' something wrong ... exiting ...'
       call exit(-1)
@@ -90,26 +90,29 @@ c count the lines
       write(*,*) ' exiting ...'
       call exit(-1)
  800  continue
+      close(iun)
+      return
       contains
       subroutine resizearrs
          allocate(tmp(maxbins+1))
-         tmp = x1
+         tmp(1:maxbins) = x1(1:maxbins)
          deallocate(x1)
          allocate(x1(maxbins+1+nchunk))
-         x1(1:maxbins) = tmp
-         tmp(1:maxbins) = x2
+         x1(1:maxbins) = tmp(1:maxbins)
+         tmp(1:maxbins) = x2(1:maxbins)
          deallocate(x2)
          allocate(x2(maxbins+nchunk))
-         x2 = tmp(1:maxbins)
-         tmp(1:maxbins) = v
+         x2(1:maxbins) = tmp(1:maxbins)
+         tmp(1:maxbins) = v(1:maxbins)
          deallocate(v)
          allocate(v(maxbins+nchunk))
-         v = tmp(1:maxbins)
-         tmp(1:maxbins) = e
+         v(1:maxbins) = tmp(1:maxbins)
+         tmp(1:maxbins) = e(1:maxbins)
          deallocate(e)
          allocate(e(maxbins+nchunk))
-         e = tmp(1:maxbins)
+         e(1:maxbins) = tmp(1:maxbins)
          deallocate(tmp)
+         maxbins = maxbins + nchunk
       end subroutine resizearrs
 
       end
@@ -200,8 +203,35 @@ c check that x values are compatible
       endif
       end
 
-
-      
+      subroutine pwhgoperatehisto1(op,val,str)
+c applies op val to the histogram in str.
+      implicit none
+      include 'pwhg_bookhist-multi-new.h'
+      character * (*) op,str
+      real * 8 val
+      integer j,k,n,ind
+      ind=0
+      do j=1,jhist
+         if(hist_ptr(j)%id.eq.str) then
+            ind=j
+         endif
+      enddo
+      if(ind.eq.0) then
+         write(*,*) ' pwhgoperatehisto: histogram ',trim(str),
+     1        ' not found, exiting ...'
+         call exit(-1)
+      endif
+      if(op.eq.'/') then
+         do k=1,hist_ptr(ind)%nbins
+            hist_ptr(ind)%yhistarr2(1,k)   = hist_ptr(ind)%yhistarr2(1,k) / val
+            hist_ptr(ind)%errhistarr2(1,k) = hist_ptr(ind)%errhistarr2(1,k) / val
+         enddo
+      else
+         write(*,*) ' pwhgoperatehisto: unknown operator ',op
+         write(*,*) ' exiting'
+         call exit(-1)
+      endif
+      end      
       
       subroutine pwhgrebin(str1,str2)
 c makes an empty duplicate of histogram str1 into histogram str2
