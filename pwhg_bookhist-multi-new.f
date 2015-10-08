@@ -7,15 +7,19 @@ c increase nhist
          allocate(hist_ptr(20))
          nhist = 20
       else
-c allocate temporary array where to store current pointers
-         allocate(save_ptr(nhist))
-         save_ptr = hist_ptr
-c reallocate bigger pointer array
-         deallocate(hist_ptr)
-         allocate(hist_ptr(nhist+20))
-         hist_ptr(1:nhist) = save_ptr
-         deallocate(save_ptr)
-         nhist = nhist + 20
+c allocate larger array
+         allocate(save_ptr(2*nhist))
+c transfer the entries already present in hist_ptr
+         save_ptr(1:nhist) = hist_ptr
+c associate hist_ptr to the new array
+         hist_ptr => save_ptr
+c IMPORTANT REMARK: we do not deallocate hist_ptr before associating it
+c with the save_ptr pointer. By doing it, the memory taken by its previous
+c allocation remain inaccessible and unclaimed. However, this avoids subtle
+c errors: if this subroutine was called by other subroutines that receive
+c the hist_ptr pointer as an argument, the associated dummy argument of the
+c calling subroutine becomes undefined as hist_ptr is deallocate.
+         nhist = 2 * nhist
       endif
       end
 
