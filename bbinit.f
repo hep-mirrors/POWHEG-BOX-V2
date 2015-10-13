@@ -720,6 +720,9 @@ c
       integer ih1x, ih2x, ndns1x, ndns2x
       integer j,k,iun,jfile,nfiles,ncall2,itmx2
       logical lpresent,manyfiles,filefound
+      double precision, allocatable :: totarr(:,:)
+      logical, allocatable :: goodentries(:)
+      logical, save :: check_bad_st2
       real * 8 powheginput
       external powheginput
       if(powheginput('use-old-grid').eq.0) then
@@ -732,9 +735,16 @@ c
      #     form='unformatted',status='old',iostat=ios)
       if(ios.eq.0) then
          nfiles=1
+         check_bad_st2 = .false.
       else
          nfiles=par_maxseeds
          manyfiles=.true.
+         check_bad_st2 =
+     1        powheginput("#check_bad_st2") == 1
+         if(check_bad_st2) then
+            allocate(totarr(2,nfiles),goodentries(nfiles))
+            totarr = 0
+         endif
       endif
 c Try to open and merge a set of grid files, generated with different
 c random seeds
@@ -791,6 +801,9 @@ c random seeds
      1      .or.ios.ne.0)
      2        goto 998
          read(iun,iostat=ios) ((tot(k,j),k=1,2),j=1,8)
+         if(check_bad_st2) then
+            totarr(:,jfile)=tot(:,1)
+         endif
          if(ios.ne.0) goto 998
          jfound=jfound+1
          if(jfound.lt.2) then
@@ -874,9 +887,45 @@ c random seeds
          close(iun)
  111     continue
       enddo
-      if(filefound) return
+      if(filefound) then
+         if(manyfiles .and. check_bad_st2) then
+c check that the different runs are more or less consistent
+            call check_stat_consistency(nfiles,totarr,goodentries,iret)
+            deallocate(goodentries,totarr)
+         endif
+         return
+      endif
  998  continue
       iret=-1
+      end
+
+      subroutine  check_stat_consistency(nentries,res,goodentries,iret)
+      implicit none
+      integer nentries,iret
+      double precision res(2,nentries)
+      logical goodentries(nentries)
+      double precision average,weight,tmpav,tmpweight
+      integer nonzeroentries,j
+c Compute the average. Neglect zero entries.
+      average = 0
+      weight = 0
+      nonzeroentries = 0
+      do j=1,nentries
+         if(res(1,j).ne.0) then
+            average = average + res(1,j)/res(2,j)**2
+            weight = weight + 1/res(2,j)**2
+         endif
+      enddo
+      average = average/weight
+      do j=1,nentries
+         tmpweight = weight -  1/res(2,j)**2
+         tmpav = (average*weight-res(1,j)/res(2,j)**2)/
+     1            tmpweight
+         if(abs(tmpav-average)*sqrt(tmpweight).gt.10) then
+            write(*,*) ' Something went wrong with run ',j
+            call exit(-1)
+         endif
+      enddo
       end
 
       subroutine storexgrid(xgrid,xint,xgridrm,xintrm)
