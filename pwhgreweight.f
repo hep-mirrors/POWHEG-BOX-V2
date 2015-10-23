@@ -838,7 +838,7 @@ c Setup gaussian weights and points
          enddo
       enddo
       simplesudakovx = res
-      end
+      end function simplesudakovx
 
       double precision function
      1     simplesudakovx0(lam5,q2low,q2high,x1,x2,fl1,fl2,xxx)
