@@ -273,6 +273,13 @@ c just force loading of the powheg.input file
 
       do j=1,pwin_numvalues
          if(string.eq.pwin_keywords(j)) then
+            if(pwin_stringptr(j) == 0) then
+               write(*,*) 'powheginputstring: error, keyword ',
+     1              trim(pwin_keywords(j)),
+     2              ' is not associated to a string'
+               write(*,*) 'exiting ...'
+               call exit(-1)
+            endif
             call assignstring(pwin_strings(pwin_stringptr(j)),
      1           stringout,iret)
             if(iret.lt.0) then

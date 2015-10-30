@@ -724,6 +724,7 @@ c
       logical, allocatable :: goodentries(:)
       logical firsttime
       logical, save :: check_bad_st2
+      real * 8 rjfound, rncall2
       real * 8 powheginput
       external powheginput
       if(powheginput('use-old-grid').eq.0) then
@@ -869,10 +870,13 @@ c random seeds
                enddo
             enddo
             do j=1,8
-               rtot(2,j)=sqrt((rtot(2,j)**2*(jfound-1)**2+tot(2,j)**2)
-     1              /jfound**2+(jfound-1)*(rtot(1,j)-tot(1,j))**2/
-     2              (jfound**3*ncall2))
-               rtot(1,j)=(rtot(1,j)*(jfound-1)+tot(1,j))/jfound
+c turn these to reals; very large integer can overflow in fortran
+               rjfound = jfound
+               rncall2 = ncall2
+               rtot(2,j)=sqrt((rtot(2,j)**2*(rjfound-1)**2+tot(2,j)**2)
+     1              /rjfound**2+(rjfound-1)*(rtot(1,j)-tot(1,j))**2/
+     2              (rjfound**3*rncall2))
+               rtot(1,j)=(rtot(1,j)*(rjfound-1)+tot(1,j))/rjfound
             enddo
          endif
          rad_totbtl     =rtot(1,1)
