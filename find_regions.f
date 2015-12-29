@@ -893,14 +893,14 @@ c     debug information
       do j=3,n
          if(emitter.eq.j) then
             if(flav(j).gt.max_partnames.or.flav(j).lt.min_partnames
-     1     .or. partnames(j).eq.' ') then
+     1     .or. partnames(flav(j)).eq.' ') then
                string(next:)='(XXX)'
             else
                string(next:)='('//partnames(flav(j))//').'
             endif
          else
             if(flav(j).gt.max_partnames.or.flav(j).lt.min_partnames
-     1     .or. partnames(j).eq.' ') then
+     1     .or. partnames(flav(j)).eq.' ') then
                string(next:)='XXX'
             else
                string(next:)=' '//partnames(flav(j))//' .'
