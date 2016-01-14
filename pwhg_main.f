@@ -59,6 +59,12 @@ c integer at line j is used to initialize the random
 c sequence for the generation of the event.
 c The event file is called 'pwgprefix'events-'j'.lhe
       if(powheginput("#manyseeds").eq.1) then
+
+         par_maxseeds=powheginput("#maxseeds")
+         if(par_maxseeds < 0) then
+            par_maxseeds = 200
+         endif
+
          open(unit=iun,status='old',iostat=ios,
      1        file=pwgprefix(1:lprefix)//'seeds.dat')
           if(ios.ne.0) then
@@ -82,10 +88,10 @@ c The event file is called 'pwgprefix'events-'j'.lhe
          endif
          if(rnd_iwhichseed.gt.par_maxseeds) then
             write(*,*)
-     1           ' Powheg is compiled with a maximum number of seeds=',
-     2       par_maxseeds
-            write(*,*) ' edit the pwhg_par.h file and increase'
-            write(*,*) ' the par_maxseeds parameter to use more'
+     1           ' maximum seed value exceeded ',
+     2           rnd_iwhichseed, '>', par_maxseeds
+            write(*,*) ' Add to the powheg.input file a line like'
+            write(*,*) ' maxseeds <maximum seed you need>'
             call exit(-1)
          endif
          rewind(iun)

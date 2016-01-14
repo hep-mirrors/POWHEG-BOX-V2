@@ -62,8 +62,12 @@ c reads a file with output histograms and reloads them
          if(string(1:1).eq.'#') then
 c find name of histo
             string=adjustl(string(2:))
-            k=index(string,' ')
-            string = string(1:k-1)
+c     with the (optional) third argument set to .true., the last rather than the first occurrence
+c     of the string is returned.
+            k=index(string,' index ',.true.)
+            if(k>0) then
+               string = string(1:k-1)
+            endif
 c count the lines
             k=0
             read(10,'(a)') line
