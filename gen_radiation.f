@@ -124,6 +124,10 @@ c rad_type=3 for regular contributions
          endif
          weight=weight/suppfact
       endif
+c     correct for bound violations
+      if(flg_ubexcess_correct) then
+         weight = weight * rad_genubexceeded
+      endif
 c If at the end the event is not generated for some reason (nup=0)
 c restart from here
       if(nup.eq.0) goto 1

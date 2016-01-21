@@ -75,6 +75,10 @@ c added a posteriori)
 c Current event weight, needed when doing reweghting    
       real  * 8 rad_currentweight
       integer rad_iupperfsr,rad_iupperisr
+c     These variable store the amount of upper bound violation
+c     (ratio of the function value to the upper bound) in gen
+c     and in the generation of radiation
+      real * 8 rad_genubexceeded
       common/pwhg_rad/
      1     rad_totbtl,rad_etotbtl,
      2     rad_totabsbtl,rad_etotabsbtl,
@@ -89,6 +93,7 @@ c Current event weight, needed when doing reweghting
      2     rad_normfact,rad_ptsqmin,rad_charmthr2,rad_bottomthr2,
      3     rad_lamll,rad_xradremn,rad_pt2max,
      4     rad_branching,rad_currentweight,
+     5     rad_genubexceeded,
 c     integers
      1     rad_ubornidx,rad_alr_list,rad_alr_nlist,
      2     rad_realidx,rad_realalr,rad_realreg,

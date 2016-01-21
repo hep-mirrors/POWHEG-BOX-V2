@@ -479,6 +479,7 @@ c     the returned coordinate vector of the generated point
       integer ndim,imode
       integer nintervals,ndimmax
       include 'nlegborn.h'
+      include 'pwhg_rad.h'
       include 'pwhg_flg.h'
       parameter (nintervals=50,ndimmax=ndiminteg)
       integer fun
@@ -494,6 +495,14 @@ c     the returned coordinate vector of the generated point
       integer icalls,mcalls,kdim,kint,nintcurr,iret,ifirst,istep,ifun
       integer gen_seed,gen_n1,gen_n2
       common/cgenrand/gen_seed,gen_n1,gen_n2
+c use these to provide an estimate of the cross section while generating an event
+      real * 8 sigma, sigma2, rweight
+      integer isigma
+      common/gencommon/sigma,sigma2,isigma
+      sigma = 0
+      sigma2 = 0
+      isigma = 0
+
       if(ndim.gt.ndiminteg) then
          write(*,*) 'Mint: at most ',ndiminteg,' dimensions'
          write(*,*) 'Got ',ndim
@@ -525,14 +534,22 @@ c     the returned coordinate vector of the generated point
       mcalls=mcalls+1
 c this is the main hit and miss loopo
  10   continue
+      isigma = isigma + 1
+ 11   continue
 c save random status for each iteration
       call readcurrentrandom(gen_seed,gen_n1,gen_n2)
+      rweight = 1
       do kdim=1,ndim
          nintcurr=nintervals/ifold(kdim)
          r=random()
          do kint=1,nintcurr
             if(r.lt.xmmm(kint,kdim)) then
                ncell(kdim)=kint
+               if(kint == 1) then
+                  rweight = rweight*xmmm(kint,kdim)*nintervals
+               else
+                  rweight = rweight*(xmmm(kint,kdim)-xmmm(kint-1,kdim))*nintervals
+               endif
                goto 1
             endif
          enddo
@@ -596,20 +613,36 @@ c if it fails the hit and miss, f also fails
             if(ub.gt.ubound) goto 10
 c now go back to compute the full f, if required
             istep=1
+c     if we got up to here we will be exiting the 4 loop after
+c     the computation of the istep=1 f.
+c     The distribution generated up to this point is the
+c     minimum between the product of f at istep=0 times ymaxrat
+c     and fsu (that is to say ymax). We reset fsu to this minimum
+c     to check later for bound violations
+            rweight = rweight * min(ubound,fsu) / fsu
+            fsu = min(ubound,fsu)
             goto 4
          endif
       endif
-      if(.not.pwhg_isfinite(f)) goto 10
+      if(.not.pwhg_isfinite(f)) goto 11
       if(f.lt.0) then
          write(*,*) 'gen: non positive function',f
 c         f=fun(x,vol,2)
 c         stop
       endif
+
       if(f.gt.fsu) then
+         rad_genubexceeded = f/fsu
          call monitorubound(f/fsu,icalls)
          call increasecnt
-     #       ('upper bound failure in inclusive cross section')
+     1        ('upper bound failure in inclusive cross section')
+      else
+         rad_genubexceeded = 1
       endif
+
+      sigma = sigma + f/rweight
+      sigma2 = sigma2 + (f/rweight)**2
+
       icalls=icalls+1
       if(ub.gt.f) then
          call increasecnt

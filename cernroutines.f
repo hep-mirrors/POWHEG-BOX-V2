@@ -1713,6 +1713,35 @@ c not found
       counters(ncounters)=value
       end
 
+
+      subroutine setcnt(string,value)
+      implicit none
+      character *(*) string
+      real * 8 value
+      integer maxnum
+      parameter (maxnum=100)
+      character * 100 keywords(maxnum)
+      real * 8 counters(maxnum)
+      integer ncounters
+      common/ccounters/keywords,counters,ncounters
+      integer j
+      call initcnt
+      do j=1,ncounters
+         if(string.eq.keywords(j)) then
+            counters(j)=value
+            return
+         endif
+      enddo
+c not found
+      if(ncounters.eq.maxnum) then
+         write(*,*) 'ERROR: increasecnt too many counters requested'
+         stop
+      endif
+      ncounters=ncounters+1
+      keywords(ncounters)=string
+      counters(ncounters)=value
+      end
+
       subroutine resetcnt(string)
       implicit none
       character *(*) string

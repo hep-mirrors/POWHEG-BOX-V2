@@ -607,32 +607,85 @@ c         close(iun)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_rad.h'
+      include 'pwhg_flg.h'
       integer mcalls,icalls
       include 'cgengrids.h'
       real * 8 xx(ndiminteg)      
       real * 8 btilde
       external btilde
+c use these to provide an estimate of the cross section while generating an event
+      real * 8 sigma, sigma2
+      integer isigma
+      common/gencommon/sigma,sigma2,isigma
+      if(mcalls == 0) then
+         gen_sigma  = 0
+         gen_sigma2 = 0
+         gen_isigma = 0
+         gen_totev  = 0
+      endif
       call gen(btilde,ndiminteg,xgrid,ymax,ymaxrat,xmmm,ifold,1,
      1     mcalls,icalls,xx)
+      gen_sigma  = gen_sigma  + sigma
+      gen_sigma2 = gen_sigma2 + sigma2
+      gen_isigma = gen_isigma + isigma
+      gen_totev  = gen_totev  + rad_genubexceeded
+      gen_mcalls    = mcalls
+      call setcnt("btilde cross section used:", rad_totgen-rad_totrm)
+      call setcnt("btilde cross section estimate:",gen_sigma/gen_isigma)
+      call setcnt("btilde cross section estimate num. points:",dble(gen_isigma))
+      call setcnt("btilde cross section error estimate:",
+     1     sqrt(((gen_sigma2/gen_isigma)-(gen_sigma/gen_isigma)**2)/gen_isigma))
+      if(flg_ubexcess_correct) then
+         call setcnt("btilde bound violation correction factor:",
+     1        gen_totev/gen_mcalls)
+      endif
       end
-
+      
       subroutine gen_sigremnant
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
+      include 'pwhg_rad.h'
       include 'cgengrids.h'
       real * 8 xx(ndiminteg)
       integer mcalls,icalls
       logical savelogical
       real * 8 sigremnant
       external sigremnant
+c use these to provide an estimate of the cross section while generating an event
+      real * 8 sigma, sigma2
+      integer isigma
+      common/gencommon/sigma,sigma2,isigma
+      if(mcalls == 0) then
+         gen_sigmarm  = 0
+         gen_sigma2rm = 0
+         gen_isigmarm = 0
+         gen_totevrm  = 0
+      endif
 c communicate file to load upper bound data
       savelogical=flg_fastbtlbound
       flg_fastbtlbound=.false.
       call gen(sigremnant,ndiminteg,xgridrm,ymaxrm,ymaxratrm,
      1    xmmmrm,ifoldrm,1,mcalls,icalls,xx)
       flg_fastbtlbound=savelogical
+      gen_sigmarm  = gen_sigmarm  + sigma
+      gen_sigma2rm = gen_sigma2rm + sigma2
+      gen_isigmarm = gen_isigmarm + isigma
+      gen_totevrm  = gen_totevrm  + rad_genubexceeded
+      gen_mcallsrm    = mcalls
+      call setcnt("remnant cross section used:", rad_totrm)
+      call setcnt("remnant cross section estimate:",gen_sigmarm/gen_isigmarm)
+      call setcnt("remnant cross section error estimate:",
+     1     sqrt(((gen_sigma2rm/gen_isigmarm)
+     2     -(gen_sigmarm/gen_isigmarm)**2)/gen_isigmarm))
+      call setcnt("remnant cross section estimate num. points:",
+     1     dble(gen_isigmarm))
+      if(flg_ubexcess_correct) then
+         call setcnt("remnant bound violation correction factor:",
+     1        gen_totevrm/gen_mcallsrm)
+      endif
       end
 
 

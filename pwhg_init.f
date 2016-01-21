@@ -113,7 +113,10 @@ c set st_bornorder to an impossible value; later on we check
 c if the user has set it. This is only used by minlo
          st_bornorder=-1000
       endif
-c
+c     whether to correct for upper bound violations in the generation
+c     of btilde and remnant events 
+      flg_ubexcess_correct = powheginput("#ubexcess_correct") ==1     
+      
       call setrandom(i1,n1,n2)
 c     assign a default id for the process at hand
 c     if the user want to assign different id's
