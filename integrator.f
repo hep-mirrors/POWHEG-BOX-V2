@@ -548,7 +548,8 @@ c save random status for each iteration
                if(kint == 1) then
                   rweight = rweight*xmmm(kint,kdim)*nintervals
                else
-                  rweight = rweight*(xmmm(kint,kdim)-xmmm(kint-1,kdim))*nintervals
+                  rweight = rweight*(xmmm(kint,kdim)-xmmm(kint-1,kdim))*
+     $                 nintervals
                endif
                goto 1
             endif

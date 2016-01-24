@@ -7,10 +7,12 @@ c -*-Fortran-*-
      3     xmmm(0:nintervals,ndiminteg),
      4     xint,gen_sigma,gen_sigma2,gen_totev,
      5     xgridrm(0:nintervals,ndiminteg),
-     6     xgrid0rm(0:nintervals,ndiminteg),ymaxrm(nintervals,ndiminteg),
-     7     ymaxratrm(nintervals,ndiminteg),xaccrm(0:nintervals,ndiminteg),
-     8     xmmmrm(0:nintervals,ndiminteg),
-     9     xintrm,gen_sigmarm,gen_sigma2rm,gen_totevrm
+     6     xgrid0rm(0:nintervals,ndiminteg),
+     7     ymaxrm(nintervals,ndiminteg),
+     8     ymaxratrm(nintervals,ndiminteg),
+     9     xaccrm(0:nintervals,ndiminteg),
+     $     xmmmrm(0:nintervals,ndiminteg),
+     $     xintrm,gen_sigmarm,gen_sigma2rm,gen_totevrm
       integer nhits(1:nintervals,ndiminteg),gen_isigma,gen_mcalls,
      1     nhitsrm(1:nintervals,ndiminteg), gen_isigmarm,gen_mcallsrm
       integer ifold(ndiminteg),ifoldrm(ndiminteg)
