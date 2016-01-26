@@ -546,10 +546,11 @@ c save random status for each iteration
             if(r.lt.xmmm(kint,kdim)) then
                ncell(kdim)=kint
                if(kint == 1) then
-                  rweight = rweight*xmmm(kint,kdim)*nintervals
+                  rweight = rweight * xmmm(kint,kdim)
+     1                              * nintcurr
                else
-                  rweight = rweight*(xmmm(kint,kdim)-xmmm(kint-1,kdim))*
-     $                 nintervals
+                  rweight = rweight * ( xmmm(kint,kdim) - xmmm(kint-1,kdim) )
+     1                              * nintcurr
                endif
                goto 1
             endif
