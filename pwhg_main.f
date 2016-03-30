@@ -11,6 +11,7 @@
       include 'pwhg_weights.h'
       include 'pwhg_lhrwgt.h'
       integer j,iun,iunin,iunrwgt,nev,maxev
+      character * 10 statlhe
       common/cnev/nev
       real * 8 weight,tmp
       real * 8 powheginput
@@ -120,6 +121,11 @@ c
       if (testplots) WHCPRG='NLO   '
       call pwhginit
       if(nev.gt.0) then
+         if(powheginput("#clobberlhe").eq.1) then
+            statlhe = 'unknown'
+         else
+            statlhe = 'new'
+         endif
          if(flg_newweight) then
             if (testplots) then 
                write(*,*) '-------> Warning: testplots has been reset to
@@ -131,10 +137,10 @@ c
             if(rnd_cwhichseed.ne.'none') then
                write(*,*) pwgprefix(1:lprefix)//'events-'//
      1            rnd_cwhichseed//'.lhe', rnd_iwhichseed,rnd_initialseed
-               open(unit=iun,status='new',file=pwgprefix(1:lprefix)
+               open(unit=iun,status=statlhe,file=pwgprefix(1:lprefix)
      1              //'events-'//rnd_cwhichseed//'.lhe')
             else
-               open(unit=iun,status='new',
+               open(unit=iun,status=statlhe,
      1              file=pwgprefix(1:lprefix)//'events.lhe')
             endif
          endif
@@ -202,6 +208,9 @@ c this is needed for fullrwgt.
       endif
 
       do j=1,nev
+         if(j==68) then
+            write(*,*) ' one hundreth event'
+         endif
          if(flg_newweight) then
             call pwhgnewweight(iunin,iunrwgt)
          else
