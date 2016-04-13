@@ -232,14 +232,16 @@ c Make sure nmulti hasn't changed; fix up for older code
       endif
 c     underflow
       if(xval.lt.hist_ptr(j)%xhistarr(1)) then
-         hist_ptr(j)%yhistarr(1:nmulti,0)=hist_ptr(j)%yhistarr(1:nmulti,0)+weight
+         hist_ptr(j)%yhistarr(1:nmulti,0)=
+     1        hist_ptr(j)%yhistarr(1:nmulti,0)+weight
          hist_ptr(j)%nhits(0)=hist_ptr(j)%nhits(0)+1
          return
       else
          do k=1,hist_ptr(j)%nbins
             if(xval.lt.hist_ptr(j)%xhistarr(k+1)) then
-               hist_ptr(j)%yhistarr(1:nmulti,k)=hist_ptr(j)%yhistarr(1:nmulti,k)+weight/
-     1              (hist_ptr(j)%xhistarr(k+1)-hist_ptr(j)%xhistarr(k))
+               hist_ptr(j)%yhistarr(1:nmulti,k)=
+     1              hist_ptr(j)%yhistarr(1:nmulti,k)+weight/
+     2              (hist_ptr(j)%xhistarr(k+1)-hist_ptr(j)%xhistarr(k))
                hist_ptr(j)%nhits(k)=hist_ptr(j)%nhits(k)+1
                return
             endif
@@ -268,7 +270,8 @@ c according to the current nmulti. This is just a fix, and should
 c not happen more than once.
 
       if(alreadycalledonce) then
-         write(*,*) ' filld: error: number of weights no longer consistent'
+         write(*,*) ' filld: error: number of weights'//
+     1        ' no longer consistent'
          write(*,*) '        with its previous vlaue'
          write(*,*) ' exiting ...'
          call exit(-1)
@@ -299,8 +302,9 @@ c not happen more than once.
             
             hist_ptr(j)%nmulti = nmulti
          else
-            write(*,*) ' filld: error: number of weights no longer consistent'
-            write(*,*) '        with its previous vlaue'
+            write(*,*) ' filld: error: number of weights'//
+     1           ' no longer consistent'
+            write(*,*) '        with its previous value'
             write(*,*) ' exiting ...'
             call exit(-1)
          endif
@@ -332,8 +336,9 @@ c not happen more than once.
      1           ' index ',j-1
                do k=1,hist_ptr(j)%nbins
                   write(iun,'(4(1x,e14.8))') hist_ptr(j)%xhistarr(k),
-     1                 hist_ptr(j)%xhistarr(k+1),hist_ptr(j)%yhistarr2(l,k),
-     2                 hist_ptr(j)%errhistarr2(l,k)
+     1                 hist_ptr(j)%xhistarr(k+1),
+     2                 hist_ptr(j)%yhistarr2(l,k),
+     3                 hist_ptr(j)%errhistarr2(l,k)
                enddo
                write(iun,*)
                write(iun,*)
@@ -353,10 +358,12 @@ c yhistarr is zeroed. The index ient1 is increased by one unit.
       integer j,k
       do j=1,jhist
          do k=0,hist_ptr(j)%nbins + 1
-            hist_ptr(j)%yhistarr1(1:nmulti,k)=hist_ptr(j)%yhistarr1(1:nmulti,k)
-     1           +hist_ptr(j)%yhistarr(1:nmulti,k)
-            hist_ptr(j)%errhistarr1(1:nmulti,k)=hist_ptr(j)%errhistarr1(1:nmulti,k)
-     1           +hist_ptr(j)%yhistarr(1:nmulti,k)**2
+            hist_ptr(j)%yhistarr1(1:nmulti,k)=
+     1           hist_ptr(j)%yhistarr1(1:nmulti,k)
+     2           +hist_ptr(j)%yhistarr(1:nmulti,k)
+            hist_ptr(j)%errhistarr1(1:nmulti,k)=
+     1           hist_ptr(j)%errhistarr1(1:nmulti,k)
+     2           +hist_ptr(j)%yhistarr(1:nmulti,k)**2
             hist_ptr(j)%yhistarr(1:nmulti,k)=0
          enddo
          hist_ptr(j)%ient1 = hist_ptr(j)%ient1 + 1
@@ -376,7 +383,8 @@ c analysis, leaving the yhistarr1 and errhistarr1 unchanged.
             sum = hist_ptr(j)%yhistarr1(1:nmulti,k)
             sumsq = hist_ptr(j)%errhistarr1(1:nmulti,k)
             hist_ptr(j)%yhistarr2(1:nmulti,k) = xxx*sum
-            hist_ptr(j)%errhistarr2(1:nmulti,k) = sqrt(xxx**2*abs(sumsq-sum**2*xxx))
+            hist_ptr(j)%errhistarr2(1:nmulti,k) =
+     1           sqrt(xxx**2*abs(sumsq-sum**2*xxx))
          enddo
       enddo
       end
@@ -394,9 +402,11 @@ c a cross section with several contributions.
          do k=0,hist_ptr(j)%nbins+1
             sum=hist_ptr(j)%yhistarr1(1:nmulti,k)
             sumsq=hist_ptr(j)%errhistarr1(1:nmulti,k)
-            hist_ptr(j)%yhistarr2(1:nmulti,k)=hist_ptr(j)%yhistarr2(1:nmulti,k)+xxx*sum
-            hist_ptr(j)%errhistarr2(1:nmulti,k)=sqrt(hist_ptr(j)%errhistarr2(1:nmulti,k)**2+
-     1           xxx**2*abs(sumsq-sum**2*xxx))
+            hist_ptr(j)%yhistarr2(1:nmulti,k)=
+     1           hist_ptr(j)%yhistarr2(1:nmulti,k)+xxx*sum
+            hist_ptr(j)%errhistarr2(1:nmulti,k)=
+     1           sqrt(hist_ptr(j)%errhistarr2(1:nmulti,k)**2+
+     2           xxx**2*abs(sumsq-sum**2*xxx))
          enddo
       enddo
       do j=1,jhist
