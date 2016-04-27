@@ -59,12 +59,13 @@ c The file 'pwgprefix'seeds.dat at line j is read, and the
 c integer at line j is used to initialize the random
 c sequence for the generation of the event.
 c The event file is called 'pwgprefix'events-'j'.lhe
-      if(powheginput("#manyseeds").eq.1) then
+      
+      par_maxseeds=powheginput("#maxseeds")
+      if(par_maxseeds < 0) then
+         par_maxseeds = 200
+      endif
 
-         par_maxseeds=powheginput("#maxseeds")
-         if(par_maxseeds < 0) then
-            par_maxseeds = 200
-         endif
+      if(powheginput("#manyseeds").eq.1) then
 
          open(unit=iun,status='old',iostat=ios,
      1        file=pwgprefix(1:lprefix)//'seeds.dat')
