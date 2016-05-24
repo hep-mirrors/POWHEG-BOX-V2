@@ -209,9 +209,6 @@ c this is needed for fullrwgt.
       endif
 
       do j=1,nev
-         if(j==68) then
-            write(*,*) ' one hundreth event'
-         endif
          if(flg_newweight) then
             call pwhgnewweight(iunin,iunrwgt)
          else
