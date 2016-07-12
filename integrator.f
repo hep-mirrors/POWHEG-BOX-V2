@@ -209,8 +209,8 @@ c this accumulated value will not be used
             if(iret.eq.0) goto 1
 c closing call: accumulated value with correct sign
             ifun = fun(x,vol,2,1,vfun,vfun0)
-            if(.not.pwhg_isfinite(f)) goto 12
             f=vfun
+            if(.not.pwhg_isfinite(f)) goto 12
          endif
 c
          if(imode.eq.0) then

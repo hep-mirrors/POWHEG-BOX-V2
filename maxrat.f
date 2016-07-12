@@ -409,7 +409,7 @@ c.....mod
       endif
 c     fill the norm array
       iy=abs(kn_y)*rad_nynorms+1
-      icsi=log(1/(1-kn_csi))/log(kn_sbeams/kn_minmass**2)
+      icsi=log(1/(1-kn_csi))/log(kn_sbeams/max(1d0,kn_minmass**2))
      1    *rad_ncsinorms+1
 c
       if(iy.lt.1) iy=1
