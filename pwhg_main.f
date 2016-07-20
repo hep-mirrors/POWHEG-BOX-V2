@@ -29,7 +29,6 @@ c Print out svn information, if any
       iun = 6
       include 'svn.version'
 
-
       if (powheginput('#testplots').eq.1d0) then
          testplots=.true.
       else
@@ -40,6 +39,11 @@ c Print out svn information, if any
 c whether to save btilde calls to set up upper bounding envelope
       if(powheginput('#storemintupb').eq.1d0) then
          flg_storemintupb = .true.
+         if(powheginput('#mintupbxless') == 1) then
+            flg_mintupb_xless = .true.
+         else
+            flg_mintupb_xless = .false.
+         endif
       else
          flg_storemintupb = .false.
       endif
@@ -50,6 +54,11 @@ c whether to save btilde calls to set up upper bounding envelope
          flg_fastbtlbound = .false.
       endif
 
+      if(flg_fastbtlbound .and. flg_storemintupb) then
+         par_mintupb_ratlim = powheginput("#mintupbratf")
+         if(par_mintupb_ratlim < 0) par_mintupb_ratlim = 1d50
+      endif
+      
       call newunit(iun)
 
 c The following allows to perform multiple runs with

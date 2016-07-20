@@ -267,50 +267,72 @@ c file opened for reading
       end
          
 
-
-
-
-
       subroutine loadmintupb(ndim,filetag,ymax,ymaxrat)
       implicit none
       include 'pwhg_flg.h'
+      include 'pwhg_par.h'
       integer ndim
       character *(*) filetag
       real * 8 ymax(50,ndim),xint,xintrat
       real * 8 ymaxrat(50,ndim)
       integer cells(ndim)
       integer kdim,iret,j,iunit
-      real * 8 f,f0,prod,prodrat,xless,xmore,xmorerat
-      real * 8 fail,tot,ubtot,failrat,totrat,ubtotrat
-      integer ipoints
+      real * 8 f,f0,prod,prodrat,xless,xmore,xlessrat,xmorerat
+      real * 8 fail,tot,ubtot,failrat,totrat,ubtotrat,ratlim
+      integer ipoints,ndiscarded
       integer iterations
       logical ratflg
       iterations=1
-      if(filetag.eq.'btildeupb'.and.flg_storemintupb) then
+      if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
          ratflg=.true.
       else
          ratflg=.false.
       endif
+      ratlim=par_mintupb_ratlim
+      if(ratlim < 0) ratlim=1d3
 c First compute total for f and f/f0 (f/b)
       iret=0
       xint=0
       xintrat=0
       ipoints=0
-      do while (iret.eq.0)
+      ndiscarded = 0
+      do
          call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
-         if(iret.eq.-1) goto 998
+         if(iret == 1) exit
+         if(iret /= 0) goto 998
+         if(f/f0 > ratlim) then
+            ndiscarded = ndiscarded + 1
+            cycle
+         endif
          ipoints=ipoints+1
          xint=xint+f
          if(ratflg) then
             if(f0.gt.0) xintrat=xintrat+f/f0
          endif
       enddo
-      ipoints=ipoints-1
+c     This is to reproduce a minor old bug, just not to break binary compatibility
+c     of previous versions
+      if(.not.flg_mintupb_xless) then
+         xint=xint+f
+         if(ratflg) then
+            if(f0.gt.0) xintrat=xintrat+f/f0
+         endif
+      endif
+      write(*,*) 'loadmintupb: num. discarded/total:',
+     1     ndiscarded,'/',ipoints
       xint=xint/ipoints
+      write(*,*) 'loadmintupb: estimated integral for '
+     1    //trim(filetag)//' (pos.+|neg.|)  is ',xint
       xintrat=xintrat/ipoints/10
       xmore=0.01
       xmorerat=xmore/5
-      xless=xmore/2
+      if(flg_mintupb_xless) then
+         xless=xmore
+         xlessrat=xmorerat
+      else
+         xless=0
+         xlessrat=0
+      endif
 c The bound is initially set as if the function was uniform
 c with the given integral
       do kdim=1,ndim
@@ -321,120 +343,143 @@ c with the given integral
             endif
          enddo
       enddo
-c loop for reading u-bound data
- 1    continue
-      call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
-      if(iret.lt.0) then
-         write(*,*) ' error while loading bound files'
-         call exit(-1)
-      endif
-      if(iret.eq.0) then
-         prod=1
-         prodrat=1
-         do kdim=1,ndim
-            prod=prod*ymax(cells(kdim),kdim)
-            if(ratflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
-         enddo
-         if(f.gt.prod) then
-            do kdim=1,ndim
-               ymax(cells(kdim),kdim)=
-     1              ymax(cells(kdim),kdim)*(f/prod+0.1)**(xmore/ndim)
-            enddo
-         endif
-         if(ratflg) then
-            if(f0.gt.0) then
-               if(f/f0.gt.prodrat) then
-                  do kdim=1,ndim
-                     ymaxrat(cells(kdim),kdim)=
-     1                    ymaxrat(cells(kdim),kdim)*
-     2                    (f/f0/prodrat+0.1)**(xmorerat/ndim)
-                  enddo
+c     Large loop for finding ymax,ymaxrat, etc. Exit when efficiency is OK
+      do
+c     loop for reading u-bound data
+         do
+            call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
+            if(iret == 1) exit
+            if(iret /= 0) then
+               write(*,*) ' error while loading bound files'
+               call exit(-1)
+            endif
+            if(f/f0 > ratlim) then
+               ndiscarded = ndiscarded + 1
+               cycle
+            endif
+
+            call evalprod
+
+            if(f.gt.prod) then
+               do kdim=1,ndim
+                  ymax(cells(kdim),kdim)=
+     1                 ymax(cells(kdim),kdim)*(f/prod+0.1)**(xmore/ndim)
+               enddo
+            else
+               do kdim=1,ndim
+                  ymax(cells(kdim),kdim)=
+     1                 ymax(cells(kdim),kdim)/(2d0)**(xless/ndim)
+               enddo
+            endif
+            if(ratflg) then
+               if(f0.gt.0) then
+                  if(f/f0.gt.prodrat) then
+                     do kdim=1,ndim
+                        ymaxrat(cells(kdim),kdim)=
+     1                       ymaxrat(cells(kdim),kdim)*
+     2                       (f/f0/prodrat+0.1)**(xmorerat/ndim)
+                     enddo
+                  else
+                     do kdim=1,ndim
+                        ymaxrat(cells(kdim),kdim)=
+     1                       ymaxrat(cells(kdim),kdim)/
+     2                       (2d0)**(xlessrat/ndim)
+                     enddo
+                  endif
                endif
             endif
-         endif
-         goto 1
-      endif
-c check if the failure rate is satisfactory
-      fail=0
-      tot=0
-      ubtot=0
-      if(ratflg) then
-         failrat=0
-         totrat=0
-         ubtotrat=0
-      endif
- 2    continue
-      call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
-      if(iret.lt.0) goto 998
-      if(iret.eq.0) then         
-         prod=1
-         if(ratflg) prodrat=1
-         do kdim=1,ndim
-            prod=prod*ymax(cells(kdim),kdim)
-            if(ratflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
          enddo
-         if(f.gt.prod) fail=fail+(f-prod)
-         tot=tot+f
-         ubtot=ubtot+prod
+c     check if the failure rate is satisfactory
+         fail=0
+         tot=0
+         ubtot=0
          if(ratflg) then
-            if(f0.ne.0) then
-               if(f.gt.f0*prodrat) failrat=failrat+(f-f0*prodrat)
-               totrat=totrat+f
-               ubtotrat=ubtotrat+f0*prodrat
+            failrat=0
+            totrat=0
+            ubtotrat=0
+         endif
+         do
+            call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
+            if(iret.eq.1) exit
+            if(iret.ne.0) goto 998
+            if(f/f0 > ratlim) then
+               ndiscarded = ndiscarded + 1
+               cycle
             endif
+
+            call evalprod
+
+            if(f.gt.prod) fail=fail+(f-prod)
+            tot=tot+f
+            ubtot=ubtot+prod
+            if(ratflg) then
+               if(f0.ne.0) then
+                  if(f.gt.f0*prodrat) failrat=failrat+(f-f0*prodrat)
+                  totrat=totrat+f
+                  ubtotrat=ubtotrat+f0*prodrat
+               endif
+            endif
+         enddo
+         if(fail/tot.gt.1d-3.or.(ratflg.and.failrat/totrat.gt.1d-3))then
+c     stop updating the rat grid, if satisfactory
+            if(ratflg.and.failrat/totrat.lt.1d-3) then
+               ratflg=.false.
+               write(*,*) ' ratios envelope efficiency',totrat/ubtotrat
+               write(*,*) ' ratios failure estimate',failrat/totrat
+            endif
+            if(iterations.lt.4) then
+               write(*,*) ' iterating upper bounding envelope formation'
+            elseif(iterations.lt.5) then
+               write(*,*) ' more iterations needed'
+               write(*,*) ' this can take a moment ...'
+            endif
+            write(*,*) ' failure estimate, efficiency ',
+     1           fail/tot,(tot-fail)/ubtot
+            if(ratflg) then
+               write(*,*) ' ratios failure estimate, efficiency ',
+     1              failrat/totrat,(totrat-failrat)/ubtotrat
+            endif
+            iterations=iterations+1
+            xless = xless * 0.9
+            xlessrat = xlessrat * 0.9
+         else
+            exit
          endif
-         goto 2
-      endif
-      if(fail/tot.gt.1d-3.or.(ratflg.and.failrat/totrat.gt.1d-3))then
-c stop updating the rat grid, if satisfactory
-         if(ratflg.and.failrat/totrat.lt.1d-3) then
-            ratflg=.false.
-            write(*,*) ' envelope efficiency',totrat/ubtotrat
-            write(*,*) 'failure estimate',failrat/totrat
-         endif
-         if(iterations.lt.4) then
-            write(*,*) ' iterating upper bounding envelope formation'
-         elseif(iterations.lt.5) then
-            write(*,*) ' more iterations needed'
-            write(*,*) ' this can take a moment ...'
-         endif
-         write(*,*) 'failure estimate',fail/tot
-         if(ratflg) then
-            write(*,*) 'ratios failure estimate',failrat/totrat
-         endif
-         iterations=iterations+1
-         goto 1
-      endif
+      enddo
       if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
          ratflg=.true.
       endif
+      write(*,*) ' summary of bounds for '//trim(filetag)
       if(ratflg) then
-         write(*,*) 'envelope efficiency: '
          write(*,*)
-     1 ' # of generated configurations over number of btilde calls'
-         write(*,*) totrat/ubtotrat
-         write(*,*) 'failure estimate',failrat/totrat
+     1 ' estimated efficiency without fastbtlbound ',
+     2        tot/ubtot
+         write(*,*) ' failure estimate',fail/tot
          write(*,*)
-     1 ' # of generated configurations over number of born calls'
-         write(*,*) tot/ubtot
-         write(*,*) 'failure estimate',fail/tot
+     1 ' estimated efficiency with fastbtlbound ',
+     2        totrat/ubtotrat
+         write(*,*) ' failure estimate',failrat/totrat
       else
-         write(*,*) 'envelope efficiency=',tot/ubtot
-         write(*,*) 'failure estimate',fail/tot
+         write(*,*) ' envelope efficiency=',tot/ubtot
+         write(*,*) ' failure estimate',fail/tot
       endif
       write(*,*) 'processed ',ipoints,' points',iterations,'iterations'
       call newunit(iunit)
-      open(unit=iunit,file='testbndrat.top',status='unknown')
-      do kdim=1,ndim
-         write(iunit,*) 'set limits x 0 50 y 0 5'
-         do j=1,50
-            write(iunit,*) j, ymaxrat(j,kdim)
+      if(filetag == 'btlupb' .and. flg_fastbtlbound) then
+         open(unit=iunit,file='mint_upb_'//trim(filetag)//'_rat.top',
+     1        status='unknown')
+         do kdim=1,ndim
+            write(iunit,*) 'set limits x 0 50 y 0 5'
+            do j=1,50
+               write(iunit,*) j, ymaxrat(j,kdim)
+            enddo
+            write(iunit,*) 'hist'
+            write(iunit,*) 'newplot'
          enddo
-         write(iunit,*) 'hist'
-         write(iunit,*) 'newplot'
-      enddo
-      close(iunit)
-      open(unit=iunit,file='testbnd.top',status='unknown')
+         close(iunit)
+      endif
+      open(unit=iunit,file='mint_upb_'//trim(filetag)//'.top',
+     1     status='unknown')
       do kdim=1,ndim
          write(iunit,*) 'set limits x 0 50 y 0 5'
          do j=1,50
@@ -449,7 +494,19 @@ c stop updating the rat grid, if satisfactory
  998  continue
       write(*,*) ' error while loading bound files'
       call exit(-1)      
+
+      contains
+      subroutine evalprod
+      prod=1
+      prodrat=1
+      do kdim=1,ndim
+         prod=prod*ymax(cells(kdim),kdim)
+         if(ratflg) prodrat=prodrat*ymaxrat(cells(kdim),kdim)
+      enddo
+      end subroutine evalprod
+
       end
+
 
       subroutine monitorubound(x,icalls)
       implicit none
