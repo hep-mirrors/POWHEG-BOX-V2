@@ -55,7 +55,7 @@ c whether to save btilde calls to set up upper bounding envelope
       endif
 
       if(flg_fastbtlbound .and. flg_storemintupb) then
-         par_mintupb_ratlim = powheginput("#mintupbratf")
+         par_mintupb_ratlim = powheginput("#mintupbratlim")
          if(par_mintupb_ratlim < 0) par_mintupb_ratlim = 1d50
       endif
       
