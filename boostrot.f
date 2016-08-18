@@ -33,7 +33,6 @@ c      endif
       enddo
       end
 
-
       subroutine mrotate(dir,sinphi,cosphi,vec)
 c Rotates vector vec counterclockwise around the direction
 c dir (|dir|=1) with angle phi, given sin phi and cos phi.
@@ -51,6 +50,22 @@ c dir (|dir|=1) with angle phi, given sin phi and cos phi.
       enddo
       end
 
+      subroutine rotate3tovec(v,vec)
+c Rotate vec with the rotation that brings v along the positive
+c third direction.
+      implicit none
+      real * 8 v(3),vec(3)
+      real * 8 d(3),dir(3),cosphi,sinphi
+      d = v/sqrt(v(1)**2+v(2)**2+v(3)**2)
+      cosphi = d(3)
+      dir(1) = d(2)
+      dir(2) = -d(1)
+      dir(3) = 0
+      sinphi = sqrt(d(1)**2+d(2)**2)
+      if(sinphi.lt.1d-9) return
+      dir = - dir/sinphi
+      call mrotate(dir,sinphi,cosphi,vec)
+      end
 
       subroutine boost2reson(pres,nm,pin,pout)
       implicit none
