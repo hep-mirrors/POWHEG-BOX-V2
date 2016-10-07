@@ -481,6 +481,7 @@ c     the returned coordinate vector of the generated point
       include 'nlegborn.h'
       include 'pwhg_rad.h'
       include 'pwhg_flg.h'
+      include 'pwhg_rwl.h'
       parameter (nintervals=50,ndimmax=ndiminteg)
       integer fun
       real * 8 xgrid(0:nintervals,ndim),
@@ -493,8 +494,6 @@ c     the returned coordinate vector of the generated point
       logical savelogical,pwhg_isfinite
       external fun,random,pwhg_isfinite
       integer icalls,mcalls,kdim,kint,nintcurr,iret,ifirst,istep,ifun
-      integer gen_seed,gen_n1,gen_n2
-      common/cgenrand/gen_seed,gen_n1,gen_n2
 c use these to provide an estimate of the cross section while generating an event
       real * 8 sigma, sigma2, rweight
       integer isigma
@@ -537,7 +536,7 @@ c this is the main hit and miss loopo
       isigma = isigma + 1
  11   continue
 c save random status for each iteration
-      call readcurrentrandom(gen_seed,gen_n1,gen_n2)
+      call readcurrentrandom(rwl_seed,rwl_n1,rwl_n2)
       rweight = 1
       do kdim=1,ndim
          nintcurr=nintervals/ifold(kdim)

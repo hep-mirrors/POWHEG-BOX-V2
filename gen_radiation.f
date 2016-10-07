@@ -6,6 +6,7 @@
       include 'pwhg_flg.h'
       include 'pwhg_kn.h'
       include 'pwhg_rad.h'
+      include 'pwhg_rwl.h'
       include 'LesHouches.h'
       integer iret,iun
       real * 8 suppfact
@@ -71,6 +72,10 @@ c if negative weight, flip the sign of weight
 c rad_type=1 for btilde events (used only for debugging purposes)
          rad_type=1
          call increasecnt("btilde event")
+         rwl_type = rad_type
+         rwl_index = rad_ubornidx
+         rwl_weight = rad_btilde_arr(rad_ubornidx)
+     $        *rad_btilde_sign(rad_ubornidx)
       else
 c generate remnant n+1 body cross section
          call reset_timer
@@ -105,6 +110,9 @@ c     set st_muren2 equal to pt2 for scalup value
 c     rad_type=2 for remnants
             rad_type=2
             call increasecnt("remnant event")
+            rwl_type = rad_type
+            rwl_index = rad_realalr
+            rwl_weight = rad_damp_rem_arr(rad_realalr)
          else
 c     set st_muren2 for scalup value for regular contributions
             rad_pt2max=max(rad_ptsqmin,pt2max_regular())
@@ -113,6 +121,9 @@ c     set st_muren2 for scalup value for regular contributions
 c rad_type=3 for regular contributions
             rad_type=3
             call increasecnt("regular event")
+            rwl_type = rad_type
+            rwl_index = rad_realreg
+            rwl_weight = rad_reg_arr(rad_realreg)
          endif         
       endif
       if(flg_weightedev) then
@@ -132,6 +143,7 @@ c If at the end the event is not generated for some reason (nup=0)
 c restart from here
       if(nup.eq.0) goto 1
       xwgtup = weight
+      
       end
 
       logical function notfinite_kin(BornOrReal)

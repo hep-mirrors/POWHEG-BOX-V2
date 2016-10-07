@@ -56,6 +56,10 @@ c End initialization of common block defaults.
          write(*,*) ' unimplemented pdf package',whichpdfpk()
          stop
       endif
+c     the following are needed only if fullrwgt is on, and are
+c     set in due time. They are better initialized as follows
+      pdf_ndns1lhe = pdf_ndns1
+      pdf_ndns2lhe = pdf_ndns2
       if(pdf_ndns1.ne.pdf_ndns2) then
          st_lambda5MSB=powheginput('QCDLambda5')
       else

@@ -4,21 +4,26 @@
       integer ndns
 c wrap for pdfset; avoids subsequent
 c calls to pdfset (you never know)
-      integer, parameter:: maxsets = 10
-      integer sets(maxsets),idset(maxsets),nsets
-      real * 8 lam5set(maxsets),q2minset(maxsets)
-      save lam5set,q2minset,sets,idset,nsets
+      integer,allocatable :: seq(:),idset(:),nsets
+      real * 8, allocatable :: lam5set(:),q2minset(:)
+      save lam5set,q2minset,seq,idset,nsets
       real * 8 genericxlambdL,genericxlambdNL,genericxlambdNNL,
      ,         alphasPDF,asmz,mz
       parameter (mz=91.1876d0)
       real * 8 lam5
-      integer iord,iset
-      common/cgenericpdf/lam5,iord,iset
+      integer iord,iset,maxsets
+      common/cgenericpdf/lam5,iord,iset,maxsets
       logical,save:: ini=.true.
       integer j
+      real * 8 powheginput
       if(ini) then
          nsets = 0
          iset = 0
+         maxsets=nint(powheginput("#lhapdf6maxsets"))
+         if(maxsets < 0) maxsets = 10
+         allocate(seq(maxsets),idset(maxsets),
+     1        lam5set(maxsets),q2minset(maxsets))
+         call setlha6init(maxsets)
          ini = .false.
       endif
       if(iset /= 0) then
@@ -27,18 +32,22 @@ c calls to pdfset (you never know)
       do j=1,nsets
          if(ndns == idset(j)) then
             iset = j
+            call ontop(iset)
             exit
          endif
       enddo
       if(j == nsets+1) then
-c... initalise set
-         nsets = nsets+1
-         if(nsets .gt. maxsets) then
-            write(*,*) ' generipdfset: too many sets,'
-            write(*,*) ' increase maxsets. Exiting ...'
-            call exit(-1)
+c...  initalise set
+         if(nsets == maxsets) then
+c     delete the oldest
+            iset = seq(1)
+            call setlha6del(iset)
+            call ontop(iset)
+         else
+            nsets = nsets+1
+            iset = nsets
+            seq(iset)=iset
          endif
-         iset = nsets
          idset(iset) = ndns
          call setlha6set(iset,ndns,iord,mz,asmz,pdf_q2min)
          write(*,*) ' check: alpha_s(Mz)=',asmz
@@ -59,6 +68,20 @@ c we don't have LO alpha around
          lam5 = lam5set(iset)
          pdf_q2min = q2minset(iset)
       endif
+      contains
+      subroutine ontop(j)
+c     look for j in seq
+      integer j,k,l
+      do k=1,nsets
+         if(seq(k) == j) then
+            do l=k,nsets-1
+               seq(l)=seq(l+1)
+            enddo
+            seq(nsets)=j
+            return
+         endif
+      enddo
+      end subroutine
       end
 
       function genericxlambdL(as,q,nf)
@@ -146,8 +169,8 @@ c Interface to lhapdf package.
       include 'pwhg_pdf.h'
 
       real * 8 lam5
-      integer iord,iset
-      common/cgenericpdf/lam5,iord,iset
+      integer iord,iset,maxsets
+      common/cgenericpdf/lam5,iord,iset,maxsets
 
 
       integer ndns,ih
@@ -214,9 +237,9 @@ c      endif
       subroutine genericpdfpar(ndns,ih,xlam,scheme,iorder,iret)
       implicit none
 
-      integer iord,iset
+      integer iord,iset,maxsets
       real * 8 lam5
-      common/cgenericpdf/lam5,iord,iset
+      common/cgenericpdf/lam5,iord,iset,maxsets
 
       integer ndns,ih,iorder
       real * 8 xlam

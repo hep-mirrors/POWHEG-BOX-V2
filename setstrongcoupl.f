@@ -100,21 +100,16 @@ c we are in a counterterm.
       external pwhg_alphas
       character * 3 whichpdfpk
       external whichpdfpk
-      integer ini,mem
-      data ini/0/
-      save ini
-      
-      if (ini.eq.0) then
-         if( whichpdfpk().eq.'lha') then
-            continue
-         elseif( whichpdfpk().eq.'mlm') then    
-            continue
-         else
-            write(*,*) ' unimplemented pdf package',whichpdfpk()
-            stop
-         endif 
-         ini=1
-      endif
+
+      if( whichpdfpk().eq.'lha') then
+         continue
+      elseif( whichpdfpk().eq.'mlm') then    
+         continue
+      else
+         write(*,*) ' unimplemented pdf package',whichpdfpk()
+         call exit(-1)
+      endif 
+
       st_mufact2=max(pdf_q2min,ptsq) 
 cccccccccccccccccccccccccccccccccc
 c     In case of final-state radiation, Born and real PDF's

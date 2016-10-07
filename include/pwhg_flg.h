@@ -36,7 +36,8 @@ c flg_reweight: outputs extra infos for reweighting LH events
      9     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad,
      $     flg_LOevents,flg_evenmaxrat,flg_novirtual,flg_noevents,
      1     flg_doubletags,flg_analysisextrainfo,flg_fullrwgt,
-     2     flg_ubexcess_correct,flg_mintupb_xless
+     2     flg_ubexcess_correct,flg_mintupb_xless,flg_compress_lhe,
+     3     flg_compress_upb,flg_rwl,flg_rwl_add
       character * 1 flg_btildepart
       character * 20 flg_processid
       common/pwhg_flg/flg_nlotest,flg_withsubtr,flg_withdamp,
@@ -52,7 +53,8 @@ c flg_reweight: outputs extra infos for reweighting LH events
      1     flg_drscheme,flg_withresrad,flg_with_em,flg_em_rad,
      2     flg_evenmaxrat,flg_novirtual,flg_noevents,flg_doubletags,
      3     flg_analysisextrainfo,flg_fullrwgt,flg_ubexcess_correct,
-     4     flg_mintupb_xless,
-c     cstrings      
-     2     flg_btildepart,flg_processid
+     4     flg_mintupb_xless,flg_rwl,flg_rwl_add,flg_compress_lhe,
+     5     flg_compress_upb,
+c strings      
+     6     flg_btildepart,flg_processid
       save /pwhg_flg/

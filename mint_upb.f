@@ -30,30 +30,29 @@ c upper bounding envelope in MINT
       subroutine startstoremintupb(filetag)
       implicit none
       include 'pwhg_rnd.h'
+      include 'pwhg_flg.h'
       character * (*) filetag
       character * 20 pwgprefix
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
-      integer iunit,l
+      integer iunit
       logical active
       common/storeubc/iunit,active
       save /storeubc/
       data active/.false./
+      integer iret
       active=.true.
-      l=len(filetag)
- 1    if(filetag(l:l).eq.' ') then
-        l=l-1
-        goto 1
-      endif
-      call newunit(iunit)
       if(rnd_cwhichseed.eq.'none') then
-         open(unit=iunit,
-     1        file=pwgprefix(1:lprefix)//filetag(1:l)//'.dat',
-     2        status='unknown')
+         call pwhg_io_open_write(pwgprefix(1:lprefix)//
+     1    trim(filetag)//'.dat',iunit,flg_compress_upb,iret)
       else
-         open(unit=iunit,
-     1        file=pwgprefix(1:lprefix)//filetag(1:l)//'-'//
-     1        rnd_cwhichseed//'.dat',status='unknown')
+         call pwhg_io_open_write(pwgprefix(1:lprefix)//
+     1    trim(filetag)//'.dat',iunit,flg_compress_upb,iret)
+      endif
+      if(iret /= 0) then
+         write(*,*) 'startstoremintupb: cannot open output file'
+         write(*,*) 'exiting ...'
+         call exit(-1)
       endif
       end
 
@@ -66,6 +65,7 @@ c upper bounding envelope in MINT
       logical active
       common/storeubc/iunit,active
       character * 30 fmt
+      character(len=2*ndim+22) string
       integer k
       logical ini
       data ini/.true./
@@ -77,9 +77,11 @@ c upper bounding envelope in MINT
             ini=.false.
          endif
          if(imode.eq.0) then
-            write(iunit,fmt) (ncell(k),k=1,ndim),f,f0
+            write(string,fmt) (ncell(k),k=1,ndim),f,f0
+            call pwhg_io_write(iunit,string)
          else
-            write(iunit,fmt) (ncell(k),k=1,ndim),f
+            write(string,fmt) (ncell(k),k=1,ndim),f
+            call pwhg_io_write(iunit,string(1:2*ndim+11))
          endif
       endif
       end
@@ -89,7 +91,7 @@ c upper bounding envelope in MINT
       integer iunit
       logical active
       common/storeubc/iunit,active
-      close(iunit)
+      call pwhg_io_close(iunit)
       active=.false.
       end
 
@@ -187,6 +189,7 @@ c          from the beginning
       include 'pwhg_rnd.h'
       include 'pwhg_flg.h'
       character * 20 pwgprefix
+      character(len=2*ndim+22) string
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
       integer ltag
@@ -208,7 +211,6 @@ c initial call
          endif
 c The format for reading the bounds file, for ndim dimensions
          write(fmt(2:4),'(i2)') ndim
-         call newunit(iunit)
 c see if there are files to load
          if(rnd_cwhichseed.eq.'none') then
             fname=pwgprefix(1:lprefix)//filetag(1:ltag)//'.dat'
@@ -226,22 +228,25 @@ c see if there are files to load
             goto 999
          endif
  10      continue
-         open(unit=iunit,file=fname,status='old',err=999)
+         call pwhg_io_open_read(trim(fname),iunit,iret)
+         if(iret /= 0) goto 999
          write(*,*) ' opened ',trim(fname)
 c file opened for reading
          status=1
       endif
  12   continue
+      call pwhg_io_read(iunit,string,iret)
+      if(iret < 0) goto 11
       if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
-         read(unit=iunit,fmt=fmt,end=11) (cells(k),k=1,ndim),f,f0
+         read(string,fmt=fmt) (cells(k),k=1,ndim),f,f0
       else
-         read(unit=iunit,fmt=fmt,end=11) (cells(k),k=1,ndim),f
+         read(string,fmt=fmt) (cells(k),k=1,ndim),f
          f0=-1
       endif
       iret=0
       return
  11   continue
-      close(iunit)
+      call pwhg_io_close(iunit)
       if(rnd_cwhichseed.ne.'none') then
  13      jfile=jfile+1
          if(jfile.lt.9999) then
@@ -252,7 +257,8 @@ c file opened for reading
             fname=pwgprefix(1:lprefix)//filetag//'-'//chnum//'.dat'
             inquire(file=fname,exist=lpresent)
             if(lpresent) then
-               open(unit=iunit,file=fname,status='old',err=999)
+               call pwhg_io_open_read(trim(fname),iunit,iret)
+               if(iret /= 0) goto 999
                write(*,*) ' opened ',trim(fname)
                goto 12
             else
@@ -266,6 +272,10 @@ c file opened for reading
  999  iret=-1
       end
          
+
+
+
+
 
       subroutine loadmintupb(ndim,filetag,ymax,ymaxrat)
       implicit none
