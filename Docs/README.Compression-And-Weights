@@ -12,8 +12,9 @@ package is included in the distribution. By linking it, everything works
 but without compression.
 
 You need a late gfortran compiler, 5.1.0 and 5.2.1 are known to work.
-
-
+On lxplus at CERN you can do
+ source /afs/cern.ch/sw/lcg/contrib/gcc/5.2/x86_64-slc6-gcc52-opt/setup.sh
+and recompile.
 
 COMPRESSION
 
