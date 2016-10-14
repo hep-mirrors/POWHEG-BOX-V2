@@ -61,6 +61,10 @@ c no radiation from production!
       if(flg_collremnsamp) then
          xjac=630*(1-xrad)**4*xrad**4
          x=xrad**5*(70*xrad**4-315*xrad**3+540*xrad**2-420*xrad+126)
+         if (x.ge.1d0) then
+            x = 1d0
+            xjac = 0d0
+         endif
       else
          xjac=1
          x=xrad
