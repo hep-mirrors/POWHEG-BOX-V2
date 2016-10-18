@@ -151,9 +151,18 @@ c Look for old new weight format:
      5                       weights_whichpdf(weights_num)
       endif
       if(string.eq.'# Start extra-info-previous-event') then
-         read(nlf,'(a)') string
+         call pwhg_io_read(nlf,string,iret)
+         if(iret /= 0) goto 800
          read(string(3:),*) rad_kinreg
-         read(nlf,'(a)') string
+         call pwhg_io_read(nlf,string,iret)
+ 800     if(iret /= 0) then
+            write(*,*)
+     1           'lhefreadextra:'
+            write(*,*)
+     1       'found no lines after Start extra-info-previous-event'
+            write(*,*) ' exiting ...'
+            call exit(-1)
+         endif
          read(string(3:),*) rad_type
       endif
       goto 1
