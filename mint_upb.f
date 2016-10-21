@@ -47,7 +47,8 @@ c upper bounding envelope in MINT
      1    trim(filetag)//'.dat',iunit,flg_compress_upb,iret)
       else
          call pwhg_io_open_write(pwgprefix(1:lprefix)//
-     1    trim(filetag)//'.dat',iunit,flg_compress_upb,iret)
+     1        trim(filetag)//'-'//rnd_cwhichseed//'.dat',
+     2        iunit,flg_compress_upb,iret)
       endif
       if(iret /= 0) then
          write(*,*) 'startstoremintupb: cannot open output file'
@@ -134,7 +135,8 @@ c a call with iret=-10 deallocate all arrays and returns ;
 c status=0 is the initial call;
          iret=0
          nlines=0
-c in this block count the lines in the file (nlines
+c     in this block count the lines in the file (nlines
+         write(*,*) ' getlinemintupb1: counting lines in files'
  1       continue
          call getlinemintupb(filetag,ndim,cells,f,f0,iret)
          if(iret.eq.0) then
@@ -142,6 +144,7 @@ c in this block count the lines in the file (nlines
             goto 1
          endif
 c lines counted
+         write(*,*) ' getlinemintupb1: found ',nlines,' lines in files'
 c allocates enough stuff for nlines lines
          deallocate(allcells,stat=iret)
          allocate(allcells(ndim,nlines),stat = iret)
@@ -150,12 +153,14 @@ c allocates enough stuff for nlines lines
          deallocate(allf0,stat=iret)
          allocate(allf0(nlines),stat=iret)
 c store file content in allocated array
+         write(*,*) ' getlinemintupb1: load content from files'
          do j=1,nlines
             call getlinemintupb(filetag,ndim,cells,f,f0,iret)
             call inttochar(cells,allcells(:,j),ndim)
             allf(j)=f
             allf0(j)=f0
          enddo
+         write(*,*) ' getlinemintupb1: content loaded'
 c this call should return 1 in iret (no more lines)
          call getlinemintupb(filetag,ndim,cells,f,f0,iret)
 c Set status to 1 (cells loaded), index to 1 (initiate reading)
