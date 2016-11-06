@@ -39,7 +39,7 @@ c link errors. It is never invoked in the present case.
       integer iret,iorder
       call pdfpar(ndns,ih,xlam,scheme,iret)
 c set ad hoc value for q2min (not provided in mlmpdf)
-      pdf_q2min = 0
+      pdf_q2min = 2d0
 c not yet implemented
       iorder=-1
       end

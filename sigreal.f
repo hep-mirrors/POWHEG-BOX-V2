@@ -644,6 +644,7 @@ c     endif
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
+               flst_cur_alr = alr
                if(kn_emitter.eq.0) then
                   kn_resemitter=0
                else
@@ -838,6 +839,7 @@ c    csi^2 (1-y)   for FSR regions
 c     generate "nmomset" random real-phase space configurations
             call fillmomenta(nlegreal,nmomset,kn_masses,preal)
             do alr=1,flst_nalr
+               flst_cur_alr = alr
                do j=1,nmomset
                   if(kn_emitter.eq.0) then
                      kn_resemitter=0

@@ -21,7 +21,7 @@ c     generation of the b_tilde function
 c 3   prepare the upper bound for the generation of radiation
 c 4   generate events
       parallelstages =  powheginput('#parallelstage')
-      if(flg_newweight .and. parallelstages .gt. 0) then
+      if((flg_newweight .or. flg_rwl_add) .and. parallelstages .gt. 0) then
          write(*,*) ' Since we are running in reweighting mode '
          write(*,*) ' we set parallelstages to 4 '
          parallelstages = 4

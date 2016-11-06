@@ -297,7 +297,7 @@ c     it is a weight
       integer j,k
       character(len=3) group
       do j=1,rwl_num_weights
-         write(*,'(a,i2)') 'Weight ',j
+         write(*,'(a,i4)') 'Weight ',j
          write(*,'(a)') '   id='//rwl_weights_array(j)%id//','
          write(group,'(i3)')  rwl_weights_array(j)%group
          write(*,'(a,i2)') '   group='//trim(adjustl(group))//','
