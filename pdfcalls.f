@@ -4,6 +4,14 @@
       integer ih
       real * 8 x,pdf(-pdf_nparton:pdf_nparton)
       include 'pwhg_st.h'
+      if(x .ge. 1) then
+         if(x-1 .gt. 1d-4) then
+            write(*,*) 'pdfcall: warning, x=',x
+            write(*,*) 'returning pdf=0'
+         endif
+         pdf = 0
+         return
+      endif
       if(ih.eq.1) then
          call genericpdf0(pdf_ndns1,pdf_ih1,st_mufact2,x,pdf)
       elseif(ih.eq.2) then
