@@ -72,6 +72,9 @@ c whether to save btilde calls to set up upper bounding envelope
       endif
 
       if(flg_fastbtlbound .and. flg_storemintupb) then
+c     This parameter can accelerate the generation of btilde configuration
+c     by discarding phase space points where btilde>par_mintupb_ratlim*born.
+c     Reasonable values that have proven effective are mintupbratlim 1000.
          par_mintupb_ratlim = powheginput("#mintupbratlim")
          if(par_mintupb_ratlim < 0) par_mintupb_ratlim = 1d50
       endif

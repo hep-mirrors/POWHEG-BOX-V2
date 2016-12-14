@@ -304,7 +304,6 @@ c file opened for reading
          ratflg=.false.
       endif
       ratlim=par_mintupb_ratlim
-      if(ratlim < 0) ratlim=1d3
 c First compute total for f and f/f0 (f/b)
       iret=0
       xint=0
@@ -313,6 +312,7 @@ c First compute total for f and f/f0 (f/b)
       ndiscarded = 0
       do
          call getlinemintupb1(filetag,ndim,cells,f,f0,iret)
+c        iret = 1 is end of file.
          if(iret == 1) exit
          if(iret /= 0) goto 998
          if(f/f0 > ratlim) then
@@ -325,8 +325,12 @@ c First compute total for f and f/f0 (f/b)
             if(f0.gt.0) xintrat=xintrat+f/f0
          endif
       enddo
-c     This is to reproduce a minor old bug, just not to break binary compatibility
-c     of previous versions
+c     This was introduced in rev. 3205 to reproduce a minor old bug, just not to break binary compatibility
+c     of previous versions. In the previous version the exit condition was faulty, the do loop was
+c     was executed one more time after getlinemintupb1 returned an end of file. Thus the last
+c     value was adde in twice. Here we reproduce the same behaviour if flg_mintupb_xless is not set.
+c     The flg_mintupb_xless was introduced in 3205, so if flg_mintupb_xless is true there no binary
+c     compatibility with previous output anyhow.
       if(.not.flg_mintupb_xless) then
          xint=xint+f
          if(ratflg) then
