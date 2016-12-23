@@ -1,7 +1,8 @@
       subroutine rwl_setup_params_weights(count)
       implicit none
       integer count
-      integer, save :: old_pdf1,old_pdf2,old_facfact,old_renfact
+      integer, save :: old_pdf1,old_pdf2
+      real * 8, save :: old_facfact,old_renfact
       include 'pwhg_rwl.h'
       include 'pwhg_pdf.h'
       include 'pwhg_st.h'
