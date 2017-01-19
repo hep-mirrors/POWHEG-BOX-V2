@@ -42,10 +42,12 @@ c It should be set at the first call of the analysis.
       save /c_setupmulti/
 c if this is set we are sure that setupmulti was called
       weirdnum=317d0/12345d0
-      nmulti=n
+      if (nmulti.ne.n) then
+         nmulti=n
+         call rebookhist
+      endif
       end
 
- 
       subroutine bookupeqbins(string,binsize,xlow,xhigh)
       implicit none
       character *(*) string
@@ -75,7 +77,7 @@ c avoid funny numbers for bin edges near zero
          write(*,*) 'replacing ',xhigh,' with ',x(nbins+1)
          write(*,*) ' in histogram ',string
       endif
-      
+
       call bookup(string,nbins,x)
 
       deallocate(x)
@@ -248,7 +250,7 @@ c     underflow
          enddo
       endif
 c overflow
-      hist_ptr(j)%yhistarr(1:nmulti,hist_ptr(j)%nbins+1) = 
+      hist_ptr(j)%yhistarr(1:nmulti,hist_ptr(j)%nbins+1) =
      1     hist_ptr(j)%yhistarr(1:nmulti,hist_ptr(j)%nbins+1) + weight
       end
 
@@ -265,7 +267,7 @@ c It is better to book the histogram after the number of weights
 c are made available. This happens as soon as the first
 c event is read. Older code was not organized in this way.
 c In order not to break it, if nmulti changes by the time
-c onte tries to fill the first histogram, we rebook all of them
+c one tries to fill the first histogram, we rebook all of them
 c according to the current nmulti. This is just a fix, and should
 c not happen more than once.
 
@@ -285,21 +287,21 @@ c not happen more than once.
             deallocate(hist_ptr(j)%errhistarr1)
             deallocate(hist_ptr(j)%yhistarr2)
             deallocate(hist_ptr(j)%errhistarr2)
-            
+
             n = hist_ptr(j)%nbins
-            
+
             allocate(hist_ptr(j)%yhistarr(nmulti,0:n+1))
             allocate(hist_ptr(j)%yhistarr1(nmulti,0:n+1))
             allocate(hist_ptr(j)%errhistarr1(nmulti,0:n+1))
             allocate(hist_ptr(j)%yhistarr2(nmulti,0:n+1))
             allocate(hist_ptr(j)%errhistarr2(nmulti,0:n+1))
-            
+
             hist_ptr(j)%yhistarr = 0
             hist_ptr(j)%yhistarr1 = 0
             hist_ptr(j)%errhistarr1 = 0
             hist_ptr(j)%yhistarr2 = 0
             hist_ptr(j)%errhistarr2 = 0
-            
+
             hist_ptr(j)%nmulti = nmulti
          else
             write(*,*) ' filld: error: number of weights'//
