@@ -133,7 +133,7 @@ c     back right after <initrwgt>
          if(iret /= 0) goto 999
 c         read(unit=iunin,fmt='(a)',end=999,err=999) string0
          string=adjustl(string0)
-         if(string.eq.'<initrwgt>') then
+         if(string(1:10).eq.'<initrwgt>') then
 c     we back to the previous line and then position the file right after
 c     the <initrwgt>, in case something is written on the same line 
             call pwhg_io_backspace(iunin)
@@ -558,7 +558,9 @@ c     found iv, jv; now look for value
       implicit none
       character *(*) task
       integer numevts,count
+      include 'nlegborn.h'
       include 'pwhg_rwl.h'
+      include 'pwhg_rad.h'
       include 'LesHouches.h'
       type(rwl_lhe_block), allocatable, save :: events(:)
       logical,save :: ini=.true.
@@ -619,6 +621,10 @@ c     found iv, jv; now look for value
          events(count)%rwl_n1      = rwl_n1
          events(count)%rwl_n2      = rwl_n2
          events(count)%rwl_weight  = rwl_weight
+
+         events(count)%rad_type  = rad_type
+         events(count)%rad_kinreg  = rad_kinreg
+
       elseif(task == 'get') then
          nup = events(count)%nup
          idprup = events(count)%idprup
@@ -640,6 +646,10 @@ c     found iv, jv; now look for value
          rwl_n1     = events(count)%rwl_n1    
          rwl_n2     = events(count)%rwl_n2    
          rwl_weight = events(count)%rwl_weight
+
+         rad_type   = events(count)%rad_type
+         rad_kinreg = events(count)%rad_kinreg
+
       elseif(task == 'getwinfo') then
          xwgtup = events(count)%xwgtup
          rwl_type   = events(count)%rwl_type  
@@ -648,6 +658,10 @@ c     found iv, jv; now look for value
          rwl_n1     = events(count)%rwl_n1    
          rwl_n2     = events(count)%rwl_n2    
          rwl_weight = events(count)%rwl_weight
+
+         rad_type   = events(count)%rad_type
+         rad_kinreg = events(count)%rad_kinreg
+
       endif
       end
 

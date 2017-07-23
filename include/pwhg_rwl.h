@@ -2,7 +2,7 @@ c -*- Fortran -*-
 
       type rwl_lhe_block
          sequence
-         integer nup,idprup
+         integer nup,idprup,rad_type,rad_kinreg
          real * 8 xwgtup,scalup,aqedup,aqcdup
          integer, pointer :: idup(:),istup(:),mothup(:,:),icolup(:,:)
          real * 8, pointer :: pup(:,:),vtimup(:),spinup(:)
