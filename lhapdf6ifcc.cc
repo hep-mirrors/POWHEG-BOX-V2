@@ -39,4 +39,9 @@ extern "C" {
   void setlha6del_(int &iset) {
     delete pdfs[iset];
   }
+
+  void alphasfrompdf_(int &iset,double &q, double &asq) {
+    asq = pdfs[iset]->alphasQ(q);
+  }
+
 }

@@ -257,3 +257,14 @@ c      endif
       character * 3 whichpdfpk
       whichpdfpk='lha'
       end
+
+      function alphaspdf(mu)
+      implicit none
+      real * 8 lam5
+      integer iord,iset,maxsets
+      common/cgenericpdf/lam5,iord,iset,maxsets
+      real *8 mu,alphaspdf,tmp
+      call alphasfrompdf(iset,mu,tmp)
+      alphaspdf=tmp
+      return
+      end

@@ -187,6 +187,13 @@ c
       data olam/0.d0/
       save olam,b5,bp5,b4,bp4,b3,bp3,xlc,xlb,xllc,xllb,c45,c35,xmc,xmb
 
+      real *8 powheginput,mz,alphaspdf
+      external powheginput
+      logical ini,alphas_from_lhapdf
+      data ini/.true./
+      parameter (mz=91.1876d0)
+      save ini,alphas_from_lhapdf
+      
 c      logical ini
 c      data ini/.true./
 c      save ini
@@ -201,6 +208,17 @@ c         ini = .false.
 c      endif           
 c      return
 
+      if(ini) then
+         alphas_from_lhapdf=powheginput("#alphas_from_lhapdf").eq.1
+         if(alphas_from_lhapdf) then
+            write(*,*) '********************************'
+            write(*,*) '    Using alpha_s from LHAPDF'
+            write(*,*) '    alphas(mz=91.1876) = ',alphaspdf(mz)
+            write(*,*) '********************************'
+         endif
+         ini=.false.
+      endif
+      
       if(xlam.ne.olam) then
         olam = xlam
         xmc=sqrt(rad_charmthr2)
@@ -224,26 +242,31 @@ c      return
       xlq = 2 * log( q/xlam )
       xllq = log( xlq )
       nf = inf
-      if( nf .lt. 0) then
-        if( q .gt. xmb ) then
-          nf = 5
-        elseif( q .gt. xmc ) then
-          nf = 4
-        else
-          nf = 3
-        endif
-      endif
-      if    ( nf .eq. 5 ) then
-        pwhg_alphas = 1/(b5 * xlq) -  bp5/(b5 * xlq)**2 * xllq
-      elseif( nf .eq. 4 ) then
-        pwhg_alphas =
-     #    1/( 1/(1/(b4 * xlq) - bp4/(b4 * xlq)**2 * xllq) + c45 )
-      elseif( nf .eq. 3 ) then
-        pwhg_alphas =
-     #    1/( 1/(1/(b3 * xlq) - bp3/(b3 * xlq)**2 * xllq) + c35 )
+
+      if(alphas_from_lhapdf) then
+         pwhg_alphas=alphaspdf(q)
       else
-        print *,'error in alfa: unimplemented # of light flavours',nf
-        call exit(1)
+         if( nf .lt. 0) then
+            if( q .gt. xmb ) then
+               nf = 5
+            elseif( q .gt. xmc ) then
+               nf = 4
+            else
+               nf = 3
+            endif
+         endif
+         if    ( nf .eq. 5 ) then
+            pwhg_alphas = 1/(b5 * xlq) -  bp5/(b5 * xlq)**2 * xllq
+         elseif( nf .eq. 4 ) then
+            pwhg_alphas =
+     #1/( 1/(1/(b4 * xlq) - bp4/(b4 * xlq)**2 * xllq) + c45 )
+         elseif( nf .eq. 3 ) then
+            pwhg_alphas =
+     #1/( 1/(1/(b3 * xlq) - bp3/(b3 * xlq)**2 * xllq) + c35 )
+         else
+            print *,'error in alfa: unimplemented # of light flavours',nf
+            call exit(1)
+         endif
       endif
       return
       end
