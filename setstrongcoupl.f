@@ -264,8 +264,8 @@ c      return
             pwhg_alphas =
      #1/( 1/(1/(b3 * xlq) - bp3/(b3 * xlq)**2 * xllq) + c35 )
          else
-            print *,'error in alfa: unimplemented # of light flavours',nf
-            call exit(1)
+          print *,'error in alfa: unimplemented # of light flavours',nf
+          call exit(1)
          endif
       endif
       return
