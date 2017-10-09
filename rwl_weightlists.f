@@ -452,7 +452,7 @@ c     Check that group is not already present
             call  getquotedstringpos(buf(jpos:),i,j)
             if(i == -1) call errr
      1 ("can't find beginning of quoted string after id= in a weight")
-            if(i == -1) call errr
+            if(j == -1) call errr
      1       ("can't find end of quoted string after id= in a weight")
             i=i+jpos-1
             j=j+jpos-1
@@ -518,40 +518,61 @@ c     Set up arrays of key-value pairs contained in the desc string
       end
 
       logical function next_key_value_pair(buf,jpos,iv,jv,val)
+c     finds the next key=value pair in buf(jpos:)
+c     when returning jpos points at the character right after the found
+c     key=value pair, iv and jv are set to the index of the first and last
+c     character of the key in buf.
+c      If no key=value pair is found it returns false.
       implicit none
       character(len=*) buf
       integer jpos,iv,jv
       real * 8 val
-      integer ieq,i,j,k,lb
+      integer lb,i1,i2,ieq
       lb = len(buf)
  1    continue
-      if(jpos >= lb) goto 999
-      ieq = index(buf(jpos:),'=')
-      if(ieq <= 0) goto 999
-      ieq = jpos + ieq - 1
-c     Look for keyword backward
-      jv=ieq-1
-      do while ( jv > 0)
-         if(buf(jv:jv) /= ' ') exit
-         jv = jv - 1
-      enddo
-      if(jv <= 0) then
-         jpos = ieq + 1
-         goto 1
+      if(jpos <=0 ) then
+         write(*,*) 'next_key_value_pair:'
+         write(*,*) 'index of first character<=0, exiting ...'
+         call exit(-1)
       endif
-      iv = jv
-      do while ( iv - 1 > 0)
-         if(buf(iv-1:iv-1) == ' ') exit
-         iv = iv - 1
+      if(jpos > lb) goto 998
+c this should be the key
+      call nextword(jpos,iv,jv)
+c No key found
+      if(iv>lb) goto 998
+c     Next we should find an =
+      ieq=jv+1
+      do while(buf(ieq:ieq) == ' ' .and. ieq<=lb)
+         ieq=ieq+1
       enddo
-c     found iv, jv; now look for value
-      jpos = ieq+1
-      if(jpos >= lb) goto 999
-      read(buf(jpos:),fmt=*,err=1) val
+c     If there is no =, it is an error
+      if(ieq>lb) goto 999
+      if(buf(ieq:ieq) /= '=') goto 999
+c     Look for number to read
+      call nextword(ieq+1,i1,i2)
+      read(buf(i1:i2),fmt=*,err=999) val
+      jpos=i2+1
       next_key_value_pair = .true.
       return
- 999  continue
-      next_key_value_pair = .false.
+ 998  next_key_value_pair = .false.
+      return
+ 999  write(*,*) 'next_key_value_pair: malformed input buffer'
+      write(*,*) '"'//buf//'"'
+      call exit(-1)
+      contains
+      subroutine nextword(jj,ii1,ii2)
+      integer jj,ii1,ii2
+      ii1=jj
+      do while(buf(ii1:ii1) == ' ' .and. ii1<=lb)
+         ii1=ii1+1
+      enddo
+      ii2=ii1
+      do while(buf(ii2:ii2) /= ' '
+     1    .and. buf(ii2:ii2) /= '=' .and. ii2<=lb)
+         ii2=ii2+1
+      enddo
+      ii2 = ii2-1
+      end subroutine nextword
       end
 
       subroutine rwl_handle_lhe(task,numevts,count)
@@ -676,6 +697,11 @@ c     found iv, jv; now look for value
       do i=1,l
          ch=string(i:i)
          if(ch=="'" .or. ch=='"') exit
+         if(ch /= ' ') then
+            write(*,*)
+     1    'getquotedstringpos: was expecting a quote, found '//ch
+            call exit(-1)
+         endif
       enddo
       if(i>l) then
          i=-1
