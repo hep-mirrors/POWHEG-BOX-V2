@@ -143,9 +143,13 @@
 c skip completely a reweigting section
             if(adjustl(line0) == '<initrwgt>') then
                do while(adjustl(line0) /= '</initrwgt>')
+c     we empty the line before reading, since in case of EOF the behaviour
+c     is undefined
+                  line0 = ' '
                   read(unit=iun,fmt='(a)',iostat=ios) line0
                   if(ios.ne.0.and.line0.eq.' ') goto 10
                enddo
+               line0 = ' '
                read(unit=iun,fmt='(a)',iostat=ios) line0
                if(ios.ne.0.and.line0.eq.' ') goto 10
             endif
