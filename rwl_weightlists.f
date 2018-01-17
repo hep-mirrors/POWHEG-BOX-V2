@@ -45,7 +45,15 @@ c     <wgt id='...'> number </wgt> weights
             j = index(buf(jpos:nskip),'<wgt ')
             if(j <= 0) exit
             jpos = jpos + j - 1 + len('<wgt ')
-            call getquotedstringpos(buf(jpos:),i,j)
+            if(start_equal_strings(buf(1:nskip),'id',jpos)) then
+               if(start_equal_strings(buf(1:nskip),'=',jpos)) then
+                  call getquotedstringpos(buf(jpos:),i,j)
+               else
+                  call errr("no id keyword after <wgt")
+               endif
+            else
+               call errr("no = keyword after <wgt id")
+            endif
             if(i == -1 .or. j == -1) then
                write(*,*) buf
                write(*,*) buf(jpos:)
@@ -540,9 +548,18 @@ c this should be the key
       call nextword(jpos,iv,jv)
 c No key found
       if(iv>lb) goto 998
+      if(buf(iv:jv) == 'default') then
+c     In this case we do not expect a value
+         val = 0
+         next_key_value_pair = .true.
+         jpos = jv+1
+         return
+      endif
 c     Next we should find an =
       ieq=jv+1
-      do while(buf(ieq:ieq) == ' ' .and. ieq<=lb)
+      do
+         if(ieq>lb) exit
+         if(buf(ieq:ieq) /= ' ') exit
          ieq=ieq+1
       enddo
 c     If there is no =, it is an error
@@ -563,12 +580,15 @@ c     Look for number to read
       subroutine nextword(jj,ii1,ii2)
       integer jj,ii1,ii2
       ii1=jj
-      do while(buf(ii1:ii1) == ' ' .and. ii1<=lb)
+      do
+         if(ii1 > lb) exit
+         if(buf(ii1:ii1) /= ' ') exit
          ii1=ii1+1
       enddo
       ii2=ii1
-      do while(buf(ii2:ii2) /= ' '
-     1    .and. buf(ii2:ii2) /= '=' .and. ii2<=lb)
+      do
+         if(ii2 > lb) exit
+         if(buf(ii2:ii2) == ' ' .or. buf(ii2:ii2) == '=') exit
          ii2=ii2+1
       enddo
       ii2 = ii2-1
@@ -719,6 +739,11 @@ c skip final quote
       contains
       end
 
+
+c     Finds the next word in string(jpos:), sets i and j to the first
+c     and last letter of the word. The symbols < and > are always
+c     considered single letter words. Words can be separated by blanks,
+c     tabs and newlines.
       subroutine next_word_in_string(string,jpos,i,j)
       use, intrinsic :: ISO_C_BINDING
       implicit none
@@ -753,7 +778,7 @@ c skip final quote
 
       logical function start_equal_strings(str1,str2,jpos)
       use, intrinsic :: ISO_C_BINDING
-c returns true if str2 is the beginning of str1 ignoring leading blanks
+c returns true if str2 is the beginning of str1(jpos:) ignoring leading blanks
 c If this is the case jpos is change to point past the end of str2 in str1 
       implicit none
       character(len=*) :: str1,str2
