@@ -286,7 +286,8 @@ c allocate a weight array of the appropriate size
 c     Read weight information
 c      call read_weights_info
       do j=1,nev
-         if(flg_newweight) then
+         if(flg_newweight .and. .not. flg_rwl_add) then
+c     Old style adding one weight
             call pwhgnewweight(iunin,iunout)
          elseif(flg_rwl_add) then
 c     read num_stored_evt from input .lhe file

@@ -99,7 +99,7 @@ c      write(nlf,'(a)')'<event>'
      & vtimup(i),spinup(i)
          call  pwhg_io_write(nlf,trim(buffer))
  200  continue
-      if(flg_reweight) then
+      if(flg_reweight .or. flg_rwl) then
          call lhefwriteevrw(nlf)
          if(flg_rwl) then
             call rwl_write_weights(nlf)
