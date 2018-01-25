@@ -64,7 +64,8 @@ POWHEG should set its parameter according to the description present in each wei
 The interpretation of the settings for each weight is performed by the subroutine in rwl_setup_param_weights.f.
 It looks for keywords=value pairs in the description field of the weight, and it performs the appropriate
 action. At the moment it only handles PDF's and scale factors, but it can be easily extended according
-to the needs of each process.
+to the needs of each process. Inspecting the file  rwl_setup_param_weights.f helps in explaining what is
+handled at the moment.
 
 By running the pwhg_main program, you will get events with the appropriate <initrwgt> header, and with the
 three weights added. The nominal weight is not included! You should add an appropriate line
@@ -93,9 +94,19 @@ rwl_add 1
 <weight id='6'> lhapdf=10802 facscfact=2 </weight>
 </initrwgt>
 
-three new weights will be added. Notice that in these way other parameters may have different settings,
-according to the new powheg.input file. Thus, by using this feature, the behaviour of the older weight
-scheme can be fully reproduced.
+three new weights will be added. Notice that in these way other
+parameters may have different settings, according to the new
+powheg.input file. Thus, by using this feature, the behaviour of the
+older weight scheme can be fully reproduced.
+
+Remember, however, that, as in the old weight scheme, you cannot
+reweight in parameters that affect the generation of phase
+space. Typically, the masses of final state particles or resonances
+may do that.  If you need to do this, contact the authors of the
+package.  Other subtle problems that may arise are, for example, if
+the width of a resonance depends upon alpha_s, and thus on the PDF
+set. This may cause inconsistencies. Always contact the authors of the
+package if you find problems there.
 
 
 EFFICIENCY ISSUES WITH MANY PDF SETS
