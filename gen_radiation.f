@@ -571,9 +571,15 @@ c to set xmuren2:
       tmp2=st_alpha / pwhg_alphas0(t,rad_lamll,nlc)
       tmp=tmp1*tmp2
       if(tmp.gt.1) then
-         write(*,*) ' Error: upper bound lower than actual value',
-     #        tmp,tmp1,tmp2,t
-         call exit(1)
+c     It has been reported that this can actually happen for very
+c     small values of t when using the alphas_from_lhapdf option.
+c     It occours at very small values of t, and violations are very small,
+c     so we ignore them unless t is significantly above ptsqmin
+         if(t > 1.2*rad_ptsqmin) then
+            write(*,*) ' Error: upper bound lower than actual value',
+     1        tmp,tmp1,tmp2,t
+            call exit(1)
+         endif
       endif
       if(rv.gt.tmp) then
          goto 1
