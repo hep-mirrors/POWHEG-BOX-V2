@@ -113,6 +113,8 @@ c set st_bornorder to an impossible value; later on we check
 c if the user has set it. This is only used by minlo
          st_bornorder=-1000
       endif
+c     Flag to perform nnlo reweighting
+      flg_nnlops = (powheginput("#nnlops") == 1)
 c     whether to correct for upper bound violations in the generation
 c     of btilde and remnant events 
       flg_ubexcess_correct = powheginput("#ubexcess_correct") ==1     

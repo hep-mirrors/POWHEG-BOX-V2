@@ -198,6 +198,10 @@ c     write(iunout,'(a)') trim(string0)
      2              rwl_weights_array(kw)%desc//"</weight>")
             endif
          enddo
+c     If flg_nnlops is set, weights are doubled to include the NNLO corrected ones.
+c     We include here a dummy file. NLLOPS generators can override it to call their own routines
+c     for filling the NNLOPS weights in the header.
+         include 'rwl_write_rwgt_extra_info.f'
          if(kg /= 0) then
             call pwhg_io_write(iun,"</weightgroup>")
          endif
@@ -350,6 +354,10 @@ c     it is a weight
                   call pwhg_io_write(iun,tmpstr)
                endif
             enddo
+c     If flg_nnlops is set, weights are doubled to include the NNLO corrected ones.
+c     We include here a dummy file. NLLOPS generators can override it to call their own routines
+c     for writing the NNLOPS weights in the event.            
+            include 'rwl_write_weights_extra.f'
          enddo
          call pwhg_io_write(iun,'</weights>')
       endif
