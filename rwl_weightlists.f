@@ -182,6 +182,7 @@ c     write(iunout,'(a)') trim(string0)
       subroutine rwl_write_rwgt_info(iun)
       implicit none
       include 'pwhg_rwl.h'
+      include 'pwhg_flg.h'
       integer iun
       integer kg,kw,group
       call pwhg_io_write(iun,"<initrwgt>")
@@ -199,7 +200,7 @@ c     write(iunout,'(a)') trim(string0)
             endif
          enddo
 c     If flg_nnlops is set, weights are doubled to include the NNLO corrected ones.
-c     We include here a dummy file. NLLOPS generators can override it to call their own routines
+c     We include here a dummy file. NNLOPS generators can override it to call their own routines
 c     for filling the NNLOPS weights in the header.
          include 'rwl_write_rwgt_extra_info.f'
          if(kg /= 0) then
@@ -329,6 +330,7 @@ c     it is a weight
       implicit none
       integer iun
       include 'pwhg_rwl.h'
+      include 'pwhg_flg.h'
       character(len=20) string
       character(len=11) tmpstr
       integer jg,jw
@@ -355,7 +357,7 @@ c     it is a weight
                endif
             enddo
 c     If flg_nnlops is set, weights are doubled to include the NNLO corrected ones.
-c     We include here a dummy file. NLLOPS generators can override it to call their own routines
+c     We include here a dummy file. NNLOPS generators can override it to call their own routines
 c     for writing the NNLOPS weights in the event.            
             include 'rwl_write_weights_extra.f'
          enddo
