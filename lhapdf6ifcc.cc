@@ -3,9 +3,9 @@
 
 #include "LHAPDF/LHAPDF.h"
 #include <iostream>
+#include <string.h>
 
 using namespace std;
-
 
 LHAPDF::PDF* *pdfs;
 
@@ -44,4 +44,10 @@ extern "C" {
     asq = pdfs[iset]->alphasQ(q);
   }
 
+  void lhapdfname_(int &ndns, char* fstring){
+    string cname=LHAPDF::lookupPDF(ndns).first;
+    strcpy(fstring,cname.c_str());
+    //cout<<cname<<"|"<<endl;
+    //cout<<fstring<<"|"<<endl;
+  }
 }
