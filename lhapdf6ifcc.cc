@@ -44,9 +44,10 @@ extern "C" {
     asq = pdfs[iset]->alphasQ(q);
   }
 
-  void lhapdfname_(int &ndns, char* fstring){
+  void lhapdfname_(int &ndns, char* fstring, int &iset){
     string cname=LHAPDF::lookupPDF(ndns).first;
     strcpy(fstring,cname.c_str());
+    iset=LHAPDF::lookupPDF(ndns).second;
     //cout<<cname<<"|"<<endl;
     //cout<<fstring<<"|"<<endl;
   }
