@@ -147,7 +147,7 @@ c proton and antiproton
 c neutron and antineutron
         idbmup(1) = 2112*pdf_ih1/abs(pdf_ih1)
       else
-c can be used to pass directly the pdg id of the projectilr
+c can be used to pass directly the pdg id of the projectile
          idbmup(1)=pdf_ih1
       endif
       if(abs(pdf_ih2).eq.1) then
@@ -155,7 +155,7 @@ c can be used to pass directly the pdg id of the projectilr
       elseif(abs(pdf_ih2).eq.2) then
         idbmup(2) = 2112*pdf_ih2/abs(pdf_ih2)
       else
-c can be used to pass directly the pdg id of the projectilr
+c can be used to pass directly the pdg id of the projectile
          idbmup(2)=pdf_ih2
       endif
 c pdf group; negative to use internal herwig pdf's for showering
