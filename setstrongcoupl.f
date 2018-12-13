@@ -213,7 +213,7 @@ c      return
          if(alphas_from_lhapdf) then
             write(*,*) '********************************'
             write(*,*) '    Using alpha_s from LHAPDF'
-            write(*,*) '    alphas(mz=91.1876) = ',alphaspdf(mz)
+            write(*,*) '    alphas(mz=',mz,') = ',alphaspdf(mz)
             write(*,*) '********************************'
          endif
          ini=.false.
