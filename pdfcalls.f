@@ -4,6 +4,14 @@
       integer ih
       real * 8 x,pdf(-pdf_nparton:pdf_nparton)
       include 'pwhg_st.h'
+      integer npdf
+      if(ih == 1 .and. pdf_ndns1 == -100) then
+         pdf = 1
+         return
+      elseif(ih == 2 .and. pdf_ndns2 == -100) then
+         pdf = 1
+         return
+      endif
       if(x .ge. 1) then
          if(x-1 .gt. 1d-4) then
             write(*,*) 'pdfcall: warning, x=',x
