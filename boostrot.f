@@ -14,7 +14,11 @@ c      if (abs(beta).ge.1d0) then
 c         write(*,*) '********** WARNING ***************'
 c         write(*,*) 'mboost called with beta=',beta
 c         write(*,*) '**********************************'
-c      endif
+c     endif
+      if(beta == 0) then
+         vout=vin
+         return
+      endif
       if (beta.ge.1d0) then
          beta = 1-tiny
       elseif (beta.le.-1d0) then
