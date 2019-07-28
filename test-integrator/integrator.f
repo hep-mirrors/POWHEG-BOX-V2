@@ -613,14 +613,15 @@ c get final value (x and vol not used in this call)
             enddo
 c ubound is now an upper bound on the full (not avatar) f;
 c     if it fails the hit and miss, f also fails.
-c     Here goto 10, not 11! meaning this counts for the estimate of the
-c     cross section.
+c     Here goto 10, not 11! Doing this is equivalent to supplying
+c     an extra factor equal to the ratio of the volumes of the regions
+c     delimited by y < min(ymaxrat(x)*vfun0(x),ymax(x)) and y < ymax(x).
             if(ub.gt.ubound) goto 10
 c now go back to compute the full f, if required
             istep=1
 c     if we got up to here we will be exiting the 4 loop after
 c     the computation of the istep=1 f.
-c     The distribution generated up to this point is the
+c     The distribution generated up to this point is proportional to the
 c     minimum between the product of f at istep=0 times ymaxrat
 c     and fsu (that is to say ymax). We reset fsu to this minimum
 c     to check later for bound violations
