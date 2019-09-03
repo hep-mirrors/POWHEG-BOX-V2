@@ -593,13 +593,14 @@ c If imode=2, only the full contribution is needed
 c if ifun is nonzero the function does not support the avatar function;
 c do only one iteration
       if(ifun.ne.0) istep = 1
-      if(.not.pwhg_isfinite(vfun)) goto 10
+      if(.not.pwhg_isfinite(vfun)) goto 11
       f=f+vfun
       ifirst=1
       call nextlexi(ndim,ifold,kfold,iret)
       if(iret.eq.0) goto 5
 c get final value (x and vol not used in this call)
       ifun = fun(x,vol,2,istep,vfun,vfun0)
+      if(.not.pwhg_isfinite(vfun)) goto 11
       f = vfun
       if(imode.eq.2) then
          return
