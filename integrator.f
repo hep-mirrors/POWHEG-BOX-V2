@@ -344,6 +344,13 @@ c nitmax*ncalls calls.
       integer iun
       logical iunopen
       common/cregrid/iun,iunopen
+      logical, save :: ini=.true., fixedgrid
+      real * 8 powheginput
+      if(ini) then
+         fixedgrid = powheginput('#fixedgrid').eq.1
+         ini = .false.
+      endif      
+      if(fixedgrid) return
       xacc = xacc0
       do kint=1,nint
 c xacc (xerr) already contains a factor equal to the interval size
