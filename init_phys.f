@@ -45,6 +45,9 @@ c flag to use importance sampling in the x variable in
 c collinear remnant generation. Needed for charm at LHC
       flg_collremnsamp=.false.
 c End initialization of common block defaults.
+c     This factor was introduced for the MiNNLOStuff work.
+c     If set to 1 leaves the lhapdf behaviour unchanged.
+      pdf_cutoff_fact=1
       pdf_ih1=powheginput('ih1')
       pdf_ih2=powheginput('ih2')
       if(whichpdfpk().eq.'lha') then

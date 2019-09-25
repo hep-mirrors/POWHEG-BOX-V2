@@ -177,14 +177,32 @@ c Interface to lhapdf package.
       real * 8 xmu2,x,fx(-pdf_nparton:pdf_nparton)
       real * 8 fxlha(-6:6)
       integer j
-      real * 8 tmp
+      real * 8 tmp,mu2_loc
       real*8 photon
+
+      logical,save:: ini=.true.
+      
+      if(ini) then
+         write(*,*) '==============================='
+         write(*,*) 'LHAPDF called in POWHEG' 
+         write(*,*) 'pdf cutoff factor = ',pdf_cutoff_fact
+         write(*,*) 'pdf cutoff [GeV] = ',sqrt(pdf_cutoff_fact**2 *pdf_q2min)
+         write(*,*) '==============================='
+         ini=.false.
+      endif
+
+
       call genericpdfset(ndns)
 
-      call xfxq2(iset,x,xmu2,fxlha)
+      mu2_loc=xmu2
+      if(mu2_loc.lt.(pdf_cutoff_fact**2 *pdf_q2min)) then
+         mu2_loc=pdf_cutoff_fact**2 *pdf_q2min
+      endif
+
+      call xfxq2(iset,x,mu2_loc,fxlha)
 c photon induced work only with MRST2004QED (ndns = 20460)
       if (ndns.eq.20460) then
-          call xfphoton(x,sqrt(xmu2),photon)
+          call xfphoton(x,sqrt(mu2_loc),photon)
       else
           photon=0d0
       endif
