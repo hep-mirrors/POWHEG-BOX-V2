@@ -1,5 +1,6 @@
 #!/bin/bash
 
+svnversiondir=`dirname $0`
 
 function svninfo {
 if which svn > /dev/null && svn info > /dev/null
@@ -17,7 +18,14 @@ currdir=`pwd`
 
 > $currdir/svnversion.txt
 
-for dir in ../ $currdir
+if [ a"$*" = a ]
+then
+    dirs="$currdir ../"
+else
+    dirs="$*"
+fi
+
+for dir in $dirs
 do
 
 cd $dir
@@ -46,11 +54,11 @@ fi
 
 fi
 
-done
-
 cd $currdir
 
-gfortran ../svnversion/svnversion.f -o svnversion
+done
+
+gfortran $svnversiondir/svnversion.f -o svnversion
 
 ./svnversion
 
