@@ -484,9 +484,11 @@ c only radiated gluons or photons
                enddo
                if(isequal) then
                   write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
-     1                 flst_emitter(alrp),', process ',(flst_alr(j,alrp),j=1,nlegreal)
+     1                 flst_emitter(alrp),', process ',
+     2             (flst_alr(j,alrp),j=1,nlegreal)
                   write(iun,'(2a,i2,a,20(1x,i3))') ' ==  ',' emitter ',
-     1                 flst_emitter(alr),', process ',(flst_alr(j,alr),j=1,nlegreal)
+     1                 flst_emitter(alr),', process ',
+     2             (flst_alr(j,alr),j=1,nlegreal)
                   ident(alrp)=.true.
                endif
             enddo
@@ -495,9 +497,11 @@ c only radiated gluons or photons
      1              rs(alr,jexp),rr(alr,jexp),jexp,2,flag)
                if(rs(alr,jexp) == 0 .or. rr(alr,jexp) /= rr(alr,jexp)
      1              .or. rs(alr,jexp) /= rs(alr,jexp)) then
-                  write(iun,*) 'alr=',alr,rr(alr,jexp),'/',rs(alr,jexp),flag
+                  write(iun,*) 'alr=',alr,rr(alr,jexp),
+     2             '/',rs(alr,jexp),flag
                else
-                  write(iun,*) 'alr=',alr,rr(alr,jexp)/rs(alr,jexp),flag
+                  write(iun,*) 'alr=',alr,
+     1             rr(alr,jexp)/rs(alr,jexp),flag
                endif
             enddo
          enddo
@@ -598,9 +602,11 @@ c     acceptable configuration is found
                enddo
                if(isequal) then
                   write(iun,'(2a,i2,a,20(1x,i3))') label,' emitter ',
-     1                 flst_emitter(alrp),', process ',(flst_alr(j,alrp),j=1,nlegreal)
+     1                 flst_emitter(alrp),', process ',
+     2             (flst_alr(j,alrp),j=1,nlegreal)
                   write(iun,'(2a,i2,a,20(1x,i3))') ' ==  ',' emitter ',
-     1                 flst_emitter(alr),', process ',(flst_alr(j,alr),j=1,nlegreal)
+     1                 flst_emitter(alr),', process ',
+     2             (flst_alr(j,alr),j=1,nlegreal)
                   ident(alrp)=.true.                     
                endif
             enddo
@@ -614,7 +620,8 @@ c     #(rr(alr,jexp-1)-rc(alr,jexp-1)),rc(alr,jexp)/rr(alr,jexp),flag
 c     endif
                if(rc(alr,jexp) == 0 .or. rr(alr,jexp) /= rr(alr,jexp)
      1              .or. rc(alr,jexp) /= rc(alr,jexp)) then
-                  write(iun,*) 'alr=',alr,rr(alr,jexp),'/',rc(alr,jexp),flag
+                  write(iun,*) 'alr=',alr,rr(alr,jexp),'/',
+     1             rc(alr,jexp),flag
                else
                   write(iun,*) 'alr=',alr,rr(alr,jexp)/rc(alr,jexp),flag
                endif
