@@ -186,7 +186,8 @@ c Interface to lhapdf package.
          write(*,*) '==============================='
          write(*,*) 'LHAPDF called in POWHEG' 
          write(*,*) 'pdf cutoff factor = ',pdf_cutoff_fact
-         write(*,*) 'pdf cutoff [GeV] = ',sqrt(pdf_cutoff_fact**2 *pdf_q2min)
+         write(*,*) 'pdf cutoff [GeV] = ',
+     1    sqrt(pdf_cutoff_fact**2 *pdf_q2min)
          write(*,*) '==============================='
          ini=.false.
       endif
