@@ -615,6 +615,10 @@ c         close(iun)
       real * 8 xx(ndiminteg)      
       real * 8 btilde
       external btilde
+c     this common block is to communicate to gen the outliers limits.
+c     events exceeding them will be discarded
+      real * 8 v1,v2
+      common/outliers_limits/v1,v2
 c use these to provide an estimate of the cross section while generating an event
       real * 8 sigma, sigma2
       integer isigma
@@ -625,6 +629,8 @@ c use these to provide an estimate of the cross section while generating an even
          gen_isigma = 0
          gen_totev  = 0
       endif
+c     this sets the limits previously stored for btilde in v1,v2
+      call store_outliers_limit('get','btildeupb',v1,v2)
       call gen(btilde,ndiminteg,xgrid,ymax,ymaxrat,xmmm,ifold,1,
      1     mcalls,icalls,xx)
       gen_sigma  = gen_sigma  + sigma
@@ -661,6 +667,10 @@ c use these to provide an estimate of the cross section while generating an even
       real * 8 sigma, sigma2
       integer isigma
       common/gencommon/sigma,sigma2,isigma
+c     this common block is to communicate to gen the outliers limits.
+c     events exceeding them will be discarded
+      real * 8 v1,v2
+      common/outliers_limits/v1,v2
       if(mcalls == 0) then
          gen_sigmarm  = 0
          gen_sigma2rm = 0
@@ -670,6 +680,8 @@ c use these to provide an estimate of the cross section while generating an even
 c communicate file to load upper bound data
       savelogical=flg_fastbtlbound
       flg_fastbtlbound=.false.
+c     this sets the limits previously stored for the remnants in v1,v2
+      call store_outliers_limit('get','remnupb',v1,v2)
       call gen(sigremnant,ndiminteg,xgridrm,ymaxrm,ymaxratrm,
      1    xmmmrm,ifoldrm,1,mcalls,icalls,xx)
       flg_fastbtlbound=savelogical
@@ -702,6 +714,7 @@ c communicate file to load upper bound data
       include 'pwhg_pdf.h'
       include 'pwhg_rad.h'
       include 'pwhg_rnd.h'
+      include 'pwhg_flg.h'
       real * 8 xgrid(0:50,ndiminteg),ymax(50,ndiminteg),
      1     ymaxrat(50,ndiminteg),xgridrm(0:50,ndiminteg),
      2     ymaxrm(50,ndiminteg),ymaxratrm(50,ndiminteg)
@@ -713,6 +726,7 @@ c communicate file to load upper bound data
       integer lprefix
       common/cpwgprefix/pwgprefix,lprefix
       integer j,k,iun
+      real * 8 v1,v2
       call newunit(iun)
       if(rnd_cwhichseed.eq.'none') then
          open(unit=iun,file=pwgprefix(1:lprefix)//gridtag//'.dat',
@@ -741,6 +755,14 @@ c communicate file to load upper bound data
      6     rad_totbtlgen,rad_etotbtlgen,
      7     rad_totgen,rad_etotgen,
      8     rad_tot,rad_etot
+      if(gridtag == 'fullgrid' .and. flg_storemintupb
+     1     .and. flg_storemintupb_nooutliers) then
+c outliers limits are computed at stage 3, and should be passed to stage 4         
+         call store_outliers_limit('get','btildeupb',v1,v2)
+         write(iun) v1,v2
+         call store_outliers_limit('get','remnupb',v1,v2)
+         write(iun) v1,v2
+      endif
       close(iun)
       end
 
@@ -754,6 +776,7 @@ c communicate file to load upper bound data
       include 'pwhg_rad.h'
       include 'pwhg_rnd.h'
       include 'pwhg_par.h'
+      include 'pwhg_flg.h'
       real * 8 xgrid(0:50,ndiminteg),ymax(50,ndiminteg),
      1     ymaxrat(50,ndiminteg),xgridrm(0:50,ndiminteg),
      2     ymaxrm(50,ndiminteg),ymaxratrm(50,ndiminteg)
@@ -784,6 +807,7 @@ c
       real * 8 rjfound, rncall2
       real * 8 powheginput
       external powheginput
+      real * 8 v1,v2
       if(powheginput('use-old-grid').eq.0) then
          iret=1
          return
@@ -866,6 +890,16 @@ c random seeds
      1      .or.ios.ne.0)
      2        goto 998
          read(iun,iostat=ios) ((tot(k,j),k=1,2),j=1,8)
+c     outliers limits are red from the fullgrid file, and stored in the store_outliers_limit
+c     routine. Repeated calls with 'put' have no effects, so no worry if this is done for
+c     each loaded file.
+         if(gridtag == 'fullgrid' .and. flg_storemintupb
+     1        .and. flg_storemintupb_nooutliers) then
+            read(iun) v1,v2
+            call store_outliers_limit('put','btildeupb',v1,v2)
+            read(iun) v1,v2
+            call store_outliers_limit('put','remnupb',v1,v2)
+         endif
          if(check_bad_st2) then
 c     tot(:,7) corresponds to rad_totgen, sum of btl and rmn (absolute value) results.
             totarr(:,jfile)=tot(:,7)

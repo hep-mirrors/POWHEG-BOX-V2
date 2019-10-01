@@ -29,6 +29,8 @@
      1     num_weights,num_old_weights,count_weights
       real * 8, allocatable :: weights(:,:)
       logical exist
+c     This, if available, prints citation information on the process.
+      include 'ProcessCitation.f'
 c     Print out svn information, if any
       iun = 6
       include 'svn.version'
@@ -76,7 +78,9 @@ c     by discarding phase space points where btilde>par_mintupb_ratlim*born.
 c     Reasonable values that have proven effective are mintupbratlim 1000.
       par_mintupb_ratlim = powheginput("#mintupbratlim")
       if(par_mintupb_ratlim < 0) par_mintupb_ratlim = 1d50
-      
+c     This flag activates the rejection of outliers when storemintupb is set.
+      flg_storemintupb_nooutliers = powheginput("#StoredubNoOutliers") == 1
+c      
       call newunit(iun)
 
 c The following allows to perform multiple runs with

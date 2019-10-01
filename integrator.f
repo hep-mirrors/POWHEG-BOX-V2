@@ -505,6 +505,10 @@ c use these to provide an estimate of the cross section while generating an even
       real * 8 sigma, sigma2, rweight
       integer isigma
       common/gencommon/sigma,sigma2,isigma
+c     this common block is to communicate to gen the outliers limits.
+c     events exceeding them will be discarded
+      real * 8 v1,v2
+      common/outliers_limits/v1,v2      
       sigma = 0
       sigma2 = 0
       isigma = 0
@@ -608,6 +612,13 @@ c do only one iteration
 c get final value (x and vol not used in this call)
       ifun = fun(x,vol,2,istep,vfun,vfun0)
       if(.not.pwhg_isfinite(vfun)) goto 11
+      if(flg_storemintupb .and. flg_storemintupb_nooutliers) then
+         if(istep == 0) then
+            if(vfun > v2) goto 11
+         else
+            if(vfun > v1) goto 11
+         endif
+      endif
       f = vfun
       if(imode.eq.2) then
          return

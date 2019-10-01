@@ -18,7 +18,7 @@ and recompile.
 
 COMPRESSION
 
-In order to activate compression, insert:
+In order to activate compression of les Houches files, insert:
 
 compress_lhe 1
 
@@ -31,6 +31,8 @@ to get back the ascii file. The compression factor is roughly 5.
 The flag acts only for writing files. When reading files (in order to add
 new weights, for example) the io interface detects whether the file is
 compressed or not, and reads it in all cases.
+
+When using the storemintupb flag, it is often userful to compress also the 
 
 
 

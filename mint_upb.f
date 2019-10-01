@@ -103,12 +103,16 @@ c A special call with iret = -10 causes the deallocation
 c of the memory arrays used to store the data.
       implicit none
       include 'nlegborn.h'
+      include 'pwhg_flg.h'
       character *(*) filetag
       integer ndim,cells(ndiminteg),iret
       real * 8 f,f0
       character * 1, dimension(:,:), allocatable, save :: allcells
       real, dimension(:), allocatable, save :: allf
       real, dimension(:), allocatable, save :: allf0
+      real * 8 upblimitsv1,upblimitsv2
+      logical print_outliers
+      common/cfind_outliers/upblimitsv1,upblimitsv2,print_outliers
       integer nlines,j
       integer status,index
 c the internal flag status is
@@ -135,14 +139,38 @@ c a call with iret=-10 deallocate all arrays and returns ;
 c status=0 is the initial call;
          iret=0
          nlines=0
+c     In this block, find maximum below outliers
+         upblimitsv1=1d308  ! DBL_MAX
+         upblimitsv2=1d308
+         print_outliers = .false.
+         if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
+            call find_outliers_limit('startdouble',f,f0)
+         else
+            call find_outliers_limit('startsimple',f,f0)
+         endif
+         do while(iret == 0)
+            call getlinemintupb(filetag,ndim,cells,f,f0,iret)
+            if(iret == 0) call find_outliers_limit('add',f,f0)
+         enddo
+         call find_outliers_limit('lim',upblimitsv1,upblimitsv2)
+         call store_outliers_limit('put',trim(filetag),
+     1        upblimitsv1,upblimitsv2)
+         iret = 0
 c     in this block count the lines in the file (nlines
          write(*,*) ' getlinemintupb1: counting lines in files'
+c     this flag determines whether outliers found in the sequence are
+c     printed in the log file and counted in the counters.
+         print_outliers = .true.
  1       continue
          call getlinemintupb(filetag,ndim,cells,f,f0,iret)
          if(iret.eq.0) then
             nlines=nlines+1
             goto 1
          endif
+c     in the following repeated reading of the stored calls
+c     outliers are no longer counted and printed, since they
+c     have already been counted.
+         print_outliers = .false.
 c lines counted
          write(*,*) ' getlinemintupb1: found ',nlines,' lines in files'
 c allocates enough stuff for nlines lines
@@ -203,6 +231,9 @@ c          from the beginning
       character * 20 fmt
       character * 4 chnum
       logical lpresent
+      real * 8 upblimitsv1,upblimitsv2
+      logical print_outliers
+      common/cfind_outliers/upblimitsv1,upblimitsv2,print_outliers
       integer status
       data status/0/
       save status,iunit,jfile,fmt
@@ -244,8 +275,33 @@ c file opened for reading
       if(iret < 0) goto 11
       if(filetag.eq.'btildeupb'.and.flg_fastbtlbound) then
          read(string,fmt=fmt) (cells(k),k=1,ndim),f,f0
+         if(flg_storemintupb_nooutliers) then
+            if(f > upblimitsv1) then
+               if(print_outliers) then
+                  call increasecnt(trim(filetag)//' f  outliers')
+                  write(*,*) 'getlinemintupb: '//trim(filetag)//
+     1                 ' f  outlier=',f
+               endif
+               goto 12
+            elseif(f0 > upblimitsv2) then
+               call increasecnt(trim(filetag)//' f0 outliers')
+               write(*,*) 'getlinemintupb: '//trim(filetag)//
+     1          ' f0  outlier=',f
+               goto 12
+            endif
+         endif
       else
          read(string,fmt=fmt) (cells(k),k=1,ndim),f
+         if(flg_storemintupb_nooutliers) then
+            if(f > upblimitsv1) then
+               if(print_outliers) then
+                  call increasecnt(trim(filetag)//' f  outliers')
+                  write(*,*) 'getlinemintupb: '//trim(filetag)//
+     1                 ' f0  outlier=',f
+               endif
+               goto 12
+            endif
+         endif
          f0=-1
       endif
       iret=0
@@ -572,3 +628,130 @@ c     stop updating the rat grid, if satisfactory
       enddo
       end
 
+
+
+
+      subroutine find_outliers_limit(mode,v1,v2)
+c     First call:
+c     call find_outliers_limit('startsimple')   ! initializes the subroutine for single value
+c     call find_outliers_limit('startdouble')   ! initializes the subroutine for double value
+c     call find_outliers_limit('add',v1 (, v2) )  ! add a value (single or double)
+c     call find_outliers_limit('lim',v1 (, v2) )  ! returns in v1 (v2) the largest value that is not an outlier.
+c     the subroutine builds up a histograms of the number of entries that have been added in bins
+c     according to their size. Each bin is a fator of 10 wide (in log scale). When called with
+c     mode='lim' it returns the end of the last non-isolated bin.
+      character * (*)  mode
+      double precision v1,v2
+      double precision size, v(2)
+      integer logsize
+      integer, save :: l
+      double precision, save, allocatable :: hist(:,:)
+      if(mode == 'startsimple') then
+         if(allocated(hist)) then
+            write(*,*) 'find_outliers_limit: called with mode='
+     1       //trim(mode)//','
+            write(*,*) 'but was not reset, exiting ...'
+            call exit(-1)
+         endif
+         allocate(hist(1,-100:100))
+         hist = 0
+         l=1
+      else if(mode == 'startdouble') then
+         if(allocated(hist)) then
+            write(*,*) 'find_outliers_limit: called with mode='
+     1           //trim(mode)//','
+            write(*,*) 'but was not reset, exiting ...'
+            call exit(-1)
+         endif
+         allocate(hist(2,-100:100))
+         hist = 0
+         l=2
+      elseif(mode == 'add') then
+         do k=1,l
+            select case(k)
+            case(1)
+               v(1) = v1
+            case(2)
+               v(2) = v2
+            end select            
+            size=abs(v(k))
+            if(size == 0) then
+               continue
+            else
+               logsize = min(max(-100,nint(log(size))),100)
+               hist(k,logsize) = hist(k,logsize) + 1
+            endif
+         enddo
+      elseif(mode == 'lim') then
+         do k=1,l
+            maxj=-100
+            do j=-100,100
+               if(hist(k,j)>hist(k,maxj)) then
+                  maxj=j
+               endif
+            enddo
+            do j=maxj,100
+               if(hist(k,j) == 0) then
+c Make it two orders larger than the largest value, for safety.                  
+                  v(k) = exp(dble(j))*100
+                  exit
+               endif
+            enddo
+            select case(k)
+            case(1)
+               v1 = v(1)
+            case(2)
+               v2 = v(2)
+            end select
+         enddo
+         deallocate(hist)
+      else
+         write(*,*) 'find_outliers_limit: called with mode='
+     1    //trim(mode)//','
+         write(*,*) 'not known, exiting ...'
+         call exit(-1)
+      endif
+      end
+
+
+
+      subroutine store_outliers_limit(mode,filetag,v1,v2)
+      implicit none
+      character *(*) mode, filetag
+      real * 8 v1,v2
+      character * 20, save :: tags(10)
+      real * 8, save :: vals(2,10)
+      integer, save :: j=0
+      integer k
+      if(mode == 'put') then
+         if(j>=10) then
+            write(*,*) 'store_outliers_limit: too many entries'
+            write(*,*) 'exiting ...'
+            call exit(-1)
+         endif
+         do k=1,j
+            if(tags(k) == filetag) then
+               exit
+            endif
+         enddo
+         if(k == j+1) then
+            j=k
+            tags(j) = filetag
+            vals(1,j) = v1
+            vals(2,j) = v2
+         endif
+      elseif(mode == 'get') then
+         v1 = 1d308
+         v2 = 1d308
+         do k=1,j
+            if(tags(k) == filetag) then
+               v1 = vals(1,k)
+               v2 = vals(2,k)
+            endif
+         enddo
+      else
+         write(*,*) 'store_outliers_limit: invalid mode',mode
+         write(*,*) 'exiting ...'
+         call exit(-1)
+      endif
+      end

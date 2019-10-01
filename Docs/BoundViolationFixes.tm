@@ -68,6 +68,25 @@
   correct for the total cross section only if the error of the stage 4 cross
   section estimate is smaller than the cross section used for generation.
 
+  <section|Implementation in the POWHEG integrator.>
+
+  The implementation of the corrections mentioned above is not totally
+  straightforward, in view of the several different options under which the
+  integrator may work. In all cases, each coodinate is divided up into 50
+  steps, and the integration hypercube is divided into
+  <math|50<rsup|n<rsub|dim>>> cells. Each cell is generated with a given
+  probability, and is assigned a weight equal to the inverse of the
+  generation probability. In the most sofisticated one, the integrator
+  determines two sets of upper bound on the integrand, one called
+  <with|font|Tlwg|ymax>, that has the form of a product of step functions for
+  each coordinates, that we now call <math|Y<rsub|max><around*|(|<wide|x|\<vect\>>|)>>,
+  where <math|<wide|x|\<vect\>>> is a multidimensional vector in the
+  integration hypercube, and the other has the form
+  <math|Y<rsub|rat><around*|(|<wide|x|\<vect\>>|)>
+  B<around*|(|<wide|x|\<vect\>>|)>>, where
+  <math|B<around*|(|<wide|x|\<vect\>>|)>> is the Born cross section, and
+  <math|Y<rsub|rat>> is again a product of step function in each coordinate.
+
   \;
 </body>
 
@@ -78,5 +97,21 @@
   <\collection>
     <associate|auto-1|<tuple|1|?>>
     <associate|auto-2|<tuple|2|?>>
+    <associate|auto-3|<tuple|3|?>>
   </collection>
 </references>
+
+<\auxiliary>
+  <\collection>
+    <\associate|toc>
+      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|1<space|2spc>Corrections
+      for upper bound violations> <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
+      <no-break><pageref|auto-1><vspace|0.5fn>
+
+      <vspace*|1fn><with|font-series|<quote|bold>|math-font-series|<quote|bold>|2<space|2spc>Corrections
+      for wrong estimate of the cross section.>
+      <datoms|<macro|x|<repeat|<arg|x>|<with|font-series|medium|<with|font-size|1|<space|0.2fn>.<space|0.2fn>>>>>|<htab|5mm>>
+      <no-break><pageref|auto-2><vspace|0.5fn>
+    </associate>
+  </collection>
+</auxiliary>
