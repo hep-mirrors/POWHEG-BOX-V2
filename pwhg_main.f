@@ -383,6 +383,9 @@ c               write(iunout,*) '# new weight ',weights(:,k_stored_evt)
 c this causes powheginput to print all unused keywords
 c in the powheg.input file; useful to catch mispelled keywords
       tmp=powheginput('print unused tokens')
+c     This, if available, prints citation information on the process.
+      include 'ProcessCitation.f'
+      
       contains
       subroutine dotestplots
       if(testplots) then
