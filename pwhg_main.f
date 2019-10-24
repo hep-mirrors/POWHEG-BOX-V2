@@ -79,7 +79,8 @@ c     Reasonable values that have proven effective are mintupbratlim 1000.
       par_mintupb_ratlim = powheginput("#mintupbratlim")
       if(par_mintupb_ratlim < 0) par_mintupb_ratlim = 1d50
 c     This flag activates the rejection of outliers when storemintupb is set.
-      flg_storemintupb_nooutliers = powheginput("#StoredubNoOutliers") == 1
+      flg_storemintupb_nooutliers =
+     1     powheginput("#StoredubNoOutliers") == 1
 c      
       call newunit(iun)
 
