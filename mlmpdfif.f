@@ -52,19 +52,19 @@ c not yet implemented
 c     Dummy function to avoid compilation errors.
 c     This function exists in LHAPDF v5, and is defined in lhapdf6if.f
 c     when using LHAPDF v6. When the code is compiled with native pdf,
-c     a dummy function is needed, as a call to alphaspdf is present in
+c     a dummy function is needed, as a call to alphasfrompdf is present in
 c     setstrongcoupl.f (inside an if statement).
 c     With native pdf, this function should never be used, hence we put an error
 c     message.
-      function alphaspdf(mu)
+      function alphasfrompdf(mu)
       implicit none
-      real *8 alphaspdf,mu
+      real *8 alphasfrompdf,mu
       write(*,*)
       write(*,*) '***************************************************'
-      write(*,*) ' error: alphaspdf called without linking to lhapdf'
-      write(*,*) ' alphapsdf cannot be used with native pdf'
+      write(*,*) ' error: alphasfrompdf called, but not provided'
+      write(*,*) ' by native pdf'
       write(*,*) ' either switch to lhapdf, or remove the flag'
-      write(*,*) ' alphas_from_lhapdf from the input card'
+      write(*,*) ' alphas_from_pdf from the input card'
       write(*,*) '***************************************************'
       call pwhg_exit(-1)
       end

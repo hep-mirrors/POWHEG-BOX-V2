@@ -214,7 +214,7 @@ c
       data olam/0.d0/
       save olam,b5,bp5,b4,bp4,b3,bp3,xlc,xlb,xllc,xllb,c45,c35,xmc,xmb
 
-      real *8 alphaspdf
+      real *8 alphasfrompdf
 
 
       if(xlam.ne.olam) then
@@ -242,7 +242,7 @@ c
       nf = inf
 
       if(pdf_alphas_from_pdf) then
-         pwhg_alphas=alphaspdf(q)
+         pwhg_alphas=alphasfrompdf(q)
       else
          if( nf .lt. 0) then
             if( q .gt. xmb ) then
