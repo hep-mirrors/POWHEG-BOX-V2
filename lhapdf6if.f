@@ -277,13 +277,13 @@ c      endif
       whichpdfpk='lha'
       end
 
-      function alphaspdf(mu)
+      function alphasfrompdf(mu)
       implicit none
       real * 8 lam5
       integer iord,iset,maxsets
       common/cgenericpdf/lam5,iord,iset,maxsets
-      real *8 mu,alphaspdf,tmp
-      call alphasfrompdf(iset,mu,tmp)
-      alphaspdf=tmp
+      real *8 mu,alphasfrompdf,tmp
+      call alphasfrompdf0(iset,mu,tmp)
+      alphasfrompdf=tmp
       return
       end

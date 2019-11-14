@@ -40,7 +40,7 @@ extern "C" {
     delete pdfs[iset];
   }
 
-  void alphasfrompdf_(int &iset,double &q, double &asq) {
+  void alphasfrompdf0_(int &iset,double &q, double &asq) {
     asq = pdfs[iset]->alphasQ(q);
   }
 
