@@ -419,19 +419,25 @@ c are consistent with total Born
       logical valid_emitter,iszero,isnonzero,isequal,bad_born_kin,
      1     bad_real_kin
       external valid_emitter,bad_real_kin
-      real * 8 tolpar
+      real * 8 tolparb,tolpar
 c     The tolpar parameter sets the minimum in the ratio (transverse momentum)/(total energy)
 c     for a kinematic configuration to be accepted for collinear tests. It is started
 c     at 1, and for each failed configuration it is reduced by a factor 0.95 until an
 c     acceptable configuration is found
-      tolpar = 1
+      tolparb = 1
  1    continue
-      tolpar = tolpar * 0.95d0
+      tolparb = tolparb * 0.95d0
+      if(tolparb == 0) then
+c     We must abort this test
+         write(*,*) 'checksoft: cannot complete the test; returning'
+         return
+      endif
+c      
       do j=1,ndiminteg-3
          xborn(j)=random()
       enddo
       call gen_born_phsp(xborn)
-      if(bad_born_kin(tolpar)) goto 1
+      if(bad_born_kin(tolparb)) goto 1
       call setscalesbtilde
       call allborn
       call checkborn(iun)
@@ -441,6 +447,11 @@ c      write(iun,*)' mass',sqrt(2*dotp(kn_pborn(0,3),kn_pborn(0,4)))
          xrad(j)=random()
       enddo
       tolpar = tolpar * 0.95d0
+c     If we cannot pass the soft limit tolerance test, regenerate
+c     born configuration
+      if(tolpar == 0) then
+         goto 1
+      endif
 c Check soft limits
       if(valid_emitter(kn_emitter)) then
           do jexp=1,nexp
@@ -536,20 +547,31 @@ c     The tolpar parameter sets the minimum in the ratio (transverse momentum)/(
 c     for a kinematic configuration to be accepted for collinear tests. It is started
 c     at 1, and for each failed configuration it is reduced by a factor 0.95 until an
 c     acceptable configuration is found
-      real * 8 tolpar
-      tolpar = 1
+      real * 8 tolparb,tolpar
+      tolparb = 1
  19   continue
-      tolpar = tolpar * 0.95d0
+      tolparb = tolparb * 0.95d0
+      if(tolparb == 0) then
+c     We must abort this test
+         write(*,*) 'checkcoll: cannot complete the test; returning'
+         return
+      endif
       do j=1,ndiminteg-3
          xborn(j)=random()
       enddo
       call gen_born_phsp(xborn)
-      if(bad_born_kin(tolpar)) goto 19
+      if(bad_born_kin(tolparb)) goto 19
       call setscalesbtilde
       call allborn
       tolpar = 1
  20   continue
       tolpar = tolpar * 0.95d0
+c     If we cannot pass the soft limit tolerance test, regenerate
+c     born configuration
+      if(tolpar == 0) then
+         goto 19
+      endif
+      
       do j=1,3
          xrad(j)=random()
       enddo
