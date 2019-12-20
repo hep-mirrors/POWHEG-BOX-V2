@@ -733,7 +733,7 @@ c     exclude zero pdf's
       enddo
 
 c     if any transverse momentum is too small, return
-      if(l > 1) then ! exclude single resonance production!
+      if(l > 3) then ! exclude single resonance production!
          do k=3,l
             if(p(1,k)**2+p(2,k)**2 < (e*tolpar)**2) return
             if(l > 2) then
@@ -793,7 +793,7 @@ c tolerate zero pdf only for heavy quarks
       enddo
 
 c     if any transverse momentum is too small, return
-      if(l > 1) then ! exclude single resonance production!
+      if(l > 3) then ! exclude single resonance production!
          do k=3,l
             if(p(1,k)**2+p(2,k)**2 < (e*tolpar)**2) return
             if(l > 2) then
