@@ -79,13 +79,13 @@ c     accordingly to its underlying Born matrix element.
                      endif
                   endif
                endif
-               if (res(j) > 1d-4) then
-                  print*, "WARNING:"
-                  print*, "res(j) too large; usually < ~10^-4:", res(j)
-                  print*, "setting res(j)=0 for this event/flavour"
-                  print*, d3terms, uubjakob, res0(j)
-                  res(j) = 0d0
-               endif
+c$$$               if (res(j) > 1d-4) then
+c$$$                  print*, "WARNING:"
+c$$$                  print*, "res(j) too large; usually < ~10^-4:", res(j)
+c$$$                  print*, "setting res(j)=0 for this event/flavour"
+c$$$                  print*, d3terms, uubjakob, res0(j)
+c$$$                  res(j) = 0d0
+c$$$               endif
                if ((res(j)+1 .eq. res(j)) .or. (res(j)-1 .eq. res(j))) then
                   print*, "WARNING:"
                   print*, "res(j) NaN or Infinity", res(j)
