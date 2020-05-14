@@ -651,15 +651,15 @@ c     this sets the limits previously stored for btilde in v1,v2
       endif
       end
       
-      subroutine gen_sigremnant
+      subroutine gen_sigremnant(mcalls,icalls)
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
       include 'pwhg_rad.h'
       include 'cgengrids.h'
-      real * 8 xx(ndiminteg)
       integer mcalls,icalls
+      real * 8 xx(ndiminteg)
       logical savelogical
       real * 8 sigremnant
       external sigremnant
