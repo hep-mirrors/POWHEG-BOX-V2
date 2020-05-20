@@ -50,7 +50,9 @@ c      use libnnlops
       logical use_analytic_alphas
       parameter (use_analytic_alphas = .false.)
       double precision, save :: eps
-
+      logical flg_profiledscales
+      save flg_profiledscales
+      
       
 c     the only purpose of this is to invalidate the currently stored results
 c     of setlocalscales (see the line  if(imode.eq.oimode ...))
@@ -119,20 +121,24 @@ c     read the modified logarithms parameter p, if it's not found, set it to its
 
 c     alphas_cutoff_fact**2 * pdf_q2min is the scale (in GeV^2) at which we freeze the running of alphas
 c     pdf_q2min is the LHAPDF cutoff (e.g. for NNPDF30 it's 1GeV^2)
-         alphas_cutoff_fact = powheginput('#alphas_cutoff_fact')
-         pdf_cutoff_fact = powheginput('#pdf_cutoff_fact')
+            
+         if (.not. flg_hoppet_initialized) then
+            pdf_cutoff_fact = powheginput('#pdf_cutoff_fact')
 
 c     The conditions below should ultimately be replaced by a condition on pt/M
-         if (flg_minnloproc == 'Z') then 
-            if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=1.8d0
-            if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact=1.8d0
-         elseif (flg_minnloproc == 'H') then 
-            if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=2.5d0
-            if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact=2.5d0
-         else
-            write(*,*) ' setlocalscales: flg_minnloproc is ',flg_minnloproc
-            call exit(-1)
+            if (flg_minnloproc == 'Z') then 
+               if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact=1.8d0
+            elseif (flg_minnloproc == 'H') then 
+               if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact=2.5d0
+            else
+               write(*,*) ' setlocalscales: flg_minnloproc is ',flg_minnloproc
+               call exit(-1)
+            endif
          endif
+
+         alphas_cutoff_fact = powheginput('#alphas_cutoff_fact')
+         if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=pdf_cutoff_fact
+
 
          write(*,*) 'freezing of alphas in setlocalscales at [GeV] '
      $        ,sqrt(alphas_cutoff_fact**2 *pdf_q2min)
@@ -161,16 +167,37 @@ c     The conditions below should ultimately be replaced by a condition on pt/M
             if(powheginput('#distribute_by_ub_AP').eq.0)
      $           flg_distribute_by_ub_AP = .false.
             write(*,*) "distribute_by_ub_AP is ",flg_distribute_by_ub_AP
+
             
-c This also calls init_anom_dim
-            call init_Dterms(flav)
+            flg_dtermsallorders = .true.
+            if(powheginput('#d3allorders').eq.0)
+     $           flg_dtermsallorders = .false.
+            write(*,*) '============================================='
+            write(*,*) "flg_dtermsallorders = ",flg_dtermsallorders
+            write(*,*) '============================================='
          else
-            write(*,*) "ERROR: running at nlo (flg_minnlo=false)",
-     c           " not fully tested yet"
-            call exit(-1)
+c$$$            write(*,*) "ERROR: running at nlo (flg_minnlo=false)",
+c$$$     c           " not fully tested yet"
+c$$$            call exit(-1)
             write(*,*) '====================================='
             write(*,*) 'MINLO ACTIVATED (BUT *MINNLO* IS OFF)'
             write(*,*) '====================================='
+         endif
+c This also calls init_anom_dim
+         call init_Dterms(flav,flg_minnlo)
+
+c Setup profiled scales (main switch and parameters)    
+         flg_profiledscales=powheginput('#profiledscales').eq.1
+         Q0 = powheginput('#Q0')
+         if(Q0.lt.0d0) Q0 = 2d0
+         npow = powheginput('#npow')
+         if(npow.lt.0d0) npow = 1d0              
+         call init_profiled_scales_parameters(flg_profiledscales,Q0,npow)
+
+         if(flg_profiledscales) then
+            write(*,*) '============================================='
+            write(*,*) 'Using profiled scales: (Q0,npow) = ',Q0,npow
+            write(*,*) '============================================='
          endif
       endif
 
@@ -273,25 +300,31 @@ c     explicitly accounted for in the computation of the D terms
       
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     alpha_s reweighting
-      !mu2=ptb2*st_renfact**2
-      !st_mufact2 = ptb2*st_facfact**2
-      !>> ER+PM: set all scales using the modified logarithms
-      mu2        = st_renfact**2*mb2*exp(-2d0*L)
-      st_mufact2 = st_facfact**2*mb2*exp(-2d0*L)
+      if(flg_profiledscales) then
+         mu2 = st_renfact**2 * (sqrt(mb2) * exp(-L) + Q0 / (1d0 +
+     $        (sqrt(mb2)/Q0*exp(-L))**npow))**2
+         st_mufact2 = st_facfact**2 * (sqrt(mb2) * exp(-L) + Q0 / (1d0 +
+     $        (sqrt(mb2)/Q0*exp(-L))**npow))**2
+      else
+         mu2        = st_renfact**2*mb2*exp(-2d0*L)
+         st_mufact2 = st_facfact**2*mb2*exp(-2d0*L)
+      endif
+
+      
       omuf2=st_mufact2
       if(pdf_alphas_from_pdf) then
-         !alphas = pwhg_alphas(st_renfact**2*ptb2,st_lambda5MSB,st_nlight)
-         !if(st_renfact**2*ptb2.lt.alphas_cutoff_fact**2 *pdf_q2min) then
-         !   alphas = pwhg_alphas(alphas_cutoff_fact**2 *pdf_q2min,st_lambda5MSB,st_nlight)
-         !endif
-         !>> ER+PM: set the scale of the coupling using the modified logarithms
-         if (use_analytic_alphas) then
-            lambda = st_alpha*b0*L
+         if (use_analytic_alphas) then           
+            if(flg_profiledscales) then
+               lambda=st_alpha*b0*log(sqrt(mb2) / (sqrt(mb2)*exp(-L) +
+     $              Q0 / (1d0 + (sqrt(mb2)/Q0*exp(-L))**npow)))
+            else
+               lambda = st_alpha*b0*L
+            endif
             alphas = st_alpha / (1-2d0*lambda) * (1d0 
      &           - st_alpha / (1-2d0*lambda) * b1/b0 * log(1d0-2d0*lambda))
          else
-            alphas = pwhg_alphas(st_renfact**2*mb2*exp(-2d0*L),st_lambda5MSB,st_nlight)
-            if(st_renfact**2*mb2*exp(-2d0*L).lt.alphas_cutoff_fact**2 *pdf_q2min) then
+            alphas = pwhg_alphas(mu2,st_lambda5MSB,st_nlight)
+            if((mu2.lt.alphas_cutoff_fact**2 *pdf_q2min) .and. (.not.flg_profiledscales)) then
                  alphas = pwhg_alphas(alphas_cutoff_fact**2 *pdf_q2min,st_lambda5MSB,st_nlight)
             endif
          end if  
@@ -303,7 +336,6 @@ c     alpha_s reweighting
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
-      !sudakov_form_factor = Sudakov_pt(L, st_alpha)
       !>> ER+PM: use numerical integration for Sudakov
       sudakov_form_factor = Sudakov_pt_exact(L, alphas_cutoff_fact*sqrt(pdf_q2min), use_analytic_alphas)
       Delta1  = expsudakov_pt(L)  * alphas
@@ -331,10 +363,20 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       endif
 
       if (flg_minnlo .and. imode .eq. 3) then
+         
          call reset_dynamical_C_matxs()
-         call Dterms(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphas)
+
+         if(flg_dtermsallorders) then
+            call DtermsAllOrders(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphas)
+         else
+            call Dterms(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphas)
+         endif
+        
+         
          if (flg_include_delta_terms) then
             d3terms = D3 - D2 * Delta1 + D1 * Delta1**2/2d0 - D1 * Delta2
+         else if (flg_uubornonly) then
+            d3terms = D1+D2+D3
          else
             d3terms = D3
          end if
@@ -351,7 +393,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       end
 
 
-      subroutine init_Dterms(flav)
+      subroutine init_Dterms(flav,minnlo)
       use rad_tools
       use pdfs_tools
       use internal_parameters, pi_hoppet => pi, cf_hoppet => cf, ca_hoppet => ca, tf_hoppet => tf
@@ -368,7 +410,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       character*100 string
       integer stringlength
       real *8 kappar,kappaf
-      logical ini
+      logical ini,minnlo
       data ini/.true./
       save ini
       real *8 powheginput
@@ -386,9 +428,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       cs%M = get_M_for_init_Dterms()
       cs%Q = get_M_for_init_Dterms()
       call init_masses_Dterms() ! initializes hard-coded mass values in NNLOPS_plugin
-      call init_pdfs_from_LHAPDF(pdf_name, pdf_set, pdf_cutoff_fact**2 *pdf_q2min)
-      !call init_pdfs_NNLOPS(pdf_name, pdf_set)
-
+      if(.not. flg_hoppet_initialized) then
+         if(flg_use_NNLOPS_pdfs) then
+            call init_pdfs_NNLOPS(pdf_name, pdf_set, cutoff_high_fact=pdf_cutoff_fact)
+         else
+            call init_pdfs_from_LHAPDF(pdf_name, pdf_set, pdf_cutoff_fact)
+         endif         
+      endif
+      
       if(check_pdf) call checkpdf
 
 
@@ -405,8 +452,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 c     initialise anomalous dimensions
       call init_anom_dim
-c     initialise coefficient functions
-      call init_C_matxs()
+
+      if(minnlo)then
+         ! initialise coefficient functions
+         call init_C_matxs()
+      endif
+
       end
 
       double precision function modlog(pt,m_singlet,KR)

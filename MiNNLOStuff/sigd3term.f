@@ -18,7 +18,8 @@ c Cross section in the underlying Born of the Born
       common/d3terms/ d3terms
       integer j
       real * 8 mufact2(flst_nborn)
-      integer iborn,counter
+      integer iborn
+      integer, save :: counter = 0
       real * 8 my_mufact2
       common/my_iborn/my_mufact2,iborn
       real *8 tmp, bornAP
@@ -41,11 +42,9 @@ c     they are needed in the flg_distribute_by_ub case
          call pdfcall(1,kn_xb1,pdf1)
          call pdfcall(2,kn_xb2,pdf2)
 
-         if(flg_distribute_by_ub) then
-            res0(j)=br_born(j) *
-     1           pdf1(flst_born(1,j))*pdf2(flst_born(2,j))*kn_jacborn
-            tot0=tot0+res0(j)
-         endif
+         res0(j)=br_born(j) *
+     1        pdf1(flst_born(1,j))*pdf2(flst_born(2,j))*kn_jacborn
+         tot0=tot0+res0(j)
       enddo
       if(flg_minnlo) then
          if(flg_distribute_by_ub) then
@@ -100,7 +99,11 @@ c$$$c     first find vector boson rapidity
 c$$$            call find_j_lims(tmp)
 c$$$c     end debugging
             call evaluubjakob(uubjakob)
-            res(:) = res(:) + res0(:)*(d3terms*tmp/tot0*kn_jacborn*uubjakob)
+            if(flg_uubornonly) then
+               res(:) = res0(:)*(d3terms/tot0*kn_jacborn*uubjakob)
+            else
+               res(:) = res(:) + res0(:)*(d3terms/tot0*kn_jacborn*uubjakob)
+            endif
          endif
       endif
       end

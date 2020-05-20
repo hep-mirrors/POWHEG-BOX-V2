@@ -34,7 +34,7 @@ contains
     
     if (use_analytic_alphas) then
        !if (cs%alphas_muR*beta0*L_mod < half) then
-       if (cs%alphas_muR*beta0*L_mod < 0.43_dp) then
+       if ((cs%alphas_muR*beta0*L_mod < 0.43_dp).or.(profiled_scales)) then
           res = exp(-res)
        else
           res = zero ! set to zero below the Landau pole
@@ -52,18 +52,33 @@ contains
     real(dp), intent(in) :: L
     real(dp)             :: res, lambda, alphas2pi
     real(dp)             :: A, B, muR, pwhg_alphas
-
+    !>>>>>>
+    
     if (use_analytic_alphas) then
-       lambda    = cs%alphas_muR*beta0*L
+       if (profiled_scales) then
+          lambda = cs%alphas_muR*beta0 * log(cs%Q / (cs%Q*exp(-L) + Q0 / (one + (cs%Q/Q0*exp(-L))**npow)))
+       else
+          lambda = cs%alphas_muR*beta0*L
+       endif
        alphas2pi = cs%alphas_muR/twopi/ (one-two*lambda) * (one &
             &        - cs%alphas_muR / (one-two*lambda) * beta1/beta0 * log(one-two*lambda))
     else
-       muR = cs%muR * exp(-L)
-       !>> implement same freezing as in setlocalscales
-       if (muR < alphas_freezing_scale) then
-          muR = alphas_freezing_scale
+       if (profiled_scales) then
+          !>> linear scaling
+          !muR = cs%muR/cs%Q * (cs%Q*exp(-L) + Q0)
+          !>> with extra suppression at large pt (not much of a difference)
+          muR = cs%muR/cs%Q * (cs%Q*exp(-L) + Q0 / (one + (cs%Q/Q0*exp(-L))**npow))
+          alphas2pi = pwhg_alphas(muR**2, zero, zero)/twopi
+          !alphas2pi = RunningCoupling(muR)/twopi          
+       else
+          muR = cs%muR * exp(-L)
+          !>> implement same freezing as in setlocalscales
+          if (muR < alphas_freezing_scale) then
+             muR = alphas_freezing_scale
+          end if
+          alphas2pi = pwhg_alphas(muR**2, zero, zero)/twopi
+          !alphas2pi = RunningCoupling(muR)/twopi
        end if
-       alphas2pi = pwhg_alphas(muR**2, zero, zero)/twopi
     end if
        
     A   = Asud(1)*alphas2pi + Asud(2)*alphas2pi**2 + Asud(3)*alphas2pi**3

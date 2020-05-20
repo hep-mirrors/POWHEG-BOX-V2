@@ -27,13 +27,29 @@ module rad_tools
 
   public :: process_and_parameters, set_process_and_parameters, reset_dynamical_parameters
   public :: init_anom_dim, virtual_scale_dep, update_b2_proc_dep, compare_process_and_parameters
+  public :: init_profiled_scales_parameters
   real(dp), public :: A(3), B(3), H(1), B2Rad
   real(dp), public :: Asud(3), Bsud(3), as_pow  
   real(dp), public :: CC, BB 
   type(process_and_parameters), public, save :: cs
   logical, save :: init_anom_dim_called = .false.
+  real(dp), public, save :: Q0, npow
+  logical,  public, save :: profiled_scales
   
 contains
+
+  subroutine init_profiled_scales_parameters(use_profiled_scales, Q0_scale, npower)
+    real(dp), intent(in) :: Q0_scale, npower
+    logical,  intent(in) :: use_profiled_scales
+
+    profiled_scales = use_profiled_scales
+    Q0 = Q0_scale
+    npow = npower
+    return    
+  end subroutine init_profiled_scales_parameters
+
+  
+
 
 
   ! Subroutines to compare process_and_parameters structures
