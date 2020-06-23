@@ -18,7 +18,8 @@ c      use libnnlops
       include 'minnlo_flg.h'
       integer iuborn,imode
       real * 8 rescfac,expsud,sudakov,pwhg_alphas,resc_coupl
-      real * 8 ptb2,mb2,mu2,alphas,alphas_ptb2,b0,optb2,omb2,orescfac,omuf2
+      real * 8 ptb2,mb2,mu2,alphas,alphas_ptb2,b0,optb2,omb2,orescfac
+     $     ,omuf2,alphasdterms,mu2dterms
       real * 8 pb(0:3), ptmax, yh, sudakov_form_factor
       integer oimode,i,flav
       common/flav_initial_state/ flav
@@ -50,8 +51,8 @@ c      use libnnlops
       logical use_analytic_alphas
       parameter (use_analytic_alphas = .false.)
       double precision, save :: eps
-      logical flg_profiledscales
-      save flg_profiledscales
+      logical flg_profiledscales,flg_largeptscales
+      save flg_profiledscales,flg_largeptscales
       
       
 c     the only purpose of this is to invalidate the currently stored results
@@ -121,10 +122,13 @@ c     read the modified logarithms parameter p, if it's not found, set it to its
 
 c     alphas_cutoff_fact**2 * pdf_q2min is the scale (in GeV^2) at which we freeze the running of alphas
 c     pdf_q2min is the LHAPDF cutoff (e.g. for NNPDF30 it's 1GeV^2)
-            
-         if (.not. flg_hoppet_initialized) then
-            pdf_cutoff_fact = powheginput('#pdf_cutoff_fact')
 
+         alphas_cutoff_fact = powheginput('#alphas_cutoff_fact')
+         
+         if (.not. flg_hoppet_initialized) then            
+            pdf_cutoff_fact = powheginput('#pdf_cutoff_fact')
+c     If alphas_cutoff_fact is not set in the input card, set it to pdf_cutoff_fact (deprecated)
+            if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=pdf_cutoff_fact
 c     The conditions below should ultimately be replaced by a condition on pt/M
             if (flg_minnloproc == 'Z') then 
                if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact=1.8d0
@@ -136,9 +140,8 @@ c     The conditions below should ultimately be replaced by a condition on pt/M
             endif
          endif
 
-         alphas_cutoff_fact = powheginput('#alphas_cutoff_fact')
-         if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=pdf_cutoff_fact
-
+c     If alphas_cutoff_fact is not set in the input card, use zero (Q0 will protect from very small pt values)
+         if(alphas_cutoff_fact.lt.0d0) alphas_cutoff_fact=0d0
 
          write(*,*) 'freezing of alphas in setlocalscales at [GeV] '
      $        ,sqrt(alphas_cutoff_fact**2 *pdf_q2min)
@@ -186,10 +189,12 @@ c$$$            call exit(-1)
 c This also calls init_anom_dim
          call init_Dterms(flav,flg_minnlo)
 
-c Setup profiled scales (main switch and parameters)    
-         flg_profiledscales=powheginput('#profiledscales').eq.1
+c     Setup profiled scales (main switch and parameters)
+         flg_profiledscales=.true.
+         if(powheginput('#profiledscales').eq.0) flg_profiledscales=.false.
          Q0 = powheginput('#Q0')
          if(Q0.lt.0d0) Q0 = 2d0
+         if(Q0.eq.0d0) Q0 = 1d-10
          npow = powheginput('#npow')
          if(npow.lt.0d0) npow = 1d0              
          call init_profiled_scales_parameters(flg_profiledscales,Q0,npow)
@@ -199,6 +204,15 @@ c Setup profiled scales (main switch and parameters)
             write(*,*) 'Using profiled scales: (Q0,npow) = ',Q0,npow
             write(*,*) '============================================='
          endif
+
+c     Option to use mur and muf = pt in fixed order (Bbar) at large pt
+         flg_largeptscales=powheginput('#largeptscales').eq.1
+         if(flg_largeptscales) then
+            write(*,*) '============================================='
+            write(*,*) 'Using mu=pt in fixed order'
+            write(*,*) '============================================='
+         endif
+         
       endif
 
       rescfac = 1
@@ -298,22 +312,43 @@ c     explicitly accounted for in the computation of the D terms
          call virtual_scale_dep(msqB, msqV1, msqV2)
       endif
       
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc     
 c     alpha_s reweighting
+
       if(flg_profiledscales) then
-         mu2 = st_renfact**2 * (sqrt(mb2) * exp(-L) + Q0 / (1d0 +
+         mu2dterms  = st_renfact**2 * (sqrt(mb2) * exp(-L) + Q0 / (1d0 +
      $        (sqrt(mb2)/Q0*exp(-L))**npow))**2
          st_mufact2 = st_facfact**2 * (sqrt(mb2) * exp(-L) + Q0 / (1d0 +
      $        (sqrt(mb2)/Q0*exp(-L))**npow))**2
       else
-         mu2        = st_renfact**2*mb2*exp(-2d0*L)
-         st_mufact2 = st_facfact**2*mb2*exp(-2d0*L)
+         mu2dterms   = st_renfact**2*mb2*exp(-2d0*L)
+         st_mufact2  = st_facfact**2*mb2*exp(-2d0*L)
       endif
 
+      if(flg_largeptscales) then
+         if(flg_profiledscales) then
+            mu2        = st_renfact**2 * (sqrt(ptb2) + Q0 / (1d0 +
+     $           (sqrt(ptb2)/Q0 )**npow))**2
+            st_mufact2 = st_facfact**2 * (sqrt(ptb2) + Q0 / (1d0 +
+     $           (sqrt(ptb2)/Q0 )**npow))**2
+         else
+            mu2        = st_renfact**2 * ptb2
+            st_mufact2 = st_facfact**2 * ptb2
+         endif        
+      else
+c     This is needed when running with modified logs in the fixed-order
+c     (Bbar) part
+         mu2 = mu2dterms
+      endif     
       
       omuf2=st_mufact2
       if(pdf_alphas_from_pdf) then
-         if (use_analytic_alphas) then           
+         if (use_analytic_alphas) then
+            if(flg_largeptscales) then
+               write(*,*)
+     $  'flg_largeptscales is not supported with use_analytic_alphas'
+               stop
+            endif
             if(flg_profiledscales) then
                lambda=st_alpha*b0*log(sqrt(mb2) / (sqrt(mb2)*exp(-L) +
      $              Q0 / (1d0 + (sqrt(mb2)/Q0*exp(-L))**npow)))
@@ -323,9 +358,12 @@ c     alpha_s reweighting
             alphas = st_alpha / (1-2d0*lambda) * (1d0 
      &           - st_alpha / (1-2d0*lambda) * b1/b0 * log(1d0-2d0*lambda))
          else
-            alphas = pwhg_alphas(mu2,st_lambda5MSB,st_nlight)
+            alphas       = pwhg_alphas(mu2,st_lambda5MSB,st_nlight)
+            alphasdterms = pwhg_alphas(mu2dterms,st_lambda5MSB,st_nlight)
             if((mu2.lt.alphas_cutoff_fact**2 *pdf_q2min) .and. (.not.flg_profiledscales)) then
-                 alphas = pwhg_alphas(alphas_cutoff_fact**2 *pdf_q2min,st_lambda5MSB,st_nlight)
+               alphas       = pwhg_alphas(alphas_cutoff_fact**2 *pdf_q2min,st_lambda5MSB,st_nlight)
+c              if mu2 << Q^2, we assume that mu2dterms=mu2 (at small pt, they essentially coincide)
+               alphasdterms = alphas
             endif
          end if  
       else
@@ -338,8 +376,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
       !>> ER+PM: use numerical integration for Sudakov
       sudakov_form_factor = Sudakov_pt_exact(L, alphas_cutoff_fact*sqrt(pdf_q2min), use_analytic_alphas)
-      Delta1  = expsudakov_pt(L)  * alphas
-      Delta2  = exp2sudakov_pt(L) * alphas**2
+      Delta1  = expsudakov_pt(L)  * alphasdterms
+      Delta2  = exp2sudakov_pt(L) * alphasdterms**2
       rescfac = sudakov_form_factor
 
       if(imode.eq.2) then
@@ -367,9 +405,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
          call reset_dynamical_C_matxs()
 
          if(flg_dtermsallorders) then
-            call DtermsAllOrders(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphas)
+            call DtermsAllOrders(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphasdterms)
          else
-            call Dterms(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphas)
+            call Dterms(D1, D2, D3, exp(-L), xx1, xx2, msqB, msqV1, msqV2, alphasdterms)
          endif
         
          

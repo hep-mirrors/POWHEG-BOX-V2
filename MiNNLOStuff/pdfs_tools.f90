@@ -137,7 +137,7 @@ contains
     if (present(cutoff_low)) then
        PDF_cutoff = cutoff_low
     else
-       PDF_cutoff = min(0.7_dp, sqrt(LHAPDF_cutoff2))
+       PDF_cutoff = min(0.8_dp, sqrt(LHAPDF_cutoff2))
     end if
 
     ! set the merging scale
@@ -754,10 +754,10 @@ contains
        end if
     end if
     
-    if (mu > 0.5d0) then
+    if (mu > 0.8d0) then
        res = RunningCoupling(mu)
     else
-       res = RunningCoupling(0.5d0)
+       res = RunningCoupling(0.8d0)
     end if
 
 
@@ -1211,7 +1211,7 @@ contains
     !   if (L-two*histep > zero) exit
     !   histep = histep/two
     !end do
-    
+
     res = (        lumi_NNNLL_Born(L-two*histep,x1,x2,msqB,msqV1,msqV2,profiled_scales) &
          & - 8._dp*lumi_NNNLL_Born(L-histep    ,x1,x2,msqB,msqV1,msqV2,profiled_scales) &
          & -       lumi_NNNLL_Born(L+two*histep,x1,x2,msqB,msqV1,msqV2,profiled_scales) &

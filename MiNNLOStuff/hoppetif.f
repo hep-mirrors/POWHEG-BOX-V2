@@ -43,15 +43,23 @@ c     imem is the member name for the given ndns
          call init_masses_Dterms() ! initializes hard-coded mass values in NNLOPS_plugin
          call set_masses(mz_input)
 
-         flg_use_NNLOPS_pdfs = powheginput('#use_NNLOPS_pdfs').eq.1
+         flg_use_NNLOPS_pdfs = .true.
+         if(powheginput('#use_NNLOPS_pdfs').eq.0) flg_use_NNLOPS_pdfs = .false.
          pdfs_to_zero = powheginput('#negative_pdfs_zero').eq.1
          lhapdf_in_hoppet = powheginput('#lhapdf_in_hoppet').eq.1
 
-c        MW+PM+ER: add # back once things are consistent (code will stop if pdf_cutoff_fact not passed, if there is no #)
-         pdf_cutoff_fact = powheginput('pdf_cutoff_fact')
-c        MW+PM+ER: as default we will set it to 1, so that the cutoff of the PDF set is used.
-         if(pdf_cutoff_fact.lt.0d0) pdf_cutoff_fact = 1d0
-         
+         pdf_cutoff_fact = powheginput('#pdf_cutoff_fact')
+         if(pdf_cutoff_fact.lt.0d0) then
+            if(flg_use_NNLOPS_pdfs) then
+c     If use_NNLOPS_pdfs is true, we set it to 1.1 by default, so that
+c     we have an intermediate scale just above the cutoff of the PDF set.             
+               pdf_cutoff_fact = 1.1d0
+            else
+c     Otherwise, we set it to 1. matching the cutoff of the PDF set.
+               pdf_cutoff_fact = 1d0
+            endif
+         endif
+               
 c     Now we can initialize hoppet
          if(flg_use_NNLOPS_pdfs) then
 c     use the hybrid PDF evolution for the NNLOPS through hoppet
@@ -67,9 +75,10 @@ c     use LHAPDF through hoppet
      c           lhapdf_in_hoppet=lhapdf_in_hoppet)
             call GetQ2min(imem,pdf_q2min)
 
-            if(powheginput('#profiledscales').eq.1) then
+            if(powheginput('#profiledscales').ne.0) then
                Q0 = powheginput('#Q0')
                if(Q0.lt.0d0) Q0=2d0
+               if(Q0.eq.0d0) Q0 = 1d-10
                if(Q0**2.lt.pdf_q2min*pdf_cutoff_fact**2) then
                   write(*,*) 'Error: pdf cutoff > Q0 (profiled scales)'
                   write(*,*) 'This is not consistent.'

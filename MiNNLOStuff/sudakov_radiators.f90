@@ -52,7 +52,6 @@ contains
     real(dp), intent(in) :: L
     real(dp)             :: res, lambda, alphas2pi
     real(dp)             :: A, B, muR, pwhg_alphas
-    !>>>>>>
     
     if (use_analytic_alphas) then
        if (profiled_scales) then
