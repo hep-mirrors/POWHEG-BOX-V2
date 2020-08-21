@@ -1051,6 +1051,7 @@ c     when to swap
             endif
          enddo
       enddo
+      nonz=nentries
       do j=1,nentries
          ij = indices(j)
          tmp = res(2,ij)
