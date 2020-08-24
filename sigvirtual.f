@@ -19,39 +19,48 @@
       data ini/.true./
       save ini,/cequivtovirt/,/cequivcoefvirt/
       logical pwhg_isfinite
-      external pwhg_isfinite
+      real * 8 powheginput
+      external pwhg_isfinite,powheginput
       if(ini) then
          do iborn=1,flst_nborn
             equivto(iborn)=-1
          enddo
          if(flg_smartsig.and..not.flg_novirtual) then
             flg_in_smartsig = .true.
-            call randomsave
-            call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
-            do iborn=1,flst_nborn
-               do j=1,nmomset
-                  flst_cur_iborn = iborn 
-                  call setvirtual(pborn(0,1,j),flst_born(1,iborn),
-     #                 virtual(j,iborn))
+            call fillequivarrayvirt(flst_nborn,equivto,equivcoef,iret)
+            if(iret<0) then
+               call randomsave           
+               call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
+               do iborn=1,flst_nborn
+                  do j=1,nmomset
+                     flst_cur_iborn = iborn 
+                     call setvirtual(pborn(0,1,j),flst_born(1,iborn),
+     1                    virtual(j,iborn))
 c     check if virtual(j,iborn) is finite
-                  if (.not.pwhg_isfinite(virtual(j,iborn))) 
-     #                 virtual(j,iborn)=0d0
+                     if (.not.pwhg_isfinite(virtual(j,iborn))) 
+     1                    virtual(j,iborn)=0d0
+                  enddo
+                  call compare_vecsv(nmomset,iborn,virtual,ibornpr,
+     1                 cprop,iret)
+                  if(iret.eq.0) then
+                     equivto(iborn)=ibornpr
+                     equivcoef(iborn)=1
+                  elseif(iret.eq.1) then
+                     equivto(iborn)=ibornpr
+                     equivcoef(iborn)=cprop
+                  endif
                enddo
-               call compare_vecsv(nmomset,iborn,virtual,ibornpr,
-     #              cprop,iret)
-               if(iret.eq.0) then
-                  equivto(iborn)=ibornpr
-                  equivcoef(iborn)=1
-               elseif(iret.eq.1) then
-                  equivto(iborn)=ibornpr
-                  equivcoef(iborn)=cprop
+               call randomrestore
+               call printvirtequiv
+c     Write equiv file, if required
+               if(powheginput('#writeequivfile') == 1) then
+                  call writeequivfile('virt',
+     1                 flst_nborn,equivto,equivcoef)
                endif
-            enddo
-            call randomrestore
+            endif
          endif
          flg_in_smartsig = .false.
          ini=.false.
-         call printvirtequiv
       endif
       do iborn=1,flst_nborn
          if(equivto(iborn).lt.0) then
@@ -100,6 +109,7 @@ c it prints the set of equivalent virtual configurations
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
+      include 'pwhg_rnd.h'
       integer equivto(maxprocborn)
       common/cequivtovirt/equivto
       real * 8 equivcoef(maxprocborn)
@@ -108,7 +118,12 @@ c it prints the set of equivalent virtual configurations
       save count
       data count/0/
       call newunit(iun)
-      open(unit=iun,file='virtequiv',status='unknown')
+      if(rnd_cwhichseed == 'none') then
+         open(unit=iun,file='virtequiv',status='unknown')
+      else
+         open(unit=iun,file='virtequiv-'
+     1        //trim(rnd_cwhichseed),status='unknown')
+      endif
       write(*,*) 'Writing virtequiv file...'
       do j=1,flst_nborn
          if(equivto(j).eq.-1) then
