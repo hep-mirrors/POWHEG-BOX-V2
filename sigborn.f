@@ -159,11 +159,17 @@ c     Write equiv file, if required
       include 'nlegborn.h'
       include 'pwhg_flst.h'
       real * 8 ep
-      parameter (ep=1d-12)
       integer nmomset,iborn,ibornpr,iret,jborn,k,jleg,kleg,mu,nu
       real * 8 born(nmomset,iborn),cprop,rat,resi,resj
       real * 8 bornjk(nlegborn,nlegborn,nmomset,maxprocborn)
       real * 8 bmunu(0:3,0:3,nlegborn,nmomset,maxprocborn)
+      real * 8 powheginput,tmp
+      tmp = powheginput("#compare_vecsb_ep")
+      if(tmp>0) then
+         ep = tmp
+      else
+         ep = 1d-12
+      endif
       do jborn=1,iborn-1
          rat=born(1,iborn)/born(1,jborn)
          do k=1,nmomset

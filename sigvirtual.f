@@ -80,9 +80,15 @@ c     check if virt_arr(iborn) is finite
       subroutine compare_vecsv(nmomset,iborn,res,ibornpr,cprop,iret)
       implicit none
       real * 8 ep
-      parameter (ep=1d-8)
       integer nmomset,iborn,ibornpr,iret,j,k
       real * 8 res(nmomset,iborn),cprop,rat
+      real * 8 powheginput,tmp
+      tmp = powheginput("#compare_vecsv_ep")
+      if(tmp>0) then
+         ep = tmp
+      else
+         ep = 1d-8
+      endif
       do j=1,iborn-1
          rat=res(1,iborn)/res(1,j)
          do k=1,nmomset
