@@ -168,7 +168,6 @@ c      endif
      1       file='pwhg_checklimits-'//trim(rnd_cwhichseed))
          endif
          call checklims(iun)
-         call printbornequiv
          call flush(iun)
          write(*,*) ' POWHEG:  '
          write(*,*) ' Check of soft/collinear limits performed'

@@ -19,6 +19,7 @@
       data ini/.true./
       save ini,/cequivtovirt/,/cequivcoefvirt/
       logical pwhg_isfinite
+      real * 8 save_kn_jacborn
       real * 8 powheginput
       external pwhg_isfinite,powheginput
       if(ini) then
@@ -29,7 +30,11 @@
             flg_in_smartsig = .true.
             call fillequivarrayvirt(flst_nborn,equivto,equivcoef,iret)
             if(iret<0) then
-               call randomsave           
+               call randomsave
+               save_kn_jacborn = kn_jacborn
+c     now set kn_jacborn to a value different from zero, in order for the virtual
+c     to be evaluated, when called wth the momenta returned by fillmomenta
+               kn_jacborn = 1d0               
                call fillmomenta(nlegborn,nmomset,kn_masses,pborn)
                do iborn=1,flst_nborn
                   do j=1,nmomset
@@ -51,6 +56,7 @@ c     check if virtual(j,iborn) is finite
                   endif
                enddo
                call randomrestore
+               kn_jacborn = save_kn_jacborn 
                call printvirtequiv
 c     Write equiv file, if required
                if(powheginput('#writeequivfile') == 1) then
@@ -135,10 +141,12 @@ c it prints the set of equivalent virtual configurations
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
      1           'Beginning sequence of equivalent amplitudes'
-            write(iun,100) 1d0,j, flst_born(:,j)
+c            write(iun,100) 1d0,j, flst_born(:,j)
+            write(iun,101) j, 1d0, flst_born(:,j)
             do k=1,flst_nborn
                if(equivto(k).eq.j) then
-                  write(iun,100) equivcoef(k),k,flst_born(:,k)
+c                  write(iun,100) equivcoef(k),k,flst_born(:,k)
+                  write(iun,101) k,equivcoef(k),flst_born(:,k)
                endif
             enddo
             count=count+1
@@ -148,5 +156,6 @@ c it prints the set of equivalent virtual configurations
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
       write(*,*) 'Done'
- 100  format(d11.4,5x,i4,5x,100(i4,1x))
+c 100  format(d11.4,5x,i4,5x,100(i4,1x))
+ 101  format(i4,5x,d11.4,5x,100(i4,1x))
       end

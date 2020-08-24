@@ -293,10 +293,12 @@ c it prints the set of equivalent Born configurations
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
      1           'Beginning sequence of equivalent amplitudes'
-            write(iun,100) 1d0,j, flst_born(:,j)
+c            write(iun,100) 1d0,j, flst_born(:,j)
+            write(iun,101) j, 1d0,flst_born(:,j)            
             do k=1,flst_nborn
                if(equivto(k).eq.j) then
-                  write(iun,100) equivcoef(k),k,flst_born(:,k)
+c                 write(iun,100) equivcoef(k),k,flst_born(:,k)
+                  write(iun,101) k,equivcoef(k),flst_born(:,k)
                endif
             enddo
             count=count+1
@@ -306,5 +308,6 @@ c it prints the set of equivalent Born configurations
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
       write(*,*) 'Done'
- 100  format(d11.4,5x,i4,5x,100(i4,1x))
+c 100  format(d11.4,5x,i4,5x,100(i4,1x))
+ 101  format(i4,5x,d11.4,5x,100(i4,1x))
       end

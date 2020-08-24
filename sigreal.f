@@ -1429,10 +1429,12 @@ c      common/cequivcoefreal/equivcoef
          if(equivto(j).eq.-1) then
             write(iun,'(a)')
      1           'Beginning sequence of equivalent amplitudes'
-            write(iun,100) 1d0,j, flst_alr(:,j)
+c            write(iun,100) 1d0,j, flst_alr(:,j)
+            write(iun,101) j, 1d0, flst_alr(:,j)
             do k=1,flst_nalr
                if(equivto(k).eq.j) then
-                  write(iun,100) equivcoef(k),k,flst_alr(:,k)
+c                  write(iun,100) equivcoef(k),k,flst_alr(:,k)
+                  write(iun,101) k,equivcoef(k),flst_alr(:,k)
                endif
             enddo
             count=count+1
@@ -1442,7 +1444,8 @@ c      common/cequivcoefreal/equivcoef
       write(iun,'(a,i4,a)') 'Found ',count, ' equivalent groups'
       close(iun)
       write(*,*) 'Done'
- 100  format(d11.4,5x,i4,5x,100(i4,1x))
+c 100  format(d11.4,5x,i4,5x,100(i4,1x))
+ 101  format(i4,5x,d11.4,5x,100(i4,1x))
       end
 
 
