@@ -1332,7 +1332,7 @@ c            write(*,*) 'ptmin = ',ptmin
       implicit none
       include 'nlegborn.h'
       include 'pwhg_flst.h'
-      real * 8 :: ep=1d-8
+      real * 8 ep
       integer nmomset,alr,alrpr,imode,iret,j,k
       real * 8 res(nmomset,*),cprop,rat
       real * 8 powheginput,tmp
