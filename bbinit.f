@@ -1571,6 +1571,7 @@ c     call newunit(iunit)
       write(iunit,'(a)') '      integer nentries,iret'
       write(iunit,'(a)') '      integer equivto(nentries)'
       write(iunit,'(a)') '      real * 8 equivcoef(nentries)'
+      write(iunit,'(a)') '      write(*,*) "Reading table of equivalent amplitudes for '//flag//'"'
       do k=1,2
          if(k==1) then
             write(iunit,'(a)') '      equivto=(/'
