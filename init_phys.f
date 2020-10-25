@@ -36,6 +36,9 @@ c
       par_isrtinyy = 1d-6
       par_fsrtinycsi = 1d-5
       par_fsrtinyy = 1d-6
+
+c     threshold parameter for inconsistent results among different runs
+      par_thresh = 10d0
 c
       rad_branching=1
 c this is set to true in processes where the FSR jacobian

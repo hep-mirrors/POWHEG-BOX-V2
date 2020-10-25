@@ -1012,6 +1012,7 @@ c check that the different runs are more or less consistent
 
       subroutine  check_stat_consistency(nentries,res,goodentries,iret)
       implicit none
+      include 'pwhg_par.h'
       integer nentries,iret
       integer indices(nentries)
       double precision res(2,nentries)
@@ -1083,7 +1084,7 @@ c     Compute the average. Neglect zero, NaNs, infs, etc.
                write(*,*) ' old,new err.',ow,weight
                write(*,*) ' deviation:',abs(oav-average)/ow
 c     after half of the runs
-               if(abs(oav-average)/ow.gt.10) then
+               if(abs(oav-average)/ow.gt.par_thresh) then
                   write(*,*) ' check_stat_consistency:'
                   write(*,*)
      1                 ' The program has detected inconsistent results'
@@ -1571,7 +1572,7 @@ c     call newunit(iunit)
       write(iunit,'(a)') '      integer nentries,iret'
       write(iunit,'(a)') '      integer equivto(nentries)'
       write(iunit,'(a)') '      real * 8 equivcoef(nentries)'
-      write(iunit,'(a)') '      write(*,*) "Reading table of'//
+      write(iunit,'(a)') '      write(*,*) "Using precomputed'//
      1 'equivalent amplitudes for '//flag//'"'
       do k=1,2
          if(k==1) then
