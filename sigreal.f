@@ -1340,7 +1340,7 @@ c imode=0 when called from btilde,
 c imode=1 when called for radiation. In the latter
 c case, graphs that do not have the same underlying Born
 c     are not considered.
-      tmp = powheginput("#compare_vecs_ep")
+      tmp = powheginput("#compare_vecsr_ep")
       if(tmp>0) then
          ep = tmp
       else

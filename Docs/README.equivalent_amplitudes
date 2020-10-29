@@ -7,7 +7,7 @@ Starting with version 3776 some options have been added in order to fix the equi
 compile time. The tolerance parameter to determine if two amplitudes are related, after version 3776, can
 be overridden by the use by adding the line
 
-compare_vecs_ep <value>   ! the default is 1d-8. This is the tolerance parameter for the real amplitudes.
+compare_vecsr_ep <value>   ! the default is 1d-8. This is the tolerance parameter for the real amplitudes.
 compare_vecsb_ep <value>   ! the default is 1d-12. This is the tolerance parameter for the born amplitudes.
 compare_vecsv_ep <value>   ! the default is 1d-8. This is the tolerance parameter for the virtual amplitudes.
 
