@@ -94,7 +94,7 @@ contains
        B2Rad = B2Rad + two*A(1)**2*zeta3
        B(2)  = B2Rad + H(1)*beta0
        !B(2)  = B(2) - Hvirt + NewVirt ! add Hvirt
-       A(3)  = (cmw_K2*A(1)+pi*beta0*ca_def*(ca_def*(808._dp/27._dp-28._dp*zeta3)-224._dp/27._dp*tf_def))/twopi**3
+       A(3)  = (cmw_K2*A(1)*twopi+pi*beta0*ca_def*(ca_def*(808._dp/27._dp-28._dp*zeta3)-224._dp/27._dp*tf_def))/twopi**3
        B(3)  = zero
     case('qq')
        as_pow = zero
@@ -109,7 +109,7 @@ contains
        B2Rad = B2Rad + two*A(1)**2*zeta3
        B(2)  = B2Rad + H(1)*beta0
        !B(2)  = B(2) - DYvirt + NewVirt ! add DYvirt
-       A(3)  = (cmw_K2*A(1)+pi*beta0*cf_def*(ca_def*(808._dp/27._dp-28._dp*zeta3)-224._dp/27._dp*tf_def))/twopi**3
+       A(3)  = (cmw_K2*A(1)*twopi+pi*beta0*cf_def*(ca_def*(808._dp/27._dp-28._dp*zeta3)-224._dp/27._dp*tf_def))/twopi**3
        B(3)  = zero
     case default
        call wae_error("ERROR: init_proc cs%proc: "//cs%proc)
