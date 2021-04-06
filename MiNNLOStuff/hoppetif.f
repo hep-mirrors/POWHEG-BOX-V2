@@ -38,6 +38,7 @@ c     imem is the member name for the given ndns
          pdf_name = trim(string(1:stringlength(string)-1))
      c        //trim(".LHgrid")
          ! set the global mass of the colour singlet (this has to happen before the pdf initialisation)
+! at least the next two lines should be irrelevant; and maybe even the third (although it sets the top mass)
          cs%M = get_M_for_init_Dterms()
          cs%Q = get_M_for_init_Dterms()
          call init_masses_Dterms() ! initializes hard-coded mass values in NNLOPS_plugin
@@ -77,7 +78,7 @@ c     use LHAPDF through hoppet
 
             if(powheginput('#profiledscales').ne.0) then
                Q0 = powheginput('#Q0')
-               if(Q0.lt.0d0) Q0=2d0
+               if(Q0.lt.0d0) Q0 = 0d0
                if(Q0.eq.0d0) Q0 = 1d-10
                if(Q0**2.lt.pdf_q2min*pdf_cutoff_fact**2) then
                   write(*,*) 'Error: pdf cutoff > Q0 (profiled scales)'

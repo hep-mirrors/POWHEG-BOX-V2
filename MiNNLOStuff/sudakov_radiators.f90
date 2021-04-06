@@ -10,6 +10,7 @@ module sudakov_radiators
   
   public :: Sudakov_pt, Sudakov_pt_exact
   public :: expsudakov_pt, exp2sudakov_pt
+  public :: Smearing, ptDlogSmearing
 
   logical  :: use_analytic_alphas
   real(dp) :: alphas_freezing_scale
@@ -66,12 +67,17 @@ contains
           !>> linear scaling
           !muR = cs%muR/cs%Q * (cs%Q*exp(-L) + Q0)
           !>> with extra suppression at large pt (not much of a difference)
-          muR = cs%muR/cs%Q * (cs%Q*exp(-L) + Q0 / (one + (cs%Q/Q0*exp(-L))**npow))
+!          muR = cs%muR/cs%Q * (cs%Q*exp(-L) + Q0 / (one + (cs%Q/Q0*exp(-L))**npow)) --> this was without the kappaQ implementation
+          !>> change to implement the resummation scale (KR*pt)
+          muR = cs%muR/cs%Q * cs%Q/cs%M * (cs%Q*exp(-L) + Q0 / (one + (cs%Q/Q0*exp(-L))**npow))
           alphas2pi = pwhg_alphas(muR**2, zero, zero)/twopi
           !alphas2pi = RunningCoupling(muR)/twopi          
        else
-          muR = cs%muR * exp(-L)
+          !muR = cs%muR * exp(-L)
+          !>> change to implement the resummation scale (KR*pt)
+          muR = cs%muR * cs%Q/cs%M * exp(-L)
           !>> implement same freezing as in setlocalscales
+!          if (muR < alphas_freezing_scale) then --> this was without the kappaQ implementation
           if (muR < alphas_freezing_scale) then
              muR = alphas_freezing_scale
           end if
@@ -166,8 +172,35 @@ contains
     real(dp) :: res
 
     res = (Bsud(2)*L)/(2.*pi**2) - (2*Asud(1)*beta0*L**3)/(3.*pi) &
-         & + (L**2*(Asud(2) - 2*Bsud(1)*beta0*pi))/(2.*pi**2)
+         & + (L**2*(Asud(2) - 2*Bsud(1)*beta0*pi))/(2.*pi**2) &
+         ! adding scale dependence pieces to expand about alphas(KR*M*e^-L) to compute Delta2
+         & - Bsud(1)*L*beta0*cs%ln_Q2_M2/pi - Asud(1)*L**2*beta0*cs%ln_Q2_M2/pi
     return
   end function exp2sudakov_pt
+
+  function Smearing(exp_minus_L,Qsmear,modlog_p) result(res)
+    real(dp), intent(in) :: exp_minus_L,Qsmear,modlog_p
+    real(dp) :: res, pt
+
+    pt = cs%Q * exp_minus_L
+    if (modlog_p .gt. 0d0) then
+       res = exp(-abs(Qsmear**2/cs%Q**2 * ((1d0,0d0) - cmplx(pt/cs%Q,0d0)**(-modlog_p))**(2d0/modlog_p)))
+    else
+       res = exp(- Qsmear**2d0/pt**2d0)
+    endif
+  end function Smearing
+
+  function ptDlogSmearing(exp_minus_L,Qsmear,modlog_p) result(res)
+    real(dp), intent(in) :: exp_minus_L,Qsmear,modlog_p
+    real(dp) :: res, pt
+
+    pt = cs%Q * exp_minus_L
+    if (modlog_p .gt. 0d0) then
+       res = 2d0* (cs%Q/pt)**(modlog_p) * (Qsmear/cs%Q)**2 * &
+            & abs(-(1d0,0d0) + cmplx(pt/cs%Q,0d0)**(-modlog_p))**(2d0/modlog_p-1d0) ! argument of abs is real, but taken for safety reasons
+    else
+       res = 2d0*Qsmear**2d0/pt**2d0
+    endif
+  end function ptDlogSmearing
 
 end module sudakov_radiators

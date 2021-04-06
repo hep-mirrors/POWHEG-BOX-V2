@@ -40,8 +40,9 @@ module pdfs_tools
   private 
   public :: init_pdfs_from_LHAPDF, init_dummy_pdfs, init_pdfs_5FS_evolution, init_pdfs_NNLOPS
   public :: init_C_matxs, reset_dynamical_C_matxs
-  public :: get_pdfs_Born, lumi_Born, Dterms, fun_test, lumi_NNNLL_Born, dlumi_NNNLL_Born, DtermsAllOrders
+  public :: get_pdfs_Born, lumi_Born, Dterms, fun_test, lumi_NNNLL_Born, dlumi_NNNLL_Born, DtermsAllOrders, D1D2atQ
   public :: alphas_hoppet, xfxq2_hoppet
+  public :: DSmearing
   !----------------------------------------------------------------
   real(dp) :: PDF_cutoff
   integer, parameter  :: pdf_fit_order = -5
@@ -90,9 +91,9 @@ contains
     call InitCoeffMatrix(grid, C1_matrix, C2_matrix, G1_matrix)
 
     if (present(Qmax)) then
-       call AllocPdfTable(grid, PDFs,     PDF_cutoff, Qmax, dlnlnQ=dlnlnQ, freeze_at_Qmin = .true.)
+       call AllocPdfTable(grid, PDFs, PDF_cutoff, Qmax, dlnlnQ=dlnlnQ, freeze_at_Qmin = .true.)
     else
-       call AllocPdfTable(grid, PDFs,     PDF_cutoff, 2d4, dlnlnQ=dlnlnQ, freeze_at_Qmin = .true.)
+       call AllocPdfTable(grid, PDFs, PDF_cutoff, 2d4, dlnlnQ=dlnlnQ, freeze_at_Qmin = .true.)
     end if
   end subroutine init_grid_and_dglap
 
@@ -170,6 +171,8 @@ contains
        call GetThreshold(i, threshold_Q)
        quark_masses(i) = threshold_Q
     end do
+    quark_masses(6) = 1d10 ! the alphas running in LHAPDF uses nf=5 at high scales,
+                           ! to be consistent we have to remove the top threshold
     call InitRunningCoupling(alfas=alphasMZ, Q=MZ, nloop=3, quark_masses=quark_masses(4:6), masses_are_MSbar=.true.)
 
     ! Sanity check: make sure that the number of active flavours is what we expect
@@ -341,6 +344,8 @@ contains
        call GetThreshold(i, threshold_Q)
        quark_masses(i) = threshold_Q
     end do
+    quark_masses(6) = 1d10 ! the alphas running in LHAPDF uses nf=5 at high scales,
+                           ! to be consistent we have to remove the top threshold
     call InitRunningCoupling(alfas=alphasMZ, Q=MZ, nloop=3, quark_masses=quark_masses(4:6))!, masses_are_MSbar=.true.)
 
     call FillPdfTable_LHAPDF(PDFs, evolvePDF)
@@ -986,7 +991,19 @@ contains
     end if
 
     ! Finally, define running coupling used in the Sudakov
-    as2pi_sudakov = as2pi
+    !>> We need to change the scale of the Sudakov according to
+    !>> what is done in Sudakov_integrand() when a resummation scale is used
+    if (present(alphas_sudakov)) then
+       as2pi_sudakov = alphas_sudakov/twopi
+    else
+       !!if ((muR*cs%Q/cs%M > PDF_cutoff).or.profiled_scales) then !>> do not freeze alphas with profile scales
+       !!   as2pi_sudakov = RunningCoupling(muR*cs%Q/cs%M)/twopi
+       !!else
+       !!   as2pi_sudakov = RunningCoupling(PDF_cutoff)/twopi
+       !!end if
+       as2pi_sudakov = as2pi
+    endif
+
 
     
     ! Now proceed with the derivative of the luminosity
@@ -1012,9 +1029,17 @@ contains
     P0_G1_conv_pdf2 = two*(P0_G1_conv_pdf2)
 
     ! define building blocks
-    dS1 = two * (two*A(1)*L + (B(1) - A(1)*cs%ln_Q2_M2)) * as2pi_sudakov
-    dS2 = two * (two*A(2)*L + (B(2) - A(2)*cs%ln_Q2_M2)) * as2pi_sudakov**2
-    dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2)) * as2pi_sudakov**3
+    !>> modify expansion of the derivative of the Sudakov with a resummation scale
+    !>> now as2pi_sudakov = as(muR)/twopi
+    dS1 = two * (two*A(1)*L + (B(1) - A(1)*cs%ln_Q2_M2))
+    dS2 = two * (two*A(2)*L + (B(2) - A(2)*cs%ln_Q2_M2))
+    dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2))
+    !>> add resummation scale dependence and powers of as
+    dS3 = dS3 - four*(dS2*pi*beta0 + dS1*pi**2*beta1)*cs%ln_Q2_M2 + four*dS1*pi**2*beta0**2*cs%ln_Q2_M2**2
+    dS2 = dS2 - two*dS1*pi*beta0*cs%ln_Q2_M2
+    dS1 = dS1 * as2pi_sudakov
+    dS2 = dS2 * as2pi_sudakov**2
+    dS3 = dS3 * as2pi_sudakov**3
 
     L0  = lumi_Born(pdf1, pdf2, msqB)
     L1  = (lumi_Born(pdf1, pdf2, msqV1) + lumi_Born(C1_conv_pdf1, pdf2, msqB) + lumi_Born(pdf1, C1_conv_pdf2, msqB)) * as2pi
@@ -1211,7 +1236,7 @@ contains
     !   if (L-two*histep > zero) exit
     !   histep = histep/two
     !end do
-
+    
     res = (        lumi_NNNLL_Born(L-two*histep,x1,x2,msqB,msqV1,msqV2,profiled_scales) &
          & - 8._dp*lumi_NNNLL_Born(L-histep    ,x1,x2,msqB,msqV1,msqV2,profiled_scales) &
          & -       lumi_NNNLL_Born(L+two*histep,x1,x2,msqB,msqV1,msqV2,profiled_scales) &
@@ -1248,7 +1273,7 @@ contains
     !>> initialise D terms and scales
     D1 = zero; D2 = zero; D3 = zero
 
-    muF = cs%muF * exp_minus_L ! when pt << M this becomes cs%muF * exp(-log(Q/pT)) = pT * cs%muF/Q = pT * KF
+    muF = cs%muF * exp_minus_L ! when pt << M this becomes cs%muF * exp(-log(Q/pT)) = pT * cs%muF/Q = pT * KF/KQ
     muR = cs%muR * exp_minus_L
     !>> new profiled factorization scale (initialised elsewhere with init_profiled_scales_parameters())
     if (profiled_scales) then
@@ -1323,6 +1348,204 @@ contains
     end if
 
     ! Finally, define running coupling used in the Sudakov
+    !>> We need to change the scale of the Sudakov according to
+    !>> what is done in Sudakov_integrand() when a resummation scale is used
+    if (present(alphas_sudakov)) then
+       as2pi_sudakov = alphas_sudakov/twopi
+    else
+       !if ((muR*cs%Q/cs%M > PDF_cutoff).or.profiled_scales) then !>> do not freeze alphas with profile scales
+       !   as2pi_sudakov = RunningCoupling(muR*cs%Q/cs%M)/twopi
+       !else
+       !   as2pi_sudakov = RunningCoupling(PDF_cutoff)/twopi
+       !end if
+       as2pi_sudakov = as2pi
+    endif
+
+
+    ! Now proceed with the derivative of the luminosity
+    call get_pdfs_Born(muF, x1, x2, cs%collider, pdf1, pdf2)
+
+    ! create macros for various convolutions as coefficients of as2pi^i
+    P0_conv_pdf1 = two*(P0_conv_pdf1)
+    P0_conv_pdf2 = two*(P0_conv_pdf2)
+    P1_conv_pdf1 = two*(P1_conv_pdf1)
+    P1_conv_pdf2 = two*(P1_conv_pdf2)
+
+    P0_C1_conv_pdf1 = two*(P0_C1_conv_pdf1)
+    P0_C1_conv_pdf2 = two*(P0_C1_conv_pdf2)
+
+    ! define building blocks
+    !dS1 = two * (two*A(1)*L + (B(1) - A(1)*cs%ln_Q2_M2)) * as2pi_sudakov
+    !dS2 = two * (two*A(2)*L + (B(2) - A(2)*cs%ln_Q2_M2)) * as2pi_sudakov**2
+    !dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2)) * as2pi_sudakov**3
+
+    !>> modify expansion of the derivative of the Sudakov with a resummation scale
+    !>> now as2pi_sudakov = as(muR)/twopi
+    dS1 = two * (two*A(1)*L + (B(1) - A(1)*cs%ln_Q2_M2))
+    dS2 = two * (two*A(2)*L + (B(2) - A(2)*cs%ln_Q2_M2))
+    dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2))
+    !>> add resummation scale dependence and powers of as
+    dS3 = dS3 - four*(dS2*pi*beta0 + dS1*pi**2*beta1)*cs%ln_Q2_M2 + four*dS1*pi**2*beta0**2*cs%ln_Q2_M2**2
+    dS2 = dS2 - two*dS1*pi*beta0*cs%ln_Q2_M2
+    dS1 = dS1 * as2pi_sudakov
+    dS2 = dS2 * as2pi_sudakov**2
+    dS3 = dS3 * as2pi_sudakov**3
+
+    L0  = lumi_Born(pdf1, pdf2, msqB)
+    L1  = (lumi_Born(pdf1, pdf2, msqV1) + lumi_Born(C1_conv_pdf1, pdf2, msqB) + lumi_Born(pdf1, C1_conv_pdf2, msqB)) * as2pi
+
+    dL1 = (lumi_Born(pdf1, P0_conv_pdf2, msqB) + lumi_Born(P0_conv_pdf1, pdf2, msqB)) * as2pi
+    dL2 = (lumi_Born(pdf1, P1_conv_pdf2, msqB) + lumi_Born(P1_conv_pdf1, pdf2, msqB) &
+         & + (lumi_Born(pdf1, P0_conv_pdf2, msqV1) + lumi_Born(P0_conv_pdf1, pdf2, msqV1)) &
+         & + (lumi_Born(C1_conv_pdf1, P0_conv_pdf2, msqB) + lumi_Born(P0_conv_pdf1, C1_conv_pdf2, msqB)) &
+         & + (lumi_Born(P0_C1_conv_pdf1, pdf2, msqB) + lumi_Born(pdf1, P0_C1_conv_pdf2, msqB)) &
+         & - (4._dp*pi*beta0) * (lumi_Born(C1_conv_pdf1, pdf2, msqB) + lumi_Born(pdf1, C1_conv_pdf2, msqB)) &
+         & - (4._dp*pi*beta0) * lumi_Born(pdf1, pdf2, msqV1)) * as2pi**2
+
+    !>> profiled factorization scale
+    if (profiled_scales) then
+       dL1 = dL1 * profile_jacobian
+       dL2 = dL2 * profile_jacobian
+    end if
+    
+    ! ---------------------------------- as[pt]^1 (beginning) ---------------------------------------------
+    D1 = dS1*L0 + dL1
+    ! ------------------------------------- as[pt]^1 (end) ------------------------------------------------
+
+
+    ! ---------------------------------- as[pt]^2 (beginning) ---------------------------------------------
+    D2 = dS2*L0 + dS1*L1 + dL2
+    ! now add the explicit scale dependence (see NNLOPS.nb for a derivation of the formulae)
+    D2 = D2 - as2pi * twopi*beta0 * dL1 * (cs%ln_muF2_M2 - cs%ln_muR2_M2)
+    ! ------------------------------------- as[pt]^2 (end) ------------------------------------------------
+
+
+    ! ---------------------------- Build full remainder D3 beyond as[pt]^2 -----------------------------
+    if (profiled_scales) L = log(cs%Q / (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow)))
+
+    lumi  =  lumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
+    dlumi = dlumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
+    if (profiled_scales) dlumi = dlumi * profile_jacobian
+
+    D3 = (dS1 + dS2 + dS3) * lumi - dlumi
+    D3 = D3 - D2 - D1
+    ! ------------------------------------- D3 (end) ------------------------------------------------
+    
+    return
+  end subroutine DtermsAllOrders  
+
+
+  ! The following function returns the all-order equivalent for the D3 coefficient, such that a total
+  ! derivative is reconstructed upon integration over pt, reducing the size of higher order contamination
+  subroutine D1D2atQ(D1, D2, exp_minus_L, x1, x2, msqB, msqV1, msqV2, alphas_in, alphas_sudakov)
+    real(dp),                  intent(in) :: exp_minus_L, x1, x2
+    real(dp), optional, intent(in) :: alphas_in, alphas_sudakov
+    real(dp), intent(in) :: msqB(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl), msqV1(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl), msqV2(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl)
+    real(dp),                  intent(out) :: D1, D2
+    !----------------------------------------------
+    real(dp) :: pdf1(-6:7), pdf2(-6:7)
+    real(dp) :: P0_conv_pdf1(-6:7), P0_conv_pdf2(-6:7)
+    real(dp) :: P1_conv_pdf1(-6:7), P1_conv_pdf2(-6:7)
+    real(dp) :: C1_conv_pdf1(-6:7), C1_conv_pdf2(-6:7)
+    real(dp) :: P0_C1_conv_pdf1(-6:7), P0_C1_conv_pdf2(-6:7)
+    real(dp) :: P0_P0_conv_pdf1(-6:7), P0_P0_conv_pdf2(-6:7)
+    integer  :: i
+    real(dp) :: as2pi, as2pi_sudakov, L, lambda, as2pi_M, muF, muR, H1, lumi, dlumi
+    real(dp) :: dS1, dS2, dS3, L0, L1, L2, dL1, dL2, dL3 ! building blocks of D3
+    !as in appendix C of the paper >> the following flag must be set
+    !to false is using init_pdfs_NNLOPS() for consistency with POWHEG
+    logical, parameter :: use_analytic_alpha = .false. 
+    real(dp) :: out(-6:6)
+    real(dp) :: profile_jacobian, muF_pT, muR_pT
+
+    !>> initialise D terms and scales
+    D1 = zero; D2 = zero;
+
+    muF = cs%muF !* exp_minus_L ! when pt << M this becomes cs%muF * exp(-log(Q/pT)) = pT * cs%muF/Q = pT * KF
+    muR = cs%muR !* exp_minus_L
+    !>> new profiled factorization scale (initialised elsewhere with init_profiled_scales_parameters())
+    muF_pT = cs%muF * exp_minus_L ! when pt << M this becomes cs%muF * exp(-log(Q/pT)) = pT * cs%muF/Q = pT * KF
+    muR_pT = cs%muR * exp_minus_L
+    if (profiled_scales) then
+       !>> with extra suppression at large pt (retain full unitarity)       
+       muF_pT = cs%muF/cs%Q * (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow))
+       muR_pT = cs%muR/cs%Q * (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow))
+!       profile_jacobian = 1d0
+       profile_jacobian  = (cs%Q*exp_minus_L - npow*Q0*(cs%Q/Q0*exp_minus_L)**npow/(one + (cs%Q/Q0*exp_minus_L)**npow)**2) &
+            &            / (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow))
+!       muF = muF_pT
+!       muR = muR_pT
+    end if
+
+    ! define logarithm for expansion of the Sudakov
+    L = - log(exp_minus_L)
+
+    ! get the pdf grids and the various convolutions with the coefficient functions
+    P0_conv_pdf1=zero
+    P0_conv_pdf2=zero
+    call EvalPdfTable_xQ(P0_PDFs, x1, muF, P0_conv_pdf1)
+    call EvalPdfTable_xQ(P0_PDFs, x2, muF, P0_conv_pdf2)
+    ! Hoppet returns x*f(x)
+    P0_conv_pdf1 = P0_conv_pdf1/x1
+    P0_conv_pdf2 = P0_conv_pdf2/x2
+    ! ---
+    P1_conv_pdf1=zero
+    P1_conv_pdf2=zero
+    call EvalPdfTable_xQ(P1_PDFs, x1, muF, P1_conv_pdf1)
+    call EvalPdfTable_xQ(P1_PDFs, x2, muF, P1_conv_pdf2)
+    P1_conv_pdf1 = P1_conv_pdf1/x1
+    P1_conv_pdf2 = P1_conv_pdf2/x2
+    ! ---
+    C1_conv_pdf1=zero
+    C1_conv_pdf2=zero
+    call EvalPdfTable_xQ(C1_PDFs, x1, muF, C1_conv_pdf1)
+    call EvalPdfTable_xQ(C1_PDFs, x2, muF, C1_conv_pdf2)
+    C1_conv_pdf1 = C1_conv_pdf1/x1
+    C1_conv_pdf2 = C1_conv_pdf2/x2
+    ! ---
+    P0_C1_conv_pdf1=zero
+    P0_C1_conv_pdf2=zero
+    call EvalPdfTable_xQ(C1_P0_PDFs, x1, muF, P0_C1_conv_pdf1)
+    call EvalPdfTable_xQ(C1_P0_PDFs, x2, muF, P0_C1_conv_pdf2)
+    P0_C1_conv_pdf1 = P0_C1_conv_pdf1/x1
+    P0_C1_conv_pdf2 = P0_C1_conv_pdf2/x2
+    ! ---
+    P0_P0_conv_pdf1=zero
+    P0_P0_conv_pdf2=zero
+    call EvalPdfTable_xQ(P0_P0_PDFs, x1, muF, P0_P0_conv_pdf1)
+    call EvalPdfTable_xQ(P0_P0_PDFs, x2, muF, P0_P0_conv_pdf2)
+    P0_P0_conv_pdf1 = P0_P0_conv_pdf1/x1
+    P0_P0_conv_pdf2 = P0_P0_conv_pdf2/x2
+
+    ! Define running coupling
+    if(present(alphas_in)) then
+       as2pi = alphas_in/twopi
+    else
+       if (.not.use_analytic_alpha) then
+          if ((muR > PDF_cutoff).or.profiled_scales) then !>> do not freeze alphas with profile scales
+             as2pi = RunningCoupling(muR)/twopi
+          else
+             as2pi = RunningCoupling(PDF_cutoff)/twopi
+          end if
+       else
+          if (profiled_scales) then
+             lambda = cs%alphas_muR*beta0 * &
+                  & log(cs%Q / (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow)))
+          else
+             lambda = cs%alphas_muR*beta0*L
+          endif
+          if (lambda < half) then
+             as2pi = RunningCoupling(cs%muR)/twopi
+             as2pi = as2pi / (1-two*lambda) * (one &
+                  & - (twopi*as2pi) / (1-two*lambda) * beta1/beta0 * log(one-two*lambda))
+          else
+             write(*,*) 'WARNING: freezing alphas at the Landau singularity'
+             as2pi = cs%alphas_muR/twopi
+          end if
+       end if
+    end if
+
+    ! Finally, define running coupling used in the Sudakov
     as2pi_sudakov = as2pi
 
     
@@ -1339,10 +1562,13 @@ contains
     P0_C1_conv_pdf1 = two*(P0_C1_conv_pdf1)
     P0_C1_conv_pdf2 = two*(P0_C1_conv_pdf2)
 
+    P0_P0_conv_pdf1 = four*(P0_P0_conv_pdf1) ! check
+    P0_P0_conv_pdf2 = four*(P0_P0_conv_pdf2) ! check
+
     ! define building blocks
     dS1 = two * (two*A(1)*L + (B(1) - A(1)*cs%ln_Q2_M2)) * as2pi_sudakov
     dS2 = two * (two*A(2)*L + (B(2) - A(2)*cs%ln_Q2_M2)) * as2pi_sudakov**2
-    dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2)) * as2pi_sudakov**3
+!    dS3 = two * (two*A(3)*L + (B(3) - A(3)*cs%ln_Q2_M2)) * as2pi_sudakov**3
 
     L0  = lumi_Born(pdf1, pdf2, msqB)
     L1  = (lumi_Born(pdf1, pdf2, msqV1) + lumi_Born(C1_conv_pdf1, pdf2, msqB) + lumi_Born(pdf1, C1_conv_pdf2, msqB)) * as2pi
@@ -1369,22 +1595,57 @@ contains
     ! ---------------------------------- as[pt]^2 (beginning) ---------------------------------------------
     D2 = dS2*L0 + dS1*L1 + dL2
     ! now add the explicit scale dependence (see NNLOPS.nb for a derivation of the formulae)
-    D2 = D2 - as2pi * twopi*beta0 * dL1 * (cs%ln_muF2_M2 - cs%ln_muR2_M2)   
+    D2 = D2 - as2pi * twopi*beta0 * dL1 * (cs%ln_muF2_M2 - cs%ln_muR2_M2)
+    D2 = D2 - as2pi * twopi*beta0 * D1 * 2d0 * log(muR_pT/cs%muR) ! * log(exp_minus_L)
+    D2 = D2 + as2pi * (dS1 * (lumi_Born(pdf1, P0_conv_pdf2, msqB) + lumi_Born(P0_conv_pdf1, pdf2, msqB)) & !check
+         &  + as2pi * (lumi_Born(pdf1, P0_P0_conv_pdf2, msqB) + lumi_Born(P0_P0_conv_pdf1, pdf2, msqB)) * profile_jacobian) * log(muF_pT/cs%muF) ! * log(exp_minus_L) !check
+
     ! ------------------------------------- as[pt]^2 (end) ------------------------------------------------
+!!$    print*, beta0, D1, 2d0 * log(exp_minus_L), twopi*as2pi
+!!$    print*, as2pi * twopi*beta0 * D1 * 2d0 * log(exp_minus_L)
 
-
-    ! ---------------------------- Build full remainder D3 beyond as[pt]^2 -----------------------------
-    if (profiled_scales) L = log(cs%Q / (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow)))
-
-    lumi  =  lumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
-    dlumi = dlumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
-    if (profiled_scales) dlumi = dlumi * profile_jacobian
-
-    D3 = (dS1 + dS2 + dS3) * lumi - dlumi
-    D3 = D3 - D2 - D1
-    ! ------------------------------------- D3 (end) ------------------------------------------------
+!!$    ! ---------------------------- Build full remainder D3 beyond as[pt]^2 -----------------------------
+!!$    if (profiled_scales) L = log(cs%Q / (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow)))
+!!$
+!!$    lumi  =  lumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
+!!$    dlumi = dlumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
+!!$    if (profiled_scales) dlumi = dlumi * profile_jacobian
+!!$
+!!$    D3 = (dS1 + dS2 + dS3) * lumi - dlumi
+!!$    D3 = D3 - D2 - D1
+!!$    ! ------------------------------------- D3 (end) ------------------------------------------------
     
     return
-  end subroutine DtermsAllOrders  
+  end subroutine D1D2atQ
 
+   
+  ! The following function returns the derivative of the smearing factor (defined in sudakov_radiators.f)
+  subroutine DSmearing(DSmear, exp_minus_L, x1, x2, msqB, msqV1, msqV2, Qsmear, modlog_p)
+    use sudakov_radiators, only: ptDlogSmearing
+    real(dp), intent(in) :: exp_minus_L, x1, x2, Qsmear, modlog_p
+    real(dp), intent(in) :: msqB(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl), msqV1(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl), msqV2(-nf_lcl:nf_lcl,-nf_lcl:nf_lcl)
+    real(dp), intent(out) :: DSmear
+    real(dp) :: L, muF, muR, lumi
+    !>> initialise D terms and scales
+    DSmear = zero;
+
+    muF = cs%muF * exp_minus_L ! when pt << M this becomes cs%muF * exp(-log(Q/pT)) = pT * cs%muF/Q = pT * KF/KQ
+    muR = cs%muR * exp_minus_L
+    !>> new profiled factorization scale (initialised elsewhere with init_profiled_scales_parameters())
+    if (profiled_scales) then
+       !>> with extra suppression at large pt (retain full unitarity)       
+       muF = cs%muF/cs%Q * (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow))
+       muR = cs%muR/cs%Q * (cs%Q*exp_minus_L + Q0 / (one + (cs%Q/Q0*exp_minus_L)**npow))
+    end if
+
+    ! define logarithm for expansion of the Sudakov
+    L = - log(exp_minus_L)
+
+    lumi  =  lumi_NNNLL_Born(L, x1, x2, msqB, msqV1, msqV2, profiled_scales)
+
+    DSmear = ptDlogSmearing(exp_minus_L,Qsmear,modlog_p) * lumi
+    
+    return
+  end subroutine DSmearing
+  
 end module pdfs_tools

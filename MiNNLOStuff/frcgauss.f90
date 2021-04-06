@@ -49,7 +49,7 @@ recursive function frcgauss(fun, a, b, eps)
   integer i
 
   frcgauss = 0d0
-!!  write(0,*) a, b
+!!  write(*,*) a, b
   diffab = b - a
 
   !-- first interval pair
@@ -63,8 +63,8 @@ recursive function frcgauss(fun, a, b, eps)
      diff01 = c1 - c0
      !-- first check to see if interval being deal with is acceptable.
      if ((1d0 + diff01*0.005d0/diffab) == 1d0) then
-        write(0,*) 'frcgauss: desired accuracy could not be achieved'
-        write(0,*) 'stop'
+        write(*,*) 'frcgauss: desired accuracy could not be achieved'
+        write(*,*) 'stop'
         stop
      end if
      !-- calculate 8 and 16 point quadratures for this interval
@@ -81,7 +81,7 @@ recursive function frcgauss(fun, a, b, eps)
 
      !-- test to see if accuracy has been reached
      r = abs(gh - gl)/(1d0 + abs(gh))
-!     write(0,*) c0, c1, r
+!     write(*,*) c0, c1, r
      if (r > eps) then           ! if not then subdivide interval
         c1 = c0 + 0.5 * diff01   
      elseif (c1 /= b) then       ! else add this interval, move to next
